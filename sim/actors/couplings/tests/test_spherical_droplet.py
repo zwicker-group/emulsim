@@ -1,0 +1,236 @@
+'''
+.. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
+'''
+
+
+import pytest
+import numpy as np
+
+from pde import UnitGrid, ScalarField
+from pde.grids.base import DimensionError
+from droplets import SphericalDroplet, Emulsion
+
+from ..spherical_droplet import SphericalDropletActor, ShellCollection
+from ....elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
+from .... import State, Simulation
+
+    
+def recarrays_allclose(a, b):
+    """ tests whether the entries of two structured arrays are all close """
+    if a.dtype != b.dtype:
+        return False
+    return all(np.allclose(a[name], b[name]) for name in a.dtype.names)
+    
+    
+    
+def test_shells_1d():
+    """ test shell collection in 1 dimensions """
+    sc = ShellCollection.generate(dim=1)
+    assert len(sc) == 1
+    vs, ws = sc.get_shell(1e3)
+    assert vs.shape == (2, 1)
+    assert ws.shape == (2,)
+    np.testing.assert_allclose(ws, np.full(2, 0.5))
+    
+    
+    
+@pytest.mark.parametrize('dim', [1, 2, 3])
+def test_shells_general(dim):
+    """ test shell collections in 2 and 3 dimensions """
+    sc = ShellCollection.generate(dim=dim)
+    
+    for vs, ws in sc:
+        assert vs.shape[1] == dim
+        assert vs.shape[0] == len(ws)
+        assert ws.sum() == pytest.approx(1)
+        np.testing.assert_allclose(ws @ vs, np.zeros(dim), atol=1e-10)
+    
+
+
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_spherical_droplets(dim):
+    """ simple test of SphericalDropletAgents """
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {'bounds': grid.axes_bounds})
+    assert field.concentration == pytest.approx(0)
+
+    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplets = SphericalDropletsElement.from_droplets([droplet])
+    assert droplets.droplet_count == 1
+    
+    coupling = SphericalDropletActor()
+    assert isinstance(coupling.info, dict)
+    
+    assert 0 < coupling.estimate_dt(droplets, field) < 1000
+    total_amount = pytest.approx(droplets.total_amount)
+    
+    coupling.evolve(droplets, field, 0, 0.5)
+    assert field.total_amount + droplets.total_amount == total_amount
+    assert droplets.total_amount != total_amount
+    radius = pytest.approx(droplets.data[0].radius)
+
+    evolver = coupling.make_evolver_numba(droplets, field)
+    droplets.data[0].radius = 1  # reset radius to check whether it agrees
+    field.concentration = 0
+    evolver(droplets.data, field.data, 0, 0.5)
+    assert field.total_amount + droplets.total_amount == total_amount
+    assert droplets.total_amount != total_amount
+    assert droplets.data[0].radius == radius
+
+    droplets2 = droplets.copy()
+    assert droplets2 is not droplets
+    assert np.array_equal(droplets2.data, droplets.data)
+    
+    # test whether plotting works in principle
+    if dim == 2:
+        coupling.plot_shell_points(droplets, field)
+        
+    # test incompatible dimensions
+    droplet_dim = (None, 2, 1, 1)[dim]
+    droplets = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * droplet_dim, 1)])
+    coupling = SphericalDropletActor()
+    with pytest.raises(DimensionError):
+        coupling.make_evolver_numba(droplets, field)
+        
+
+
+@pytest.mark.parametrize("compiled", [False, True])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_spherical_droplets_reactions_inside(dim, compiled):
+    """ simple test of SphericalDropletAgents with reactions """
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {'bounds': grid.axes_bounds})
+    
+
+    d1 = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * dim, 1)])
+    c1 = SphericalDropletActor()
+    
+    d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
+    c2 = SphericalDropletActor({'reaction_inside': '-1'})
+    
+    state = State({'field': field, 'd1': d1, 'd2': d2})
+    sim = Simulation(state)
+    sim.add_actor(('d1', 'field'), c1)
+    sim.add_actor(('d2', 'field'), c2)
+    
+    assert 0 < sim.estimate_dt(state) < 1000
+    
+    if compiled:
+        evolver = sim.make_evolver_numba(state)
+        evolver(state.data, 0, 0.5)
+    else:
+        sim.evolve(state, 0, 0.5)
+    assert d1.total_amount > d2.total_amount
+
+
+
+@pytest.mark.parametrize("compiled", [False, True])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_spherical_droplets_reactions_outside(dim, compiled):
+    """ simple test of SphericalDropletAgents with reactions """
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {'bounds': grid.axes_bounds})
+
+    d1 = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * dim, 1)])
+    c1 = SphericalDropletActor()
+    
+    d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
+    c2 = SphericalDropletActor({'reaction_outside': '-1'})
+    
+    state = State({'field': field, 'd1': d1, 'd2': d2})
+    sim = Simulation(state)
+    sim.add_actor(('d1', 'field'), c1)
+    sim.add_actor(('d2', 'field'), c2)
+    
+    assert 0 < sim.estimate_dt(state) < 1000
+    
+    if compiled:
+        evolver = sim.make_evolver_numba(state)
+        evolver(state.data, 0, 0.5)
+    else:
+        sim.evolve(state, 0, 0.5)
+    assert d1.total_amount > d2.total_amount
+
+
+
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_coarsening(dim):
+    """ simple test of coarsening """
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {'bounds': grid.axes_bounds})
+
+    emulsion = Emulsion([SphericalDroplet(grid.get_random_point(), 0.1),
+                         SphericalDroplet(grid.get_random_point(), 0.2)])
+    droplets = SphericalDropletsElement.from_droplets(emulsion)
+
+    coupling = SphericalDropletActor()
+    
+    ceq = coupling.get_equilibrium_concentrations(droplets, field).mean()
+    field.concentration = ceq
+    
+    total_amount = pytest.approx(field.total_amount + droplets.total_amount)
+    
+    coupling.evolve(droplets, field, 0, 0.1)
+    assert field.total_amount + droplets.total_amount == total_amount
+
+    assert droplets.data[0].radius < 0.1
+    assert droplets.data[1].radius > 0.2
+    
+    
+    
+@pytest.mark.parametrize("backend", ['numpy', 'numba'])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_spherical_droplets_drift(dim, backend):
+    """ test drift direction of droplets """
+    grid = UnitGrid([4] * dim)
+    # initialize gradient along x-direction
+    field_data = ScalarField.from_expression(grid, 'x / 40')
+     
+    for drift in [True, False]:
+        field = ScalarFieldElement.from_field(field_data)
+        droplets = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 0.2)])
+        state = State({'droplets': droplets, 'field': field})
+        
+        coupling = SphericalDropletActor({'drift_enabled': drift})
+        
+        sim = Simulation(state)
+        sim.add_actor(('droplets', 'field'), coupling)
+        res = sim.run(t_range=1, backend=backend)
+
+        d = res['droplets']
+     
+        assert np.all(d.data['radius'] > 0.2)
+        
+        if drift:
+            assert d.data['position'][0, 0] > 2 
+            np.testing.assert_allclose(d.data['position'][:, 1:],
+                                       np.full((1, dim - 1), 2), rtol=1e-2)    
+        else:
+            np.testing.assert_allclose(d.data['position'], np.full((1, dim), 2),
+                                       rtol=1e-2)
+     
+     
+     
+def test_multithreading():
+    """ simple consistency test for multiprocessing """
+    grid = UnitGrid([1])
+    field1 = MeanfieldElement(0, {'bounds': grid.axes_bounds})
+    field2 = field1.copy()
+
+    emulsion = Emulsion([SphericalDroplet(grid.get_random_point(),
+                                          np.random.uniform(0.01, 0.02))
+                         for _ in range(100)])
+    droplets1 = SphericalDropletsElement.from_droplets(emulsion)
+    droplets2 = SphericalDropletsElement.from_droplets(emulsion)
+
+    coupling1 = SphericalDropletActor({'num_threads': 1})
+    coupling2 = SphericalDropletActor({'num_threads': 2})
+
+    evolver1 = coupling1.make_evolver_numba(droplets1, field1)
+    evolver2 = coupling2.make_evolver_numba(droplets2, field2)
+    
+    evolver1(droplets1.data, field1.data, 0, 0.001)
+    evolver2(droplets2.data, field2.data, 0, 0.001)
+    
+    np.testing.assert_allclose(field1.data, field2.data, rtol=0.1)
+    

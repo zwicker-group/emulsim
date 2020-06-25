@@ -1,0 +1,204 @@
+'''
+Module defining the abstract base class of elements
+
+.. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
+'''
+
+import copy
+import logging
+import json
+from typing import Dict, Any, Type, Callable, Union  # @UnusedImport
+from abc import ABCMeta
+
+import numpy as np
+
+from pde.tools.parameters import Parameterized
+from pde.tools.cache import objects_equal
+
+
+SerializedAttributesType = Dict[str, str]
+SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
+
+
+
+class ElementBase(Parameterized, metaclass=ABCMeta):
+    """ represents the state of many agents of the same type """
+    
+    data: np.ndarray
+    """ :class:`numpy.ndarray`:
+    Data describing the agents. These are the dynamical variables (degree of
+    freedoms) of the simulation
+    """
+    
+    _subclasses: Dict[str, 'ElementBase'] = {}  # type: ignore
+    
+    dim: int  # dimensionality of the space in which the element is embedded
+
+
+    def __init__(self, data=None, parameters: Dict[str, Any] = None):
+        super().__init__(parameters)
+        self.data = data
+
+
+    def __init_subclass__(cls, **kwargs):  # @NoSelf
+        """ register all subclassess to reconstruct them later """
+        super().__init_subclass__(**kwargs)
+        cls._subclasses[cls.__name__] = cls
+
+
+    @classmethod
+    def from_state(cls, attributes: Dict[str, Any], data = None) -> "ElementBase":
+        """ create the agents state from attributes and data
+        
+        Args:
+            attributes (dict):
+                Attributes of the agents state
+            data (:class:`numpy.ndarray`):
+                The numerical data associated with the agents
+        """
+        if 'class' in attributes and attributes['class'] != cls.__name__:
+            logger = logging.getLogger(__name__)
+            logger.warning(f'Initialize `{cls.__name__}` with data from '
+                           f'`{attributes["class"]}`')
+        return cls(data, attributes.get('parameters', None))
+    
+   
+    @classmethod
+    def from_hdf_dataset(cls, dataset) -> "ElementBase":
+        """ construct the agents state by reading data from an hdf5 dataset
+        
+        Args:
+            dataset: the hdf5 dataset (in an already opened file)
+        """
+        # copy attributes from hdf
+        attributes = dict(dataset.attrs)
+        
+        # determine class
+        class_name = json.loads(attributes.pop('class'))
+        field_cls = cls._subclasses[class_name]
+        
+        # unserialize the attributes
+        attributes = cls.unserialize_attributes(attributes)
+
+        # construct the instance
+        return field_cls.from_state(attributes, data=dataset)
+
+    
+    def __str__(self):
+        return f'{self.__class__.__name__}(...)'
+    
+    def __repr__(self):
+        return f'{self.__class__.__name__}(data={self.data}, parameters={self.parameters})'
+
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """ dict: information about the agents state """
+        return {'class': self.__class__.__name__,
+                'parameters': self.parameters}
+
+
+    @property
+    def attributes_serialized(self) -> Dict[str, str]:
+        """ dict: serialized version of the attributes """
+        return {key: json.dumps(value)
+                for key, value in self.attributes.items()}
+    
+
+    @classmethod
+    def unserialize_attributes(cls, attributes: Dict[str, str]) \
+            -> Dict[str, Any]:
+        """ unserializes the given attributes
+        
+        Args:
+            attributes (dict):
+                The serialized attributes
+                
+        Returns:
+            dict: The unserialized attributes
+        """
+        return {key: json.loads(value)
+                for key, value in attributes.items()}
+
+
+    def to_file(self, filename: str, **kwargs):
+        r""" store agents state in a file
+        
+        Args:
+            filename (str):
+                Path where the data is stored
+            \**kwargs:
+                Additional parameters may be supported for some formats 
+        """
+        import h5py
+        with h5py.File(filename, "w") as fp:
+            self._write_hdf_dataset(fp, **kwargs)
+                    
+    
+    def _write_hdf_dataset(self, hdf_path, key: str = 'data'):
+        """ write data to a given hdf5 file pointer `hdf_path` """
+        dataset = hdf_path.create_dataset(key, data=self.data)
+        
+        # write attributes        
+        for key, value in self.attributes_serialized.items():
+            dataset.attrs[key] = value
+        
+
+    def copy(self, data=None):
+        """ create a copy of the agents """
+        if data is None:
+            data = self.data
+        return self.__class__.from_state(attributes=copy.deepcopy(self.attributes), data=data)
+
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return (self.attributes == other.attributes and
+                objects_equal(self.data, other.data))
+        
+
+    def plot(self, ax=None, *args, **kwargs):
+        """ plot the elements """
+        pass
+
+
+
+def element_from_hdf(hdf_path) -> ElementBase:
+    """ create agents state instance from a stored state
+     
+    Args:
+        hdf_path: HDF path in an already opened file
+    """
+    if 'class' in hdf_path.attrs:
+        # assume everything is stored in root directory
+        dataset = hdf_path
+    else:
+        # assume a single field is stored in the data
+        dataset_names = list(hdf_path.keys())
+        if len(dataset_names) > 1:
+            logging.getLogger(__name__).warning('Found multiple datasets in '
+                                                'file. Using only first one.')
+            
+        dataset = hdf_path[dataset_names[0]]  # retrieve first dataset
+
+    # determine class
+    class_name = json.loads(dataset.attrs['class'])
+    field_cls = ElementBase._subclasses[class_name]
+    
+    # load the instance from hdf
+    return field_cls.from_hdf_dataset(dataset)
+
+
+
+def element_from_file(path: str) -> ElementBase:
+    """ create agents state instance from a stored state
+     
+    Args:
+        path (str): Path to the file being read
+    """
+    import h5py
+    
+    with h5py.File(path, "r") as fp:
+        return element_from_hdf(fp)
+

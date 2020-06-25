@@ -1,0 +1,42 @@
+'''
+.. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
+'''
+
+import pytest
+
+from ..state import State
+from ..elements.tests.test_generic import generate_elements
+
+
+
+@pytest.mark.parametrize('dim', [1, 2])
+def test_state(dim):
+    """ test some methods of the SimulationState class """
+    s = State({str(i): el
+               for i, el in enumerate(generate_elements())
+               if el.dim == dim})
+
+    assert isinstance(str(s), str)
+    assert isinstance(repr(s), str)
+    assert isinstance(s.attributes, dict)
+    assert len(s.attributes['elements']) == len(s)
+    assert len(s.data) == len(s)
+    
+    s2 = s.copy()
+    assert s is not s2
+    assert s == s2
+
+    # extract items
+    name = list(s.elements.keys())[0]
+    assert name in s
+    assert s[name] is s.elements[name]
+
+    if dim == 2:
+        s.plot()
+        
+        
+        
+def test_state_errors():
+    """ test some safe-guarding of the State class """
+    with pytest.raises(ValueError):
+        State({str(i): el for i, el in enumerate(generate_elements())})
