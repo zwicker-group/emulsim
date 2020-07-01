@@ -12,8 +12,8 @@ from ...elements.base import ElementBase
 
 
 
-class LocalActorBase(ActorBase, metaclass=ABCMeta):
-    """ represents the dynamics of many agents of the same type """
+class AutonomousActorBase(ActorBase, metaclass=ABCMeta):
+    """ represents an actor affecting a single element """
     
     num_elements: int = 1
     state_class: Any = ElementBase

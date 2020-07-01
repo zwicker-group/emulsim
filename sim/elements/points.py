@@ -1,4 +1,6 @@
 '''
+Provides an element that represents a collection of points
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 

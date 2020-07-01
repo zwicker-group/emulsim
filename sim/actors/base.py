@@ -14,13 +14,15 @@ from pde.tools.cache import objects_equal
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """ represents the dynamics of many agents of the same type """
 
+    num_elements: int  # the number of elements this actor affects
+
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
         Args:
             parameters (dict):
-                Additional parameters. Call
-                :meth:`~AgentsBase.show_parameters` for details.
+                Parameters defining the behavior of the actor. Call
+                :meth:`~ActorBase.show_parameters` for details.
         """
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
@@ -42,9 +44,9 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
     def copy(self) -> "ActorBase":
         return self.__class__(self.parameters.copy())
+    
 
-
-    def estimate_dt(self, state) -> float:
+    def estimate_dt(self, *element_states) -> float:
         """ estimate the maximal time step for simulating this agent type 
         
         Args:
@@ -73,11 +75,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             if not objects_equal(self._cache.get('state_attributes'),
                                  state_attributes):
                 # the cache is out-of-date
-                self._update_cache(*element_states)
+                self._update_cache(*element_states)  # type: ignore
                 self._cache['state_attributes'] = state_attributes
 
 
-    def make_evolver_numba(self, state) -> Callable:
+    def make_evolver_numba(self, *element_states) -> Callable:
         """ return a function evolve the agents state from time `t` to `t + dt`
         
         Args:
@@ -93,7 +95,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def evolve(self, state, t: float, dt: float):
+    def evolve(self, element_states, t: float, dt: float):
         """ evolve the agents state from time `t` to `t + dt`
         
         Args:
@@ -110,3 +112,4 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 which evolves the state
         """
         pass
+    

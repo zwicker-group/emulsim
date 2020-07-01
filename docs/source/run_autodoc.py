@@ -39,7 +39,7 @@ def replace_in_file(infile, replacements, outfile=None):
 
 
 
-def main(package='agent_based'):
+def main(package='sim'):
     # remove old files
     for path in glob.glob(f'{OUTPUT_PATH}/*.rst'):
         logging.info('Remove file `%s`', path)

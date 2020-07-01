@@ -1,11 +1,6 @@
 '''
 Provides a simple actor that emit mass into a field
 
-.. autosummary::
-   :nosignatures:
-
-   ~EmitterActors
-
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
@@ -16,12 +11,12 @@ import numpy as np
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from .base import LocalActorBase
+from .base import AutonomousActorBase
 from ...elements.fields import FieldElementBase
 
 
 
-class EmittersActor(LocalActorBase):
+class EmittersActor(AutonomousActorBase):
     """ represents agents that emit mass into the background field """
 
 
@@ -40,7 +35,7 @@ class EmittersActor(LocalActorBase):
         return len(self.parameters['positions'])
     
     
-    def estimate_dt(self, state: FieldElementBase) -> float:
+    def estimate_dt(self, element: FieldElementBase) -> float:  # type: ignore
         """ estimate the maximal time step for simulating this agent type 
         
         Args:
@@ -56,7 +51,7 @@ class EmittersActor(LocalActorBase):
         return float('inf')
 
 
-    def make_evolver_numba(self, state: FieldElementBase) -> Callable:
+    def make_evolver_numba(self, element: FieldElementBase) -> Callable:  # type: ignore
         """ return a function evolve the agents state from time `t` to `t + dt`
         
         Args:
@@ -70,7 +65,7 @@ class EmittersActor(LocalActorBase):
                 (agents_data: :class:`numpy.ndarray`, t: float, dt: float,
                 background_data), evolving `agents_data`
         """
-        add_amount = state.make_add_amount_compiled()
+        add_amount = element.make_add_amount_compiled()
         
         positions = np.asarray(self.parameters['positions'])
         strengths = np.broadcast_to(self.parameters['strengths'], (len(positions), ))
@@ -79,14 +74,12 @@ class EmittersActor(LocalActorBase):
         def evolver(state_data: np.ndarray, t: float, dt: float):
             """ evolve all agents explicitly """
             for position, strength in zip(positions, strengths):
-                add_amount(state_data, position,
-                           dt * strength)
+                add_amount(state_data, position, dt * strength)
 
         return evolver  # type: ignore
 
 
-    def evolve(self, state: FieldElementBase,
-               t: float, dt: float) -> None:
+    def evolve(self, element: FieldElementBase, t: float, dt: float) -> None:
         """ evolve the agents state from time `t` to `t + dt`
         
         Args:
@@ -102,4 +95,4 @@ class EmittersActor(LocalActorBase):
         positions = self.parameters['positions']
         strengths = np.broadcast_to(self.parameters['strengths'], (len(positions), ))
         for position, strength in zip(positions, strengths):
-            state.add_amount(position, dt * strength)
+            element.add_amount(position, dt * strength)

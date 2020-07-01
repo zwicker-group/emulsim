@@ -15,21 +15,28 @@ from .. import PointsElement, SphericalDropletsElement, MeanfieldElement, Scalar
 
 
 
-def generate_elements():
+def generate_elements(dim=None):
     """ helper function generating all tested backgrounds """
-    yield PointsElement(np.random.randn(3, 1))  # 1d
-    yield PointsElement(np.random.randn(3, 2))  # 2d
+    if dim is None or dim == 1:
+        yield PointsElement(np.random.randn(3, 1))
+    if dim is None or dim == 2:
+        yield PointsElement(np.random.randn(3, 2))
     
-    emulsion = [SphericalDroplet([0], 1), SphericalDroplet([1], 2)]
-    yield SphericalDropletsElement.from_droplets(emulsion)
-    emulsion = [SphericalDroplet([0, 0], 1), SphericalDroplet([1, 1], 2)]
-    yield SphericalDropletsElement.from_droplets(emulsion)
+    if dim is None or dim == 1:
+        emulsion = [SphericalDroplet([0], 1), SphericalDroplet([1], 2)]
+        yield SphericalDropletsElement.from_droplets(emulsion)
+    if dim is None or dim == 2:
+        emulsion = [SphericalDroplet([0, 0], 1), SphericalDroplet([1, 1], 2)]
+        yield SphericalDropletsElement.from_droplets(emulsion)
     
-    yield MeanfieldElement(0.1, {'bounds': [[0, 1]]})  # 1d 
-    yield MeanfieldElement(0.1, {'bounds': [[0, 1], [0, 1]]})  # 2d 
+    if dim is None or dim == 1:
+        yield MeanfieldElement(0.1, {'bounds': [[0, 1]]})  # 1d 
+    if dim is None or dim == 2:
+        yield MeanfieldElement(0.1, {'bounds': [[0, 1], [0, 1]]})  # 2d 
     
-    field = ScalarField.random_normal(UnitGrid([3, 3]))
-    yield ScalarFieldElement.from_field(field)
+    if dim is None or dim == 2:
+        field = ScalarField.random_normal(UnitGrid([3, 3]))
+        yield ScalarFieldElement.from_field(field)
 
 
     
@@ -55,9 +62,6 @@ def test_basic(element):
 @pytest.mark.parametrize("element", generate_elements())
 def test_element_io(element, tmp_path):
     """ test writing and reading agents states """
-    if isinstance(element, ScalarFieldElement):
-        return
-        
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
     
     element.to_file(path)

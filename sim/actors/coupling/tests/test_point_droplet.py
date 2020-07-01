@@ -10,7 +10,7 @@ from pde.grids import UnitGrid
 from pde.grids.base import DimensionError
 from droplets import SphericalDroplet, Emulsion
 
-from .. import PointDropletActor
+from ..point_droplet import PointDropletActor
 from ....elements import MeanfieldElement, SphericalDropletsElement
 
 
@@ -28,6 +28,7 @@ def test_point_droplets(dim):
 
     coupling = PointDropletActor()
     assert isinstance(coupling.info, dict)
+    assert coupling.num_elements == 2
     
     assert 0 < coupling.estimate_dt(droplets, field) < 1000
     total_amount = pytest.approx(droplets.total_amount)

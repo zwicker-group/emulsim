@@ -20,6 +20,7 @@ def test_diffusion_actor():
     assert element.grid == grid
     actor = DiffusionActor()
     assert isinstance(actor.estimate_dt(element), float)
+    assert actor.num_elements == 1
     
     
 
@@ -54,6 +55,7 @@ def test_meanfield_reactions():
     parameters = {'reaction_flux': '2 + 1 * c + t'}
     actor = MeanfieldActor(parameters=parameters)
     assert isinstance(actor.info, dict)
+    assert actor.num_elements == 1
     assert 0 < actor.estimate_dt(element) < 1
     
     actor.evolve(element, 0, dt=1)

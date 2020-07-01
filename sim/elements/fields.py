@@ -1,9 +1,15 @@
 '''
+Provides elements that represent extended discretized fields 
+
+.. autosummary::
+   :nosignatures:
+
+   ~ScalarFieldElement
+   ~MeanfieldElement
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
-
-import json
 from abc import abstractmethod, abstractproperty, ABCMeta
 from typing import Dict, Any, Sequence, Tuple, Callable
 
@@ -209,39 +215,6 @@ class MeanfieldElement(FieldElementBase):
                 f'data={self.concentration})')
 
 
-    @property
-    def attributes_serialized(self) -> Dict[str, str]:
-        """ dict: serialized version of the attributes """
-        results = {}
-        for key, value in self.attributes.items():
-            if key == 'grid':
-                results[key] = value.state_serialized
-            else:
-                results[key] = json.dumps(value)
-        return results
-    
-
-    @classmethod
-    def unserialize_attributes(cls, attributes: Dict[str, str]) \
-            -> Dict[str, Any]:
-        """ unserializes the given attributes
-        
-        Args:
-            attributes (dict):
-                The serialized attributes
-                
-        Returns:
-            dict: The unserialized attributes
-        """
-        results = {}
-        for key, value in attributes.items():
-            if key == 'grid':
-                results[key] = GridBase.from_state(value)
-            else:
-                results[key] = json.loads(value)
-        return results
-
-
     @plot_on_axes()
     def plot(self, ax, color='tab:blue', **kwargs):
         """ plot the background field
@@ -338,7 +311,9 @@ class ScalarFieldElement(FieldElementBase):
     parameters_default = [
         Parameter('label', '', str),
         Parameter('grid', None,
-                  description='The grid defining the background field')
+                  description='The grid defining the background field',
+                  extra={'serializer': lambda grid: grid.state_serialized,
+                         'unserializer': lambda state: GridBase.from_state(state)})
     ]
 
 
@@ -406,9 +381,8 @@ class ScalarFieldElement(FieldElementBase):
         attributes.pop('class', None)  # remove 'class' if it is present
         
         # unserialize the attributes
-        attributes = ScalarField.unserialize_attributes(attributes)
-        field = ScalarField.from_state(attributes, data=dataset)
-        return cls.from_field(field)  # type: ignore
+        attributes = cls.unserialize_attributes(attributes)
+        return cls(data=dataset, parameters=attributes['parameters'])
 
 
     @property

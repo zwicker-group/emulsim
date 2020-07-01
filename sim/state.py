@@ -1,60 +1,56 @@
 '''
 Provides a class representing the full system state of multiple elements
 
-.. autosummary::
-   :nosignatures:
-
-   ~State
-
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
+import json
 import logging
-from typing import Any, Dict, Union, Sequence
+from typing import Any, Dict, Union, Sequence, Tuple, Optional  # @UnusedImport
 from collections import defaultdict, OrderedDict
 
 from pde.grids.base import DimensionError
 from pde.tools.misc import hdf_write_attributes
 from pde.tools.plotting import plot_on_axes
 
-from .elements.base import ElementBase
+from .elements.base import ElementBase, element_from_hdf
 
 
 
 class State():
     """ Class defining the state of the agent-based simulation """
-    
-#     @classmethod
-#     def from_hdf_dataset(cls, dataset) -> "SimulationState":
-#         """ construct the instance by reading data from an hdf5 dataset
-#         
-#         Args:
-#             dataset: the hdf5 dataset (in an already opened file)
-#         """
-#         background = background_state_from_hdf(dataset['background'])
-#         agents = agents_state_from_hdf(dataset['agents'])
-#         return cls(background, agents) 
-#     
-#     
-#     @classmethod
-#     def from_file(cls, path: str) -> "SimulationState":
-#         """ create simulation state instance from data stored in a hdf file
-#          
-#         Args:
-#             path (str): Path to the hdf file being read
-#         """
-#         import h5py
-#         
-#         with h5py.File(path, "r") as fp:
-#             return cls.from_hdf_dataset(fp)
 
     def __init__(self, elements: Dict[str, ElementBase] = None):
         self._logger = logging.getLogger(__name__)
-        self.elements = OrderedDict()
-        self.dim = None
+        self.elements: Dict[str, ElementBase] = OrderedDict()
+        self.dim: Optional[int] = None
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
+    
+    
+    @classmethod
+    def from_hdf_dataset(cls, dataset) -> "State":
+        """ construct the instance by reading data from an hdf5 dataset
+         
+        Args:
+            dataset: the hdf5 dataset (in an already opened file)
+        """
+        return cls({name: element_from_hdf(dataset[name])
+                    for name in json.loads(dataset.attrs['elements'])}) 
+     
+     
+    @classmethod
+    def from_file(cls, path: str) -> "State":
+        """ create simulation state instance from data stored in a hdf file
+          
+        Args:
+            path (str): Path to the hdf file being read
+        """
+        import h5py
+         
+        with h5py.File(path, "r") as fp:
+            return cls.from_hdf_dataset(fp)
 
 
     def add_element(self, name: str, element: ElementBase):
@@ -128,8 +124,11 @@ class State():
         
     def _write_hdf_dataset(self, hdf_path):
         """ write data to a given hdf5 file pointer `hdf_path` """
+        element_names = []
         for name, element in self.elements.items():
+            element_names.append(name)
             element._write_hdf_dataset(hdf_path.create_group(name))
+        hdf_write_attributes(hdf_path, {'elements': element_names})
 
 
     def to_file(self, filename: str, info: Dict[str, Any] = None) -> None:
@@ -149,7 +148,7 @@ class State():
             
         
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> Tuple[Any, ...]:
         """ the full data of the simulation """
         return tuple(element.data for element in self.elements.values())
         
@@ -163,18 +162,29 @@ class State():
         Args:
             ax (:class:`matplotlib.axes.Axes`):
                 The axes in which the simulation state is shown.
-            elements (str):
-                Determines which elements are plotted. Possible values are
-                `all`, `droplets`, or `background`.
-            background_args (dict):
-                Additional arguments for the background plot
-            agent_args (dict):
-                Additional arguments for the agents plot
+            element_args (dict):
+                A dictionary with arguments passed to the plotting functions of
+                individual elements
+            **kwargs:
+                All additional arguments are passed to all plotting functions
         """
+        # prepare the element argument dict so it can be easily used below
         if element_args:
             element_args = defaultdict(dict, element_args)
         else:
             element_args = defaultdict(dict)
+
+        # initialize the bounding box            
+        from matplotlib.transforms import Bbox
+        limits = Bbox.null() 
              
+        # plot all elements individually
         for name, element in self:
             element.plot(ax=ax, **element_args[name], **kwargs)
+            # keep track of the maximal bounding box
+            limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
+
+        # set the bounding box to the maximal value
+        ax.set_xlim(*limits.intervalx)        
+        ax.set_ylim(*limits.intervaly)
+        

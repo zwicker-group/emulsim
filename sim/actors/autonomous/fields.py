@@ -1,9 +1,19 @@
 '''
+Provides actors that influence scalar fields.
+
+.. autosummary::
+   :nosignatures:
+
+   ~MeanfieldActor
+   ~ScalarPDEActor
+   ~DiffusionActor
+   ~ReactionDiffusionActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
 
-
+import inspect
 from abc import abstractmethod, ABCMeta
 from typing import Dict, Any, Callable, Type  # @UnusedImport
 
@@ -16,12 +26,12 @@ from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 
-from .base import LocalActorBase
+from .base import AutonomousActorBase
 from ...elements import MeanfieldElement, ScalarFieldElement
 
 
 
-class MeanfieldActor(LocalActorBase):
+class MeanfieldActor(AutonomousActorBase):
     """ background based on a scalar field evolving with simple diffusion """
 
     parameters_default = [
@@ -30,7 +40,7 @@ class MeanfieldActor(LocalActorBase):
                   "expression may depend on the concentration and time."),
     ]
     
-    state_class: Type[MeanfieldElement] = MeanfieldElement
+    element_class: Type[MeanfieldElement] = MeanfieldElement
 
 
     def __init__(self, parameters: Dict[str, Any] = None):
@@ -63,12 +73,12 @@ class MeanfieldActor(LocalActorBase):
                                                     with_mu=False)
         
 
-    def estimate_dt(self, state: MeanfieldElement) -> float:
+    def estimate_dt(self, element: MeanfieldElement) -> float:  # type: ignore
         """ estimate the time step based on the chemical reaction
         
         Args:
-            state (:class:`MeanfieldElement`):
-                The state of the background
+            element (:class:`MeanfieldElement`):
+                The element of the background
         """
         s_max = np.abs(self._reaction(np.linspace(0, 1, 32), t=0)).max()
         if s_max == 0:
@@ -77,12 +87,12 @@ class MeanfieldActor(LocalActorBase):
             return 0.1 / s_max  # type: ignore
 
 
-    def make_evolver_numba(self, state: MeanfieldElement) -> Callable:
+    def make_evolver_numba(self, element: MeanfieldElement) -> Callable:  # type: ignore
         """ return a function evolve the field from time `t` to `t + dt`
         
         Args:
-            state (:class:`MeanfieldElement`):
-                The state of the background        
+            element (:class:`MeanfieldElement`):
+                The element of the background        
 
         Returns:
             callable: A function with signature (field_data, t: float,
@@ -98,39 +108,37 @@ class MeanfieldActor(LocalActorBase):
         return evolver  # type: ignore
 
 
-    def evolve(self, state: MeanfieldElement,
-               t: float, dt: float,
-               agents_state: "AgentsElementBase" = None):
+    def evolve(self, element: MeanfieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            state (:class:`MeanfieldElement`):
-                The state of the background
+            element (:class:`MeanfieldElement`):
+                The element of the background
             t (float):
                 The current time point
             dt (float):
-                The time step used to evolve the state
-            agents_state (:class:`agent_based.agents.base.AgentsElementBase`):
-                The state of the agents (Not used by this class)
+                The time step used to evolve the element
+            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
+                The element of the agents (Not used by this class)
         """
         if self._reaction.present:  # type: ignore
-            state.data += dt * self._reaction(state.data, t)
+            element.data += dt * self._reaction(element.data, t)
 
 
 
-class ScalarFieldActorBase(LocalActorBase, metaclass=ABCMeta):
+class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
     """ base class for a background based on a scalar field """
 
 
-    state_class: Type[ScalarFieldElement] = ScalarFieldElement
+    element_class: Type[ScalarFieldElement] = ScalarFieldElement
             
 
-    def estimate_dt(self, state: ScalarFieldElement) -> float:
+    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the background
         
         Args:
-            state (:class:`ScalarFieldElement`):
-                The background state
+            element (:class:`ScalarFieldElement`):
+                The background element
                 
         Returns:
             float: the time step
@@ -138,12 +146,12 @@ class ScalarFieldActorBase(LocalActorBase, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-    def make_evolver_numba(self, state: ScalarFieldElement) -> Callable:
+    def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
         """ return a function evolve the field from time `t` to `t + dt`
 
         Args:
-            state (:class:`ScalarFieldElement`):
-                The background state
+            element (:class:`ScalarFieldElement`):
+                The background element
 
         Returns:
             callable: A function with signature (field_data, t: float,
@@ -153,20 +161,18 @@ class ScalarFieldActorBase(LocalActorBase, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def evolve(self, state: ScalarFieldElement,
-               t: float, dt: float,
-               agents_state: "AgentsElementBase" = None):
+    def evolve(self, element: ScalarFieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            state (:class:`MeanfieldElement`):
-                The state of the background
+            element (:class:`MeanfieldElement`):
+                The element of the background
             t (float):
                 The current time point
             dt (float):
-                The time step used to evolve the state
-            agents_state (:class:`agent_based.agents.base.AgentsElementBase`):
-                The state of the agents (Not used by this class)
+                The time step used to evolve the element
+            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
+                The element of the agents (Not used by this class)
         """
         pass
     
@@ -187,7 +193,13 @@ class ScalarPDEActor(ScalarFieldActorBase):
                 :meth:`~ScalarPDEField.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
-        self.pde = pde
+        
+        if inspect.isclass(pde):
+            self._logger.warning('Class `%s` has been passed instead of an '
+                                 'instance.', pde)
+            self.pde = pde()  # type: ignore
+        else:
+            self.pde = pde
         
     
     @property
@@ -198,18 +210,18 @@ class ScalarPDEActor(ScalarFieldActorBase):
         return result
 
 
-    def make_evolver_numba(self, state: ScalarFieldElement) -> Callable:
+    def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
         """ return a function evolve the field from time `t` to `t + dt`
 
         Args:
-            state (:class:`ScalarFieldElement`):
-                The background state
+            element (:class:`ScalarFieldElement`):
+                The background element
                 
         Returns:
             callable: A function with signature (field_data, t: float,
                 dt: float, agents_data), which evolves the field_data.
         """
-        pde_rhs = self.pde._make_pde_rhs_numba(state._field)
+        pde_rhs = self.pde._make_pde_rhs_numba(element._field)
 
         @jit
         def evolver(field_data, t: float, dt: float):
@@ -219,23 +231,21 @@ class ScalarPDEActor(ScalarFieldActorBase):
         return evolver  # type: ignore
 
 
-    def evolve(self, state: ScalarFieldElement,
-               t: float, dt: float,
-               agents_state: "AgentsElementBase" = None):
+    def evolve(self, element: ScalarFieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            state (:class:`MeanfieldElement`):
-                The state of the background
+            element (:class:`MeanfieldElement`):
+                The element of the background
             t (float):
                 The current time point
             dt (float):
-                The time step used to evolve the state
-            agents_state (:class:`agent_based.agents.base.AgentsElementBase`):
-                The state of the agents (Not used by this class)
+                The time step used to evolve the element
+            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
+                The element of the agents (Not used by this class)
         """
-        rate = self.pde.evolution_rate(state._field, t)
-        state._field += dt * rate  # type: ignore
+        rate = self.pde.evolution_rate(element._field, t)
+        element._field += dt * rate  # type: ignore
 
 
 
@@ -274,14 +284,14 @@ class DiffusionActor(ScalarPDEActor):
                                 bc=self.parameters['boundary_conditions'])
 
 
-    def estimate_dt(self, state: ScalarFieldElement) -> float:
+    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the background
         
         Returns:
             float: the time step
         """
-        dx = float(state.grid.discretization.min())
-        return 0.1 * dx**2 / float(self.pde.diffusivity)  # type: ignore
+        dx = float(element.grid.discretization.min())
+        return 0.1 * dx**2 / float(self.pde.diffusivity)
 
 
 
@@ -326,12 +336,12 @@ class ReactionDiffusionActor(ScalarPDEActor):
         self.pde = ReactionDiffusionPDE(pde_params)
 
 
-    def estimate_dt(self, state: ScalarFieldElement) -> float:
+    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the background
         
         Args:
-            state (:class:`ScalarFieldElement`):
-                The background state
+            element (:class:`ScalarFieldElement`):
+                The background element
         
         Returns:
             float: the time step
@@ -340,12 +350,12 @@ class ReactionDiffusionActor(ScalarPDEActor):
         if hasattr(self.pde, '_reaction'):
             # pde seems to be an instance of ReactionDiffusionPDE
             cs = np.linspace(0, 1, 32)
-            s_max = np.abs(self.pde._reaction(cs, t=0)).max()  # type: ignore
-            diffusivity = self.pde.diffusivity.value  # type: ignore
+            s_max = np.abs(self.pde._reaction(cs, t=0)).max()
+            diffusivity = self.pde.diffusivity.value
         else:
             # pde seems to be an instance of DiffusionPDE
             s_max = 0
-            diffusivity = self.pde.diffusivity  # type: ignore
+            diffusivity = self.pde.diffusivity
             
         if s_max == 0:
             dt_reaction = float('inf')
@@ -353,7 +363,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             dt_reaction = 0.1 / s_max 
         
         # estimate the time step required for diffusion        
-        dx = state.grid.discretization.min()
+        dx = element.grid.discretization.min()
         dt_diffusion = 0.2 * dx**2 / diffusivity  
     
         return min(dt_reaction, dt_diffusion)  # type: ignore

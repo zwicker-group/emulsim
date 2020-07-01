@@ -21,9 +21,8 @@ dynamical degrees of freedom, compared to the typical Cahn-Hilliard description.
 
 __version__ = "0.1"
 
-from .state import State
-from .simulation import Simulation
 from .elements import *
-from .actors.local import *
-from .actors.couplings import *
+from .state import State
+from .actors import *
+from .simulation import Simulation
 from .trackers import *

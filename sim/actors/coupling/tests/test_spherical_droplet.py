@@ -60,6 +60,7 @@ def test_spherical_droplets(dim):
     
     coupling = SphericalDropletActor()
     assert isinstance(coupling.info, dict)
+    assert coupling.num_elements == 2
     
     assert 0 < coupling.estimate_dt(droplets, field) < 1000
     total_amount = pytest.approx(droplets.total_amount)

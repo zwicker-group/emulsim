@@ -20,6 +20,7 @@ def test_emitters():
 
     emitters = EmittersActor({'positions': [grid.get_random_point()]})
     assert isinstance(emitters.info, dict)
+    assert emitters.num_elements == 1
     
     assert len(emitters) == 1
     

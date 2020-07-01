@@ -1,4 +1,6 @@
 '''
+Provides a simulation element representing spherical droplets
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
@@ -36,8 +38,12 @@ class SphericalDropletsElement(ElementBase):
         super().__init__(None, parameters)
         self.droplets = Emulsion([self.droplet_class.from_data(data_row)  # type: ignore
                                   for data_row in data])
+        if len(self.droplets) == 0:
+            raise ValueError('At least a single droplet needs to be defined to '
+                             'determine the dimensionality of the element.')
+        
         self.data = self.droplets.get_linked_data()
-        self.dim = self.droplets.dim
+        self.dim = self.droplets.dim  # type: ignore
 
     
     @classmethod

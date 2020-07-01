@@ -101,8 +101,22 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
     @property
     def attributes_serialized(self) -> Dict[str, str]:
         """ dict: serialized version of the attributes """
-        return {key: json.dumps(value)
-                for key, value in self.attributes.items()}
+        # serialize the individual parameters
+        default_parameters = self.get_parameters(include_hidden=True, include_deprecated=True, sort=False)
+        
+        parameters = {}
+        for key, value in self.parameters.items():
+            serializer = json.dumps
+            if key in default_parameters:
+                def_param_extra = default_parameters[key].extra
+                if 'serializer' in def_param_extra:
+                    serializer = def_param_extra['serializer']
+            parameters[key] = serializer(value)
+
+        # serialize all remaining attributes            
+        attributes = self.attributes
+        attributes['parameters'] = parameters
+        return {key: json.dumps(value) for key, value in attributes.items()}
     
 
     @classmethod
@@ -117,9 +131,23 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         Returns:
             dict: The unserialized attributes
         """
-        return {key: json.loads(value)
-                for key, value in attributes.items()}
-
+        # unserialize all attributes            
+        attributes = {key: json.loads(value) for key, value in attributes.items()}
+        
+        # unserialize the individual parameters
+        default_parameters = cls.get_parameters(include_hidden=True, include_deprecated=True, sort=False)
+        
+        parameters = attributes['parameters']
+        for key in parameters:
+            unserializer = json.loads
+            if key in default_parameters:
+                def_param_extra = default_parameters[key].extra
+                if 'unserializer' in def_param_extra:
+                    unserializer = def_param_extra['unserializer']
+            parameters[key] = unserializer(parameters[key])  # type: ignore
+            
+        return attributes
+        
 
     def to_file(self, filename: str, **kwargs):
         r""" store agents state in a file

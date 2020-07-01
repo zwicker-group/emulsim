@@ -1,11 +1,6 @@
 '''
 Provides the coupling of a point-like droplet to a field
 
-.. autosummary::
-   :nosignatures:
-
-   ~PointDropletCoupling
-
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
@@ -87,7 +82,7 @@ class PointDropletActor(CouplingActorBase):
         self._cache['cEqOut'] = self._parse_equilibrium_concentration()
 
 
-    def estimate_dt(self, droplets_state: SphericalDropletsElement,
+    def estimate_dt(self, droplets_state: SphericalDropletsElement,  # type: ignore
                     background_state: FieldElementBase) -> float:
         """ estimate the maximal time step for simulating this agent type 
         
@@ -267,7 +262,7 @@ class PointDropletActor(CouplingActorBase):
         return droplet_update  # type: ignore
 
 
-    def make_evolver_numba(self, droplet_state: SphericalDropletsElement,
+    def make_evolver_numba(self, droplet_state: SphericalDropletsElement,  # type: ignore
                            background_state: FieldElementBase) -> Callable:
         """ return a function evolve the agents state from time `t` to `t + dt`
         
@@ -306,7 +301,7 @@ class PointDropletActor(CouplingActorBase):
         return evolver  # type: ignore
 
 
-    def evolve(self, droplet_state: SphericalDropletsElement,
+    def evolve(self, droplet_state: SphericalDropletsElement,  # type: ignore
                background_state: FieldElementBase,
                t: float, dt: float) -> None:
         """ evolve the agents state from time `t` to `t + dt`

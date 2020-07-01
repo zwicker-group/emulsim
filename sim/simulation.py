@@ -11,7 +11,7 @@ Provides a class representing the full simulation
 '''
 
 import logging
-from typing import Callable, Any, Dict, Union, Tuple
+from typing import Callable, Any, Dict, Union, List, Tuple  # @UnusedImport
 
 import numpy as np
 

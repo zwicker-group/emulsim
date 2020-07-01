@@ -5,7 +5,7 @@ Provides classes that track simulation results
    :nosignatures:
 
    ~FieldTracker
-   ~DropletDataTracker
+   ~DropletElementTracker
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
@@ -231,3 +231,4 @@ class DropletElementTracker(TrackerBase):
             self.droplet_tracks.to_file(self.store_droplet_tracks)
         
         
+__all__ = ['FieldTracker', 'DropletElementTracker']

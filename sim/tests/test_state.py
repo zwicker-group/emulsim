@@ -4,6 +4,8 @@
 
 import pytest
 
+from pde.tools.misc import skipUnlessModule
+
 from ..state import State
 from ..elements.tests.test_generic import generate_elements
 
@@ -13,8 +15,7 @@ from ..elements.tests.test_generic import generate_elements
 def test_state(dim):
     """ test some methods of the SimulationState class """
     s = State({str(i): el
-               for i, el in enumerate(generate_elements())
-               if el.dim == dim})
+               for i, el in enumerate(generate_elements(dim))})
 
     assert isinstance(str(s), str)
     assert isinstance(repr(s), str)
@@ -40,3 +41,18 @@ def test_state_errors():
     """ test some safe-guarding of the State class """
     with pytest.raises(ValueError):
         State({str(i): el for i, el in enumerate(generate_elements())})
+        
+        
+
+@skipUnlessModule('h5py')
+@pytest.mark.parametrize('dim', [1, 2])
+def test_state_io(dim, tmp_path):
+    """ test some IO of the State class """
+    s1 = State({str(i): el
+                for i, el in enumerate(generate_elements(dim))})
+
+    path = tmp_path / 'state.hdf5'
+    s1.to_file(path)
+    s2 = State.from_file(path)
+    assert s1 is not s2
+    assert s1 == s2
