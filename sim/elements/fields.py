@@ -1,5 +1,5 @@
 '''
-Provides elements that represent extended discretized fields 
+Provides elements that represent extended, discretized fields 
 
 .. autosummary::
    :nosignatures:
@@ -28,11 +28,11 @@ from .base import ElementBase
 
 
 class FieldElementBase(ElementBase, metaclass=ABCMeta):
-    """ base class for the background of the agent-based simulation """
+    """ base class for field elements """
 
 
     def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
-        """ set the boundaries of the background
+        """ set the boundaries of the field
         
         Args:
             bounds (sequence):
@@ -47,19 +47,23 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
 
     @property
-    def grid(self) -> CartesianGridBase:
-        """ :class:`pde.grids.cartesian.CartesianGrid`: background grid """
+    def grid(self) -> CartesianGrid:
+        """ :class:`pde.grids.cartesian.CartesianGrid`: discretization grid """
         return CartesianGrid(self.bounds, 1)
 
     
     def plot(self, ax=None, **kwargs):
-        """ plot the background field """
+        """ plot the background field
+        
+        Args:
+            {PLOT_ARGS}
+        """
         pass
 
 
     @abstractproperty
     def total_amount(self) -> float:
-        """ float: the total material amount in the background """
+        """ float: the total material amount in the field """
         pass
     
 
@@ -77,13 +81,13 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
     @abstractmethod
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the background
+        """ add the given amount to the field
         
         Args:
             point (:class:`numpy.ndarray`):
-                Point where the amount is added to the background
+                Point where the amount is added to the field
             amount (float):
-                The total amount added to the background
+                The total amount added to the field
         """
         pass
 
@@ -94,74 +98,49 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
-            at point `point` given the background state `data`.
+            at point `point` given the field state `data`.
         """
         raise NotImplementedError
 
     
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the background
+        """ get a compiled function for adding amount to the field
         
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`
-            to the background state given by `data` at point `point`.
+            to the field state given by `data` at point `point`.
         """
         raise NotImplementedError
 
 
-# 
-# def background_state_from_hdf(hdf_path) -> FieldElementBase:
-#     """ create background state instance from a stored state
-#      
-#     Args:
-#         hdf_path: HDF Path in an already opened file
-#     """
-#     # a single field is stored in the data
-#     dataset = hdf_path[list(hdf_path.keys())[0]]  # retrieve only dataset
-#     
-#     # determine class
-#     class_name = json.loads(dataset.attrs['class'])
-#     field_cls = FieldElementBase._subclasses[class_name]
-#     
-#     # load the instance from hdf
-#     return field_cls.from_hdf_dataset(dataset)  # type: ignore
-# 
-# 
-# 
-# def background_state_from_file(path: str) -> FieldElementBase:
-#     """ create background state instance from a stored state
-#      
-#     Args:
-#         path (str): Path to the file being read
-#     """
-#     import h5py
-#     
-#     with h5py.File(path, "r") as fp:
-#         return background_state_from_hdf(fp)
-#     
-    
-    
 
 class MeanfieldElement(FieldElementBase):
-    """ the state associated with a meanfield background """
+    """ an element representing a meanfield background """
 
     parameters_default = [
         Parameter('bounds', None,
-                  description='Sets the box size')
+                  description='Sets the size of the Cartesian space covered by '
+                              'this element. This should be a list of tuples, '
+                              'where each element denotes the lower and upper '
+                              'bounds of an axis. The number of elements then '
+                              'determines the dimension of the space')
     ]
 
 
     def __init__(self, data: float = 0,
                  parameters: Dict[str, Any] = None):
-        """ initialize the meanfield background
+        """ initialize the meanfield element
         
         Args:
-            bounds (sequence):
-                A sequence of tuples specifying the lower and upper bound for
-                each axis. The number of entries sets the space dimension.
             data (float):
-                The initial concentration in the background
+                The initial concentration in the field
+            parameters (dict):
+                Additional parameters determining how the element behaves. Most
+                importantly, the entry 'bounds' determines the size of the 
+                element. It needs to be a sequence of tuples specifying the
+                lower and upper bound for each axis. The number of entries sets
+                the space dimension.
         """
         super().__init__(data, parameters)
         
@@ -174,13 +153,19 @@ class MeanfieldElement(FieldElementBase):
         
 
     @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom for this element """
+        return 1
+
+
+    @property
     def concentration(self) -> float:
-        """ float: the concentration in the background """
+        """ float: the concentration in the field """
         return float(self.data[0])
     
     @concentration.setter
     def concentration(self, value: float):
-        """ set the background concentration
+        """ set the field concentration
         
         Args:
             value (float):
@@ -191,12 +176,12 @@ class MeanfieldElement(FieldElementBase):
 
     @property
     def total_amount(self) -> float:
-        """ float: the total material amount in the background """
+        """ float: the total material amount in the field """
         return self.concentration * self.volume
 
     @total_amount.setter
     def total_amount(self, amount: float):
-        """ set the total material amount in the background
+        """ set the total material amount in the field
         
         Args:
             amount (float):
@@ -217,15 +202,13 @@ class MeanfieldElement(FieldElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color='tab:blue', **kwargs):
-        """ plot the background field
+        """ plot the field
         
         Args:
-            ax (:class:`matplotlib.axes.Axes`):
-                The axes in which the background is shown
             color:
-                The matplotlib color in which the background is shown
-                
-        All additional arguments are ignored.
+                The color in which the background is shown. All matplotlib
+                color specifications are allowed.
+            {PLOT_ARGS}
         """
         if self.dim != 2:
             raise RuntimeError('Can only plot data in two dimensions.')
@@ -259,13 +242,13 @@ class MeanfieldElement(FieldElementBase):
 
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the background
+        """ add the given amount to the field
         
         Args:
             point:
-                Not used
+                Not used and only retained to match the interface
             amount:
-                The total amount added to the background
+                The total amount added to the field
         """
         self.data[0] += amount / self.volume
         
@@ -276,7 +259,7 @@ class MeanfieldElement(FieldElementBase):
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
-            at point `point` given the background state `data`.
+            at point `point` given the field state `data`.
         """
         @nb.jit
         def get_concentration(data: np.ndarray, point: np.ndarray):
@@ -285,12 +268,12 @@ class MeanfieldElement(FieldElementBase):
     
         
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the background
+        """ get a compiled function for adding amount to the field
         
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`
-            to the background state given by `data` at point `point`.
+            to the field state given by `data` at point `point`.
         """
         volume = self.volume
      
@@ -302,18 +285,18 @@ class MeanfieldElement(FieldElementBase):
     
 
 
-
-
 class ScalarFieldElement(FieldElementBase):
-    """ the state associated with a spatially resolved background """
+    """ the state associated with a spatially resolved field """
 
 
     parameters_default = [
-        Parameter('label', '', str),
         Parameter('grid', None,
-                  description='The grid defining the background field',
+                  description='The grid on which the field is discretized. The '
+                              'grid also determines the space dimension and '
+                              'its extension.',
                   extra={'serializer': lambda grid: grid.state_serialized,
-                         'unserializer': lambda state: GridBase.from_state(state)})
+                         'unserializer': lambda state: GridBase.from_state(state)}),
+        Parameter('label', '', str, 'The name of the field')
     ]
 
 
@@ -321,10 +304,12 @@ class ScalarFieldElement(FieldElementBase):
                  parameters: Dict[str, Any] = None):
         """ 
         Args:
-            grid (:class:`~pde.grids.GridBase`):
-                Grid defining the space on which this field is defined
             data (:class:`numpy.ndarray` or float, optional):
                 Field values at the support points of the grid
+            parameters (dict):
+                Additional parameters determining how the element behaves. Most
+                importantly, the entry 'grid' determines the discretization grid 
+                on which this field is defined.
         """
         super().__init__(data, parameters)
         
@@ -339,12 +324,12 @@ class ScalarFieldElement(FieldElementBase):
 
         
     @classmethod
-    def from_field(cls, field: ScalarField):
-        """ create a scalar background state from a scalar field
+    def from_field(cls, field: ScalarField) -> "ScalarFieldElement":
+        """ create a scalar field element from a scalar field
         
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
-                The scalar field that initializes the background
+                The scalar field that initializes the element
         
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
@@ -353,8 +338,8 @@ class ScalarFieldElement(FieldElementBase):
         
 
     @property
-    def grid(self) -> CartesianGridBase:
-        """ :class:`~pde.grids.cartesian.CartesianGridBase`: the grid """
+    def grid(self) -> CartesianGrid:
+        """ :class:`~pde.grids.cartesian.CartesianGrid`: discretization grid """
         return self.parameters['grid']  # type: ignore
     
     
@@ -363,31 +348,31 @@ class ScalarFieldElement(FieldElementBase):
         """ :class:`~pde.fields.scalar.ScalarField`: the scalar field """
         return self._field
 
+
+    @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom for this element """
+        return int(np.product(self.grid.shape))
+
             
     def plot(self, ax=None, **kwargs):
-        """ plot the background as a scalar field
+        """ plot the field
         
         This simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
         arguments are forwarded.
+        
+        Args:
+            color:
+                The color in which the background is shown. All matplotlib
+                color specifications are allowed.
+            {PLOT_ARGS}
         """
         return self._field.plot(ax=ax, **kwargs)
 
 
-    @classmethod
-    def from_hdf_dataset(cls, dataset) -> "ScalarFieldElement":
-        """ construct the state by reading data from an hdf5 dataset """
-        # copy attributes from hdf
-        attributes = dict(dataset.attrs)
-        attributes.pop('class', None)  # remove 'class' if it is present
-        
-        # unserialize the attributes
-        attributes = cls.unserialize_attributes(attributes)
-        return cls(data=dataset, parameters=attributes['parameters'])
-
-
     @property
     def total_amount(self) -> float:
-        """ float: the total material amount in the background """
+        """ float: the total material amount in the field """
         return self._field.integral
 
 
@@ -403,13 +388,13 @@ class ScalarFieldElement(FieldElementBase):
 
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the background
+        """ add the given amount to the field
         
         Args:
             point (:class:`numpy.ndarray`):
-                Point where the amount is added to the background
+                Point where the amount is added to the field
             amount (float):
-                The total amount added to the background
+                The total amount added to the field
         """
         self._field.add_interpolated(point, amount)
 
@@ -420,18 +405,18 @@ class ScalarFieldElement(FieldElementBase):
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
-            at point `point` given the background state `data`.
+            at point `point` given the field state `data`.
         """
         return self._field.grid.make_interpolator_compiled()
 
 
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the background
+        """ get a compiled function for adding amount to the field
         
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`
-            to the background state given by `data` at point `point`.
+            to the field state given by `data` at point `point`.
         """
         return self._field.grid.make_add_interpolated_compiled()
 

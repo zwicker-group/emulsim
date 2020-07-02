@@ -1,5 +1,5 @@
 '''
-Provides actors that influence scalar fields.
+Provides actors that influence scalar fields
 
 .. autosummary::
    :nosignatures:
@@ -32,11 +32,11 @@ from ...elements import MeanfieldElement, ScalarFieldElement
 
 
 class MeanfieldActor(AutonomousActorBase):
-    """ background based on a scalar field evolving with simple diffusion """
+    """ actor simulating mean field chemical reactions """
 
     parameters_default = [
         Parameter('reaction_flux', '0', str,
-                  "An expression for the reaction flux in the background. The "
+                  "An expression for the reaction flux in the mean field. The "
                   "expression may depend on the concentration and time."),
     ]
     
@@ -44,12 +44,11 @@ class MeanfieldActor(AutonomousActorBase):
 
 
     def __init__(self, parameters: Dict[str, Any] = None):
-        """ initialize the background field
-        
+        """
         Args:
             parameters (dict):
-                Additional parameters. Call
-                :meth:`~MeanfieldField.show_parameters` for details.
+                Parameters affecting the actor. Call
+                :meth:`~MeanfieldActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
         
@@ -74,11 +73,11 @@ class MeanfieldActor(AutonomousActorBase):
         
 
     def estimate_dt(self, element: MeanfieldElement) -> float:  # type: ignore
-        """ estimate the time step based on the chemical reaction
+        """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`MeanfieldElement`):
-                The element of the background
+            element (:class:`~sim.elements.fields.MeanfieldElement`):
+                The element affected by the actor
         """
         s_max = np.abs(self._reaction(np.linspace(0, 1, 32), t=0)).max()
         if s_max == 0:
@@ -91,12 +90,12 @@ class MeanfieldActor(AutonomousActorBase):
         """ return a function evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`MeanfieldElement`):
-                The element of the background        
+            element (:class:`~sim.elements.fields.MeanfieldElement`):
+                The element affected by the actor
 
         Returns:
             callable: A function with signature (field_data, t: float,
-                dt: float, agents_data), which evolves the field_data.
+                dt: float), which evolves the field_data.
         """
         reation_flux = self._reaction.get_compiled()
         
@@ -112,14 +111,12 @@ class MeanfieldActor(AutonomousActorBase):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`MeanfieldElement`):
-                The element of the background
+            element (:class:`~sim.elements.fields.MeanfieldElement`):
+                The element affected by the actor
             t (float):
                 The current time point
             dt (float):
                 The time step used to evolve the element
-            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
-                The element of the agents (Not used by this class)
         """
         if self._reaction.present:  # type: ignore
             element.data += dt * self._reaction(element.data, t)
@@ -127,18 +124,18 @@ class MeanfieldActor(AutonomousActorBase):
 
 
 class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
-    """ base class for a background based on a scalar field """
+    """ base class for actors affecting discretized scalar fields """
 
 
     element_class: Type[ScalarFieldElement] = ScalarFieldElement
             
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
-        """ get the optimal time step for the simulation of the background
+        """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`ScalarFieldElement`):
-                The background element
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
                 
         Returns:
             float: the time step
@@ -147,15 +144,15 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
 
 
     def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
-        """ return a function evolve the field from time `t` to `t + dt`
+        """ return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            element (:class:`ScalarFieldElement`):
-                The background element
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
 
         Returns:
             callable: A function with signature (field_data, t: float,
-                dt: float, agents_data), which evolves the field_data.
+                dt: float), which evolves the field_data.
         """
         raise NotImplementedError
 
@@ -165,32 +162,30 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`MeanfieldElement`):
-                The element of the background
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
             t (float):
                 The current time point
             dt (float):
                 The time step used to evolve the element
-            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
-                The element of the agents (Not used by this class)
         """
         pass
     
 
 
 class ScalarPDEActor(ScalarFieldActorBase):
-    """ background based on a scalar field evolving according to a PDE """
+    """ actor evolving a field according to a PDE """
 
     def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
-        """ initialize the scalar background field and its PDE
+        """ initialize the actor and its PDE
         
         Args:
             pde (:class:`~pde.pdes.base.PDEBase`):
                 The partial differential equation describing the dynamics of the
-                scalar background field.
+                scalar field.
             parameters (dict):
-                Additional parameters. Call
-                :meth:`~ScalarPDEField.show_parameters` for details.
+                Parameters affecting the actor. Call
+                :meth:`~ScalarPDEActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
         
@@ -204,28 +199,28 @@ class ScalarPDEActor(ScalarFieldActorBase):
     
     @property
     def info(self) -> Dict[str, Any]:
-        """ dict: information about the background """
+        """ dict: information about the actor """
         result = super().info
         result['pde'] = {'class': self.pde.__class__.__name__}
         return result
 
 
     def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
-        """ return a function evolve the field from time `t` to `t + dt`
+        """ return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            element (:class:`ScalarFieldElement`):
-                The background element
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
                 
         Returns:
             callable: A function with signature (field_data, t: float,
-                dt: float, agents_data), which evolves the field_data.
+                dt: float), which evolves the field_data.
         """
         pde_rhs = self.pde._make_pde_rhs_numba(element._field)
 
         @jit
         def evolver(field_data, t: float, dt: float):
-            """ evolve the diffusion equation explicitly """
+            """ evolve the PDE explicitly """
             field_data += dt * pde_rhs(field_data, t)
 
         return evolver  # type: ignore
@@ -235,14 +230,12 @@ class ScalarPDEActor(ScalarFieldActorBase):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`MeanfieldElement`):
-                The element of the background
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
             t (float):
                 The current time point
             dt (float):
                 The time step used to evolve the element
-            agents_element (:class:`agent_based.agents.base.AgentsElementBase`):
-                The element of the agents (Not used by this class)
         """
         rate = self.pde.evolution_rate(element._field, t)
         element._field += dt * rate  # type: ignore
@@ -250,27 +243,25 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
 
 class DiffusionActor(ScalarPDEActor):
-    """ background based on a scalar field evolving with simple diffusion """
+    """ actor evolving a field according to a simple diffusion equation """
 
     parameters_default = [
         Parameter('diffusivity', 1, float,
-                  "Diffusivity in the background field. This class only "
-                  "supports constant diffusivities. Diffusivities depending "
-                  "on local concentration are supported by the "
-                  "ReactionDiffusionPDE class."),
+                  "Diffusivity in the field. This actor only supports constant "
+                  "diffusivities. Diffusivities depending on local "
+                  "concentration are supported by `ReactionDiffusionActor`."),
         Parameter('boundary_conditions', 'natural', object,
-                  "Defines the boundary conditions on the background field." + 
+                  "Defines the boundary conditions on the field." + 
                   get_text_block('ARG_BOUNDARIES')),
     ]
 
 
     def __init__(self, parameters: Dict[str, Any] = None):
-        """ initialize the background 
-        
+        """ 
         Args:
             parameters (dict):
-                Additional parameters. Call
-                :meth:`~DiffusionField.show_parameters` for details.
+                Parameters affecting the actor. Call
+                :meth:`~DiffusionActor.show_parameters` for details.
         """
         from pde import DiffusionPDE
         
@@ -285,7 +276,7 @@ class DiffusionActor(ScalarPDEActor):
 
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
-        """ get the optimal time step for the simulation of the background
+        """ get the optimal time step for the simulation of the actor
         
         Returns:
             float: the time step
@@ -296,7 +287,7 @@ class DiffusionActor(ScalarPDEActor):
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
-    """ scalar field background evolving with a reaction-diffusion equation
+    """ actor evolving a field according to a reaction-diffusion equation
     
     This class relies on the optional `phasesep` package, which needs to be
     installed separately.
@@ -304,23 +295,23 @@ class ReactionDiffusionActor(ScalarPDEActor):
 
     parameters_default = [
         Parameter('diffusivity', '1', str,
-                  "Diffusivity in the background field. This can be an "
-                  "expression that is parsed by sympy"),
+                  "Diffusivity in the field. This can be an expression "
+                  "depending  on the local concentration that is parsed by "
+                  "sympy. Alternatively, simple numbers are also supported."),
         Parameter('reaction_flux', '0', str,
-                  "An expression for the reaction flux in the background"),
+                  "An expression for the reaction flux in the field."),
         Parameter('boundary_conditions', 'natural', object,
-                  "Defines the boundary conditions on the background field." + 
+                  "Defines the boundary conditions on the field." + 
                   get_text_block('ARG_BOUNDARIES')),
     ]
 
 
     def __init__(self, parameters: Dict[str, Any] = None):
-        """ initialize the background
-        
+        """
         Args:
             parameters (dict):
-                Additional parameters. Call
-                :meth:`~ReactionDiffusionField.show_parameters` for details
+                Parameters affecting the actor. Call
+                :meth:`~ReactionDiffusionActor.show_parameters` for details
         """
         from phasesep.pdes import ReactionDiffusionPDE
         
@@ -337,11 +328,11 @@ class ReactionDiffusionActor(ScalarPDEActor):
 
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
-        """ get the optimal time step for the simulation of the background
+        """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`ScalarFieldElement`):
-                The background element
+            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
         
         Returns:
             float: the time step
@@ -367,3 +358,4 @@ class ReactionDiffusionActor(ScalarPDEActor):
         dt_diffusion = 0.2 * dx**2 / diffusivity  
     
         return min(dt_reaction, dt_diffusion)  # type: ignore
+    

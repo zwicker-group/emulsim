@@ -1,20 +1,16 @@
-# agent-based-emulsions
+# py-sim
 
-[![Build status](https://github.com/zwicker-group/agent-based-emulsions/workflows/build/badge.svg)](https://github.com/zwicker-group/agent-based-emulsions/actions?query=workflow%3Abuild)
-
-Agent-based model for simulating emulsions efficiently.
-
+Framework for simulating physical systems consisting of multiple, interacting
+entities. 
 
 
 Main idea
 ---------
 
-The idea is to have a AgentSimulation class that can be controlled to run
-simulations. This evolves and AgentState, which contains all the instantaneous
-information about the simulation. AgentState consists of a single instance
-handling the background and an AgentCollection that contains all (potentially
-different) agents. AgentCollection is a list of AgentsBase, which collects
-agents of identical behavior. 
+The main idea is that the physical system consists of multiple `elements`, which 
+together describe the state of the system. The dynamical rules are encoded in
+`actors`, which either act on individual elements, encoding their autonomous
+dynamics, or on multiple elements, introducing couplings.
 
 
 Installation
@@ -26,8 +22,8 @@ can be installed using `pip`. To install the package together with the
 requirements, the following commands can be used:
 
 ```bash
-git clone https://github.com/zwicker-group/agent-based-emulsions.git
-pip install -r agent-based-emulsions/requirements.txt
+git clone https://github.com/david-zwicker/py-sim.git
+pip install -r sim/requirements.txt
 ```
 
 

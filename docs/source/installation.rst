@@ -1,7 +1,7 @@
 Installation
 ############
 
-This `agent-based` package is developed for python 3.6+ and should run on all
+This `py-sim` package is developed for python 3.6+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
 Since the code is not yet published on `pip`, it needs to be installed from
@@ -35,11 +35,13 @@ Package      Version   Usage
 matplotlib   >= 3.1.0  Visualizing results
 numpy        >=1.16    Array library used for storing data
 numba        >=0.43    Just-in-time compilation to accelerate numerics
-scipy        >=1.2     Miscellaneous scientific functions
-sympy        >=1.4     Dealing with user-defined mathematical expressions
-py-pde       >=0.3     Solving partial differential equations
-py-droplets  >=0.1     Represent droplets
+scipy        >=1.4     Miscellaneous scientific functions
+sympy        >=1.5     Dealing with user-defined mathematical expressions
+py-pde       >=0.8.5   Solving partial differential equations
+py-droplets  >=0.3     Represent droplets
 ===========  ========= =========
+
+
 
 These package can be installed via your operating system's package manager, e.g.
 using :command:`macports`, :command:`homebrew`, :command:`conda`, or
@@ -55,8 +57,6 @@ features:
 Package      Usage                                      
 ===========  =========
 h5py         Storing data in the hierarchical file format
-pandas       Handling tabular data
-pyfftw       Faster Fourier transforms
 pytest       Running tests
 sphinx       Building the documentation
 tqdm         Display progress bars during calculations
@@ -71,7 +71,7 @@ Downloading the package
 -----------------------
 
 The package can be simply checked out from
-`github.com/zwicker-group/agent-based-emulsions <https://github.com/zwicker-group/agent-based-emulsions>`_.
+`github.com/zwicker-group/py-sim <https://github.com/zwicker-group/py-sim>`_.
 To import the package from any python session, it might be convenient to include
 the root folder of the package into the :envvar:`PYTHONPATH` environment variable.
 

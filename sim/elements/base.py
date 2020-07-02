@@ -22,12 +22,12 @@ SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 
 
 class ElementBase(Parameterized, metaclass=ABCMeta):
-    """ represents the state of many agents of the same type """
+    """ represents a simulation element """
     
     data: np.ndarray
     """ :class:`numpy.ndarray`:
-    Data describing the agents. These are the dynamical variables (degree of
-    freedoms) of the simulation
+    Data describing the state of the element. These are the dynamical variables
+    (degree of freedoms) of the simulation
     """
     
     _subclasses: Dict[str, 'ElementBase'] = {}  # type: ignore
@@ -36,6 +36,11 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
 
     def __init__(self, data=None, parameters: Dict[str, Any] = None):
+        """
+        Args:
+            data: The data defining the state
+            parameters (dict): Parameters affecting the behavior of the element
+        """
         super().__init__(parameters)
         self.data = data
 
@@ -48,13 +53,15 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def from_state(cls, attributes: Dict[str, Any], data = None) -> "ElementBase":
-        """ create the agents state from attributes and data
+        """ create the element state from attributes and data
         
         Args:
             attributes (dict):
-                Attributes of the agents state
+                Attributes of the element. This carries information about
+                parameters and possibly additional parts that do not depend on
+                time. 
             data (:class:`numpy.ndarray`):
-                The numerical data associated with the agents
+                The numerical data associated with the state of the element
         """
         if 'class' in attributes and attributes['class'] != cls.__name__:
             logger = logging.getLogger(__name__)
@@ -65,7 +72,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
    
     @classmethod
     def from_hdf_dataset(cls, dataset) -> "ElementBase":
-        """ construct the agents state by reading data from an hdf5 dataset
+        """ construct the element by reading data from an hdf5 dataset
         
         Args:
             dataset: the hdf5 dataset (in an already opened file)
@@ -93,7 +100,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def attributes(self) -> Dict[str, Any]:
-        """ dict: information about the agents state """
+        """ dict: information about the element state """
         return {'class': self.__class__.__name__,
                 'parameters': self.parameters}
 
@@ -150,7 +157,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         
 
     def to_file(self, filename: str, **kwargs):
-        r""" store agents state in a file
+        r""" store element state in a file
         
         Args:
             filename (str):
@@ -164,7 +171,11 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                     
     
     def _write_hdf_dataset(self, hdf_path, key: str = 'data'):
-        """ write data to a given hdf5 file pointer `hdf_path` """
+        """ write data to a given hdf5 file pointer `hdf_path`
+        
+        Args:
+            hdf_path: the hdf5 dataset (in an already opened file)        
+        """
         dataset = hdf_path.create_dataset(key, data=self.data)
         
         # write attributes        
@@ -173,9 +184,15 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         
 
     def copy(self, data=None):
-        """ create a copy of the agents """
+        """ create a copy of the element
+        
+        Args:
+            data:
+                New data to overwrite the data of the current element. If
+                omitted, the data of the current element is copied.
+        """
         if data is None:
-            data = self.data
+            data = self.data.copy()
         return self.__class__.from_state(attributes=copy.deepcopy(self.attributes), data=data)
 
 
@@ -186,6 +203,12 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                 objects_equal(self.data, other.data))
         
 
+    @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom for this element """
+        return int(np.asanyarray(self.data).size)
+
+
     def plot(self, ax=None, *args, **kwargs):
         """ plot the elements """
         pass
@@ -193,7 +216,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
 
 def element_from_hdf(hdf_path) -> ElementBase:
-    """ create agents state instance from a stored state
+    """ create element instance from a stored state
      
     Args:
         hdf_path: HDF path in an already opened file
@@ -220,7 +243,7 @@ def element_from_hdf(hdf_path) -> ElementBase:
 
 
 def element_from_file(path: str) -> ElementBase:
-    """ create agents state instance from a stored state
+    """ create element instance from a stored state
      
     Args:
         path (str): Path to the file being read

@@ -76,17 +76,16 @@ def test_meanfield_basic():
     assert element.concentration == 2    
     assert element.total_amount == 6
     assert element.grid == CartesianGrid([[0, 3]], 1)
-    
+    assert element.degrees_of_freedom == 1
     
     
     
 def test_scalarfield():
     """ test basic methods of the simple scalar element """
     grid = UnitGrid([10])
-    s1 = ScalarFieldElement(1, {'grid': grid})
-    assert s1.grid == grid
-    np.testing.assert_array_equal(s1.data, 1)
+    element = ScalarFieldElement(1, {'grid': grid})
+    assert element.grid == grid
+    np.testing.assert_array_equal(element.data, 1)
+    assert element.degrees_of_freedom == 10
 
-
-        
     

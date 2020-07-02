@@ -16,18 +16,18 @@ from .base import ElementBase
 
 
 class PointsElement(ElementBase):
-    """ represents the state of agents that emit mass into the background """
+    """ an element that represents a collection of points """
 
     parameters_default = [
         Parameter('representative_radius', 1, float,
-                  "Radius used for representing the point")]
+                  "Radius used for representing the point when plotting")]
 
 
     def __init__(self, data: np.ndarray = None,
                  parameters: Dict[str, Any] = None):
         """
         Args:
-            positions (:class:`numpy.ndarray`):
+            data (:class:`numpy.ndarray`):
                 The positions of all points
             parameters (dict):
                 Additional parameters. Call
@@ -47,15 +47,20 @@ class PointsElement(ElementBase):
         return len(self.data)
 
 
+    @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom for this element """
+        return int(self.data.size)
+
+
     @plot_on_axes()
     def plot(self, ax, color='red', **kwargs):
-        """ plot all emitter agents
+        """ plot all points of this element
         
         Args:
-            ax (:class:`matplotlib.axes.Axes`):
-                The axes into which the agents are plotted
             color (matplotlib color):
-                The color with which emitters are shown
+                The color with which the points are shown
+            {PLOT_ARGS}
         """
         import matplotlib as mpl
         
@@ -73,4 +78,10 @@ class PointsElement(ElementBase):
         # add all patches as a collection
         coll = mpl.collections.PatchCollection(patches, facecolors=(color,))
         ax.add_collection(coll)
+        
+        # determine bounding box
+        xmin, ymin = positions.min(axis=0) - radius
+        xmax, ymax = positions.max(axis=0) + radius
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
 

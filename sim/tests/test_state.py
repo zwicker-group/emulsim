@@ -22,6 +22,7 @@ def test_state(dim):
     assert isinstance(s.attributes, dict)
     assert len(s.attributes['elements']) == len(s)
     assert len(s.data) == len(s)
+    assert s.degrees_of_freedom > 0
     
     s2 = s.copy()
     assert s is not s2

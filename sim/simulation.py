@@ -26,17 +26,19 @@ from .state import State
 
 
 class Simulation():
-    """ Class defining the agent-based simulation """
+    """ Class defining thesimulation """
     
     def __init__(self, state, actors=None):
         """
         Args:
-            background \
-                   (:class:`~agent_based.backgrounds.base.BackgroundStateBase`):
-                The instance describing the background
-            agents (:class:`~agent_based.agents.base.AgentsBase`):
-                The instance describing all the agents. If omitted, no agents
-                are added.
+            state (:class:`~sim.state.State`):
+                The initial simulation state defining the elements in the
+                simulation. 
+            actors (dict, optional):
+                The actors in the simulation. This should be an iterable
+                returning an (element_name, actor) pair for each item. Actors
+                are added to the simulation by calling
+                :meth:`~Simulation.add_actor`.
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -71,7 +73,17 @@ class Simulation():
         
         
     def add_actor(self, elements: Union[str, Tuple[str]], actor: ActorBase):
-        """ adds a new actor to the simulation """
+        """ adds a new actor to the simulation
+        
+        Args:
+            elements (str or tuple of str):
+                The elements this actor acts upon. This needs to have the exact
+                number of elements the actor expects. In the special case of
+                autonomous actors, a single string can be given instead of a
+                tuple with a single entry.
+            actor (:class:`~sim.actors.base.ActorBase`):
+                The instance describing the actor.
+        """
         if isinstance(elements, str):
             elements = (elements,)
             
@@ -79,12 +91,19 @@ class Simulation():
         self.actors.append((elements, actor))
         
         
-    def estimate_dt(self, state: State) -> float:
+    def estimate_dt(self, state: State = None) -> float:
         """ get the optimal time step for the simulation
+                
+        Args:
+            state (:class:`~sim.state.State`):
+                A state, which may influence the calculation of the time step
                 
         Returns:
             float: the time step
         """
+        if state is None:
+            state = self.state
+        
         dts: List[float] = [np.inf]
         for elements, actor in self.actors:
             try:
@@ -98,17 +117,20 @@ class Simulation():
         return min(dts)
         
 
-    def make_evolver_numba(self, state: State) -> Callable:
+    def make_evolver_numba(self, state: State = None) -> Callable:
         """ return a function evolving the state from time `t` to `t + dt`
         
         Args:
-            state (:class:`SimulationState`):
-                The state of the simulation
+            state (:class:`~sim.state.State`):
+                A state defining the degrees of freedom of the simulation.
                 
         Returns:
             callable: A function with signature (state_data, t: float,
             dt: float), which evolves the state in time
         """
+        if state is None:
+            state = self.state
+        
         actors = []
         for elements, actor in self.actors:
             actor_data = {'actor': actor,
@@ -123,7 +145,7 @@ class Simulation():
             pass
                 
         def chain(actor_id, inner) -> Callable:
-            """ recursive helper function for evolving all agents """
+            """ recursive helper function for running all actors """
             # run through all evolvers
             evolver = actors[actor_id]['evolver']
             element_indices = actors[actor_id]['element_indices']
@@ -158,7 +180,7 @@ class Simulation():
         """ evolve the state from time `t` to `t + dt`
         
         Args:
-            state (:class:`SimulationState`):
+            state (:class:`~sim.state.State`):
                 The state of the simulation
             t (float):
                 The current time point
@@ -174,11 +196,9 @@ class Simulation():
             dt: float = None, 
             tracker: TrackerCollectionDataType = ['progress'],
             backend: str = 'auto') -> State:
-        """ run an agent-based simulation
+        """ run the simulation to advance the state in time 
         
         Args:
-            state (:class:`SimulationState`):
-                The initial state
             t_range (float or tuple of floats):
                 Sets the time range for which the simulation is run. If only a
                 single value `t_end` is given, the time range is assumed to be 
@@ -186,7 +206,7 @@ class Simulation():
             dt (float):
                 Time step of the explicit stepping. If `None`, the time step
                 will be chosen automatically using the method
-                :func:`~agent_based.state.AgentSimulation.estimate_dt`.
+                :meth:`~Simulation.estimate_dt`.
             tracker:
                 Defines trackers that process the state of the simulation at
                 fixed time intervals. Multiple trackers can be specified as a
@@ -208,16 +228,15 @@ class Simulation():
 
 
 class SimulationSolver(SolverBase):
-    """ Solver for agent-based simulation of emulsions """
+    """ Solver for actor-based simulation """
 
 
     def __init__(self, simulation: Simulation, backend: str = 'auto'):
-        """ initialize the explicit solver for the agent-based simulation
+        """ initialize the explicit solver for the actor-based simulation
         
         Args:
-            simulation (:class:`~agent_based.simulation.AgentSimulation`):
-                The simulation that will be run. This defines the behavior of
-                the background and the agents.
+            simulation (:class:`Simulation`):
+                The simulation that will be run
             backend (str):
                 Determines how the function is created. Accepted  values are
                 'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
@@ -256,15 +275,15 @@ class SimulationSolver(SolverBase):
         return stepper
 
 
-    def _make_stepper_numba(self, state: State, dt: float) \
-            -> Callable:
+    def _make_stepper_numba(self, state: State, dt: float) -> Callable:
         """ return function evolving state from time `t_start` to `t_end`
         
-        This function used compiled evolvers for the background and the agents.
+        This function uses compiled functions for the actors.
         
         Args:
-            state (:class:`~agent_based.simulation.SimulationState`):
-                An example of the simulation state
+            state (:class:`~sim.state.State`):
+                A state determining the degrees of freedom. If `None`, the state
+                given by `self.simulation` will be used.
             dt (float):
                 The time step
                 
@@ -298,13 +317,13 @@ class SimulationSolver(SolverBase):
         function must be the identical state that is also used in the stepper.  
         
         Args:
-            state (:class:`~agent_based.simulation.SimulationState`):
-                An example of the simulation state, which is used to extract the
-                grid and other information.
+            state (:class:`~sim.state.State`):
+                An example of the simulation state, which defines the degrees of
+                freedom of the simulation and supplies other information.
             dt (float):
                 Time step of the explicit stepping. If `None`, the time step
                 will be chosen automatically using the method
-                :func:`~agent_based.state.AgentSimulation.estimate_dt`.
+                :func:`~Simulation.estimate_dt`.
             \**kwargs: These are currently ignored
 
         Returns:
@@ -312,8 +331,6 @@ class SimulationSolver(SolverBase):
             `t_start` to time `t_end`. The function call signature is
             `(state: AgentSimulation, t_start: float, t_end: float)`        
         """
-#         self.simulation.agents._prepare_evolver(state.agents,state.background)
-        
         if dt is None:
             dt = self.simulation.estimate_dt(state)
             if np.isinf(dt):

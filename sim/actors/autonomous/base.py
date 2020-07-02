@@ -1,5 +1,5 @@
 '''
-Module defining the abstract base class of actors
+Module defining the base class of an actor that affects a single element
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''

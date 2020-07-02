@@ -1,6 +1,6 @@
 '''
-Provides classes for acting on the elements in a simulation. These classes
-define the dynamics of a simulation.
+Provides actors that determine the dynamics of the simulation by modifying the
+state of elements in time.
 
 .. autosummary::
    :nosignatures:

@@ -1,5 +1,5 @@
 '''
-Provides classes that act on a multiple elements in a simulation.
+Provides actors that affect multiple elements in a simulation.
 
 .. autosummary::
    :nosignatures:
@@ -10,5 +10,6 @@ Provides classes that act on a multiple elements in a simulation.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
+from .base import CouplingActorBase
 from .point_droplet import PointDropletActor
 from .spherical_droplet import SphericalDropletActor

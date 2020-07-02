@@ -1,4 +1,6 @@
 '''
+Supplies the base class for actors
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
@@ -12,7 +14,7 @@ from pde.tools.cache import objects_equal
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
-    """ represents the dynamics of many agents of the same type """
+    """ represents a single actor, which affects one or more elements """
 
     num_elements: int  # the number of elements this actor affects
 
@@ -43,15 +45,16 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 
     def copy(self) -> "ActorBase":
+        """ returns a copy the actor """ 
         return self.__class__(self.parameters.copy())
     
 
     def estimate_dt(self, *element_states) -> float:
-        """ estimate the maximal time step for simulating this agent type 
+        """ estimate the maximal time step for simulating this actor 
         
         Args:
-            state (:class:`ElementBase`):
-                The state corresponding to this actor
+            *element_states (:class:`~sim.elements.base.ElementBase`):
+                The elements that this actor affects
 
         Returns:
             float: the maximal time step
@@ -66,8 +69,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         pre-computed data, which is then available in later.
         
         Args:
-            state (:class:`ElementBase`):
-                The state corresponding to this actor
+            *element_states (:class:`~sim.elements.base.ElementBase`):
+                The elements that this actor affects
         """
         if hasattr(self, '_update_cache'):
             # the class uses a cache internally
@@ -80,27 +83,27 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 
     def make_evolver_numba(self, *element_states) -> Callable:
-        """ return a function evolve the agents state from time `t` to `t + dt`
+        """ return a function evolve the state from time `t` to `t + dt`
         
         Args:
-            state (:class:`ElementBase`):
-                The state corresponding to this actor
+            *element_states (:class:`~sim.elements.base.ElementBase`):
+                The elements that this actor affects
 
         Returns:
             callable: A function with signature
-                (agents_data: :class:`numpy.ndarray`, t: float, dt: float,
-                background_data), evolving `agents_data`
+                (state_data: :class:`numpy.ndarray`, t: float, dt: float),
+                evolving `state_data`
         """
         raise NotImplementedError
 
 
     @abstractmethod
     def evolve(self, element_states, t: float, dt: float):
-        """ evolve the agents state from time `t` to `t + dt`
+        """ evolve the state from time `t` to `t + dt`
         
         Args:
-            state (:class:`ElementBase`):
-                The state corresponding to this actor
+            element_states (:class:`~sim.elements.base.ElementBase`):
+                The elements that this actor affects
             t (float):
                 The current time point
             dt (float):

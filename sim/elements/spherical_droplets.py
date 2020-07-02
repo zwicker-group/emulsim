@@ -16,20 +16,30 @@ from .base import ElementBase
 
 
 class SphericalDropletsElement(ElementBase):
-    """ represents the state of many droplet agents """
+    """ an element representing many droplets """
     
     
     droplet_class = SphericalDroplet
     
     parameters_default = [
         Parameter('droplet_concentration', 1, float,
-                  "Concentration inside droplets")
+                  "Concentration inside droplets that is used to calculate the "
+                  "total amount of material in droplets")
     ]
 
 
     def __init__(self, data: np.ndarray,
                  parameters: Dict[str, Any] = None):
-        
+        """
+        Args:
+            data (:class:`numpy.ndarray`):
+                The positions and radii of all points. This should be a
+                structured array as returned by
+                :attr:`droplets.emulsions.Emulsion.data`               
+            parameters (dict):
+                Additional parameters. Call
+                :meth:`~SphericalDropletsElement.show_parameters` for details.
+        """
         if isinstance(data, Emulsion) or isinstance(data[0], SphericalDroplet):
             raise TypeError('`data` should be a numpy array. To initialize '
                             f'`{self.__class__.__name__}` with an emulsions use '
@@ -50,17 +60,17 @@ class SphericalDropletsElement(ElementBase):
     def from_droplets(cls, 
                       droplets: Emulsion,
                       copy: bool = False,
-                      parameters: Dict[str, Any] = None):
+                      parameters: Dict[str, Any] = None) -> "SphericalDropletsElement":
         """
         Args:
             droplets (:class:`droplets.emulsions.Emulsion`):
-                The state given as an emulsion
+                The state of this element given as an emulsion.
             copy (bool):
                 Flag indicating whether the droplets are copied, so they are not
                 modified during the simulation.
             parameters (dict):
                 Additional parameters. Call
-                :meth:`~DropletAgentsElement.show_parameters` for details.
+                :meth:`~SphericalDropletsElement.show_parameters` for details.
         """
         # create class without calling its __init__
         obj = cls.__new__(cls)
@@ -78,11 +88,18 @@ class SphericalDropletsElement(ElementBase):
         obj.data = obj.droplets.get_linked_data()
         obj.dim = obj.droplets.dim
                 
-        return obj
+        return obj  # type: ignore
 
 
     def __len__(self) -> int:
         return len(self.droplets)
+
+
+    @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom for this element """
+        entries_per_droplet = np.r_[self.data[0].tolist()]
+        return len(self.data) * len(entries_per_droplet)
 
 
     @property
@@ -102,11 +119,10 @@ class SphericalDropletsElement(ElementBase):
 
 
     def plot(self, ax=None, *args, **kwargs):
-        """ plot all droplets of this agent class
+        """ plot all droplets of this element
         
         Args:
-            ax (:class:`matplotlib.axes.Axes`):
-                The axes in which the droplet are shown
+            {PLOT_ARGS}
             **kwargs:
                 All additional arguments are forwarded to
                 :meth:`droplets.emulsions.Emulsion.plot`.

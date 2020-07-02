@@ -61,7 +61,7 @@ def test_basic(element):
 @skipUnlessModule('h5py')
 @pytest.mark.parametrize("element", generate_elements())
 def test_element_io(element, tmp_path):
-    """ test writing and reading agents states """
+    """ test writing and reading element states """
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
     
     element.to_file(path)

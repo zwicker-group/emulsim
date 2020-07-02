@@ -23,10 +23,10 @@ from .simulation import State
         
         
 class FieldTracker(TrackerBase):
-    """ tracker for analyzing the a field in a simulations
+    """ tracker for analyzing a discretized field in a simulations
     
     This acts as a wrapper around any of the trackers from :mod:`pde.trackers`,
-    e.g., `tracker = FieldTracker('background', PlotTracker)`.
+    e.g., `tracker = FieldTracker('background', PlotTracker())`.
     """
     
     def __init__(self, element_name: str, tracker: TrackerBase):
@@ -71,9 +71,10 @@ class FieldTracker(TrackerBase):
         """ handle data supplied to this tracker
         
         Args:
-            field (:class:`~agent_based.state.SimulationState`):
+            state (:class:`~sim.state.State`):
                 The current state of the simulation
-            t (float): The associated time
+            t (float):
+                The associated time
         """
         if isinstance(state[self.element_name], FieldBase):
             field = state[self.element_name]
@@ -108,7 +109,7 @@ class DropletElementTracker(TrackerBase):
             
     The two attributes `emulsions` and `droplet_tracks` contain equivalent
     information, but their structure is different and either one might thus be
-    used to analyze the agent based simulation.
+    used to analyze the simulation.
     """
     
     def __init__(self, element_name: str,
@@ -162,10 +163,10 @@ class DropletElementTracker(TrackerBase):
                    info: InfoDict = None) -> float:
         """ 
         Args:
-            state (:class:`SimulationState`):
-                The initial state of the agent based simulation
+            state (:class:`~sim.state.State`):
+                The initial state of the simulation
             info (dict):
-                Extra information from the simulation        
+                Extra information for the simulation        
         """
         if not isinstance(state, State):
             self._logger.warning('state is not of type `State`')
@@ -185,9 +186,10 @@ class DropletElementTracker(TrackerBase):
         """ handle data supplied to this tracker
         
         Args:
-            state (:class:`SimulationState`):
-                The current state of the agent based simulation
-            t (float): The associated time
+            state (:class:`~sim.state.State`):
+                The current state of the simulation
+            t (float):
+                The associated time
         """
         droplets = state[self.element_name].droplets
         

@@ -1,5 +1,5 @@
 '''
-Provides classes that act on a single element in a simulation.
+Provides actors that affect single elements in a simulation
 
 .. autosummary::
    :nosignatures:
@@ -13,6 +13,7 @@ Provides classes that act on a single element in a simulation.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
 
+from .base import AutonomousActorBase
 from .fields import (MeanfieldActor, ScalarPDEActor,
                      DiffusionActor, ReactionDiffusionActor)
 from .emitters import EmittersActor

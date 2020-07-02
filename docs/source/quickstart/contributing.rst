@@ -4,9 +4,9 @@ Contributing code
 
 Structure of the package
 """"""""""""""""""""""""
-The functionality of the :mod:`agent_based` package is split into multiple
-sub-package. In particular, there are classes representing different backgrounds
-and different agents, which can all be extended individually.
+The functionality of the :mod:`sim` package is split into multiple
+sub-package. In particular, there are classes representing different elements
+and different actors, which can all be extended individually.
 
 
 Coding style
@@ -42,13 +42,13 @@ being created.
 
 Running unit tests
 """"""""""""""""""
-The :mod:`agent_based` package contains several unit tests, typically contained
+The :mod:`sim` package contains several unit tests, typically contained
 in sub-module :mod:`tests` in the folder of a given module. These tests ensure
 that basic functions work as expected, in particular when code is changed in
 future versions. To run all tests, there are a few convenience scripts in the
 root directory :file:`tests`. The most basic script is :file:`tests_run.sh`,
 which uses :mod:`pytest` to run the tests in the sub-modules of the
-:mod:`agent_based` package. Clearly, the python package :mod:`pytest` needs to
+:mod:`sim` package. Clearly, the python package :mod:`pytest` needs to
 be installed. There are also additional scripts that for instance run tests in
 parallel (need the python package :mod:`pytest-xdist` installed), measure test 
 coverage (need package :mod:`pytest-cov` installed), and make simple performance

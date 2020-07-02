@@ -18,9 +18,16 @@ from .elements.base import ElementBase, element_from_hdf
 
 
 class State():
-    """ Class defining the state of the agent-based simulation """
+    """ defines the state of the simulation """
 
     def __init__(self, elements: Dict[str, ElementBase] = None):
+        """
+        Args:
+            elements (dict):
+                Lists the elements in the simulation. The key in this dictionary
+                gives the name of the element, while the associated value should
+                be an instance of :class:`~sim.elements.base.ElementBase`.
+        """
         self._logger = logging.getLogger(__name__)
         self.elements: Dict[str, ElementBase] = OrderedDict()
         self.dim: Optional[int] = None
@@ -54,6 +61,14 @@ class State():
 
 
     def add_element(self, name: str, element: ElementBase):
+        """ adds an element to the simulation
+        
+        Args:
+            name (str):
+                The identifier for the element.
+            element (:class:`~sim.elements.base.ElementBase`):
+                The instance defining the element.
+        """
         if name in self.elements:
             self._logger.warning('Overwriting element `%s` in state', name)
         if len(self.elements) == 0:
@@ -65,6 +80,11 @@ class State():
 
 
     def get_index(self, name: str) -> int:
+        """ returns the numerical index of a specific element
+        
+        Args:
+            name (str): The name of the element        
+        """
         for i, element_name in enumerate(self.elements):
             if name == element_name:
                 return i
@@ -123,7 +143,11 @@ class State():
         
         
     def _write_hdf_dataset(self, hdf_path):
-        """ write data to a given hdf5 file pointer `hdf_path` """
+        """ write data to a given hdf5 file
+        
+        Args:
+            dataset: the hdf5 dataset (in an already opened file)
+         """
         element_names = []
         for name, element in self.elements.items():
             element_names.append(name)
@@ -132,7 +156,7 @@ class State():
 
 
     def to_file(self, filename: str, info: Dict[str, Any] = None) -> None:
-        r""" store agents state in a hdf file
+        r""" store elements in a hdf file
         
         Args:
             filename (str):
@@ -149,22 +173,28 @@ class State():
         
     @property
     def data(self) -> Tuple[Any, ...]:
-        """ the full data of the simulation """
+        """ tuple: the full data of the state  s"""
         return tuple(element.data for element in self.elements.values())
+        
+        
+    @property
+    def degrees_of_freedom(self) -> int:
+        """ int: the number of degrees of freedom of the simulation """
+        return sum(element.degrees_of_freedom
+                   for element in self.elements.values())
         
              
     @plot_on_axes()
     def plot(self, ax,
              element_args: Dict[str, Any] = None,
              **kwargs):
-        r""" plot the emulsion together with the background field
+        r""" visualize the state
          
         Args:
-            ax (:class:`matplotlib.axes.Axes`):
-                The axes in which the simulation state is shown.
             element_args (dict):
                 A dictionary with arguments passed to the plotting functions of
                 individual elements
+            {PLOT_ARGS}
             **kwargs:
                 All additional arguments are passed to all plotting functions
         """

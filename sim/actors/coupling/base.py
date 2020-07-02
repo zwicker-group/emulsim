@@ -14,7 +14,7 @@ from ...elements.base import ElementBase
 
 
 class CouplingActorBase(ActorBase, metaclass=ABCMeta):
-    """ represents the dynamics of many agents of the same type """
+    """ base class for actors affecting multiple elements """
     
     state_classes: Tuple[Type[ElementBase], Type[ElementBase]]
     

@@ -1,5 +1,5 @@
 '''
-Provides a simple actor that emit mass into a field
+Provides a simple actor that emit mass into a field a predefined positions
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
@@ -17,14 +17,19 @@ from ...elements.fields import FieldElementBase
 
 
 class EmittersActor(AutonomousActorBase):
-    """ represents agents that emit mass into the background field """
+    """ represents actor that emit mass into a field at defined positions """
 
 
     parameters_default = [
         Parameter('positions', np.array(tuple()), np.array,
-                  "The positions of the emitters"),
+                  "The positions of all the emitters. This needs to be an "
+                  "array of positions. The dimension of each position needs to "
+                  "be compatible with the dimension of the field."),
         Parameter('strengths', np.array([1]), np.array,
-                  "The strengths of the emitters"),
+                  "The strengths of the emitters, i.e., the mass per unit time "
+                  "that is emitted. This can be an array, setting different "
+                  "strengths for each emitter, or a single number, setting the "
+                  "same strength for all emitters."),
     ]
     
 
@@ -32,18 +37,16 @@ class EmittersActor(AutonomousActorBase):
     
     
     def __len__(self):
+        """ int: return the number of dimensions """
         return len(self.parameters['positions'])
     
     
     def estimate_dt(self, element: FieldElementBase) -> float:  # type: ignore
-        """ estimate the maximal time step for simulating this agent type 
+        """ estimate the maximal time step for simulating this actor 
         
         Args:
-            agents_state (:class:`EmitterAgentsState`):
-                The state corresponding to this agent type (not used)
-            background_state \
-                   (:class:`~agent_based.backgrounds.base.FieldStateBase`):
-                The state corresponding to the background
+            element (:class:`~sim.elements.fields.FieldElementBase`):
+                The field element that is effected by the emitters
 
         Returns:
             float: the maximal time step
@@ -52,18 +55,16 @@ class EmittersActor(AutonomousActorBase):
 
 
     def make_evolver_numba(self, element: FieldElementBase) -> Callable:  # type: ignore
-        """ return a function evolve the agents state from time `t` to `t + dt`
+        """ return a function evolve the field state from time `t` to `t + dt`
         
         Args:
-            agents_state (:class:`EmitterAgentsState`):
-                The state of all the droplets        
-            background_state (:class:`FieldStateBase`):
-                The state of the background
+            element (:class:`~sim.elements.fields.FieldElementBase`):
+                The field element that is effected by the emitters
 
         Returns:
             callable: A function with signature
-                (agents_data: :class:`numpy.ndarray`, t: float, dt: float,
-                background_data), evolving `agents_data`
+                (field_data: :class:`numpy.ndarray`, t: float, dt: float),
+                evolving `field_data`
         """
         add_amount = element.make_add_amount_compiled()
         
@@ -72,7 +73,7 @@ class EmittersActor(AutonomousActorBase):
         
         @jit
         def evolver(state_data: np.ndarray, t: float, dt: float):
-            """ evolve all agents explicitly """
+            """ evolve all emitters explicitly """
             for position, strength in zip(positions, strengths):
                 add_amount(state_data, position, dt * strength)
 
@@ -80,13 +81,11 @@ class EmittersActor(AutonomousActorBase):
 
 
     def evolve(self, element: FieldElementBase, t: float, dt: float) -> None:
-        """ evolve the agents state from time `t` to `t + dt`
+        """ evolve the field state from time `t` to `t + dt`
         
         Args:
-            agents_state (:class:`EmitterAgentsState`):
-                The state of all the droplets        
-            background_state (:class:`FieldStateBase`):
-                The state of the background
+            element (:class:`~sim.elements.fields.FieldElementBase`):
+                The field element that is effected by the emitters
             t (float):
                 The current time point
             dt (float):

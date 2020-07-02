@@ -5,44 +5,37 @@ We here collect examples for using the package to demonstrate some of its
 functionality. 
 
 
-Basic simulation
-""""""""""""""""
+Basic PDE simulation
+""""""""""""""""""""
 
-Basic simulations can be run as follows
+A simple simulation of a partial differential equation (PDE) can be run as follows.
 
-.. include:: ../examples/simple.rst
+.. include:: ../examples/pde_simple.rst
 
-Here, we define a list of :class:`~droplets.droplets.SphericalDroplet` an use it
-to initialize
-:class:`~agent_based.agents.spherical_droplet.SphericalDropletAgents`.
-Together with a background
-:class:`~agent_based.backgrounds.scalar_field.DiffusionBackground` that
-simulates simple diffusion, we then create the full
-:class:`~agent_based.state.State` of the simulation.
-Finally, :func:`~agent_based.solver.simulate_agents` is used to run the
-simulation.
-The `result` is an instance of :class:`~agent_based.state.State` storing the
-state of the system at the final time point.
+General, each simulation is split in three parts: First, the simulation elements
+are combined to a simulation state. This defines *what* can be evolved in time.
+Second, the actors are added to a simulation. This determines *how* the elements
+change in time. Finally, the simulation is actually run and results are collected. 
+Here, `result` is a :class:`~sim.state.State` class like `state`, but with
+updated data.
 
 
-Custom agent class
-""""""""""""""""""
+Droplets simulation
+"""""""""""""""""""
 
-One strength of the package is that agents can be simply defined, as shown below
+The package becomes useful, when multiple elements interact. A simple example
+are droplets exchange material via a background phase:
 
-.. include:: ../examples/agents_custom.rst
+.. include:: ../examples/droplets_simple.rst
 
-Here, we define agents that behave as Brownian particle, i.e., they simply
-diffuse around and do not interact with each other or the background. This
-example can be used as the basis to augmented the agents, e.g., with fluxes
-between the agents and the background.
 
-Custom background class
-"""""""""""""""""""""""
+Custom actor
+""""""""""""
 
-Similarly, the behavior of the background can be changed:
+One strength of the package is that actors can be simply defined, as shown below
 
-.. include:: ../examples/background_custom_class.rst
+.. include:: ../examples/custom_brownian_particles.rst
 
-In this example, the background dynamics are governed by a Cahn-Hilliard
-equation instead of the simple diffusion equation.
+Here, we define an actor that moves points like Brownian particle, i.e., they
+simply diffuse around and do not interact with each other.
+

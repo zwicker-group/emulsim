@@ -1,5 +1,5 @@
 '''
-Provides the coupling of a point-like droplet to a field
+Provides an actor coupling point-like droplets to a field
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 '''
@@ -20,13 +20,12 @@ from ...elements import SphericalDropletsElement, FieldElementBase
 
 
 class PointDropletActor(CouplingActorBase):
-    """ represents points-like droplets agents
+    """ actor that couples points-like droplets to a field
     
-    For simplicity, these droplets interact with the background field only at
-    one point (their position). This approximation only works in three dimension
-    where it accelerates calculations and is usually a good approximation when
-    the background field varies only little on the length scale of the droplet
-    size.
+    For simplicity, these droplets interact with the field only at one point
+    (their position). This approximation only works in three dimension where it
+    accelerates calculations and is usually a good approximation when the
+    background field varies only little on the length scale of the droplet size.
     """
 
     parameters_default = [
@@ -62,43 +61,41 @@ class PointDropletActor(CouplingActorBase):
                                                 allow_indexed=True)
 
 
-    def _update_cache(self, droplets_state: SphericalDropletsElement,
-                      background_state: FieldElementBase) -> None:
+    def _update_cache(self, droplets: SphericalDropletsElement,
+                      field: FieldElementBase) -> None:
         """ prepare the simulation doing pre-calculations 
         
         Args:
-            agents_state (:class:`DropletAgentsElement`):
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
                 The state of all the droplets        
-            background_state \
-                   (:class:`~agent_based.backgrounds.base.FieldElementBase`):
-                The state corresponding to the background
+            field (:class:`~sim.elements.fields.FieldElementBase`):
+                The state of the field
         """
-        if droplets_state.droplets.dim != background_state.dim:
+        if droplets.droplets.dim != field.dim:
             raise DimensionError("Droplets have a different dimension than the "
-                                 f"background ({droplets_state.droplets.dim} "
-                                 f"!= {background_state.dim})")
+                                 f"background ({droplets.droplets.dim} "
+                                 f"!= {field.dim})")
         
-        self._cache['dim'] = background_state.dim
+        self._cache['dim'] = field.dim
         self._cache['cEqOut'] = self._parse_equilibrium_concentration()
 
 
-    def estimate_dt(self, droplets_state: SphericalDropletsElement,  # type: ignore
-                    background_state: FieldElementBase) -> float:
-        """ estimate the maximal time step for simulating this agent type 
+    def estimate_dt(self, droplets: SphericalDropletsElement,  # type: ignore
+                    field: FieldElementBase) -> float:
+        """ estimate the maximal time step for simulating this actor 
         
         Args:
-            agents_state (:class:`DropletAgentsElement`):
-                The state corresponding to this agent type
-            background_state \
-                   (:class:`~agent_based.backgrounds.base.FieldElementBase`):
-                The state corresponding to the background
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+                The state of all the droplets        
+            field (:class:`~sim.elements.fields.FieldElementBase`):
+                The state of the field
 
         Returns:
             float: the maximal time step
         """
-        self._check_cache(droplets_state, background_state)
+        self._check_cache(droplets, field)
         D = float(self.parameters['diffusivity'])
-        L = float(droplets_state.data['radius'].mean())
+        L = float(droplets.data['radius'].mean())
         return L**2 / D
 
 
@@ -139,7 +136,7 @@ class PointDropletActor(CouplingActorBase):
         Returns:
             callable: the function with the signature
                 (radius: float, c_far: float, cEqOut: float)
-                corresponding to :meth:`PointDropletAgents.get_flux_outside`
+                corresponding to :meth:`PointDropletActor.get_flux_outside`
         """
         D = self.parameters['diffusivity']
 
@@ -156,14 +153,13 @@ class PointDropletActor(CouplingActorBase):
         return flux_outside
 
 
-    def get_equilibrium_concentrations(self, droplets_state: SphericalDropletsElement) \
+    def get_equilibrium_concentrations(self, droplets: SphericalDropletsElement) \
             -> np.ndarray:
         """ returns the equilibrium concentration outside each droplet
         
         Args:
-            agents_state \
-                (:class:`agent_based.agents.point_droplet.DropletAgentsElement`):
-                The state of the agents
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+                The state of all the droplets        
         
         Returns:
             :class:`numpy.ndarray`: The equilibrium concentration for each
@@ -177,7 +173,7 @@ class PointDropletActor(CouplingActorBase):
             
         # calculate the equilibrium concentration for each droplet
         result = []
-        for droplet_id, droplet in enumerate(droplets_state.droplets):
+        for droplet_id, droplet in enumerate(droplets.droplets):
             if droplet.radius > 0:
                 result.append(calc_eqout(droplet.position, droplet.radius,
                                          droplet_id))
@@ -185,17 +181,16 @@ class PointDropletActor(CouplingActorBase):
         return np.array(result)
         
 
-    def _make_droplet_evolver_numba(self, droplets_state: SphericalDropletsElement,
-                                    background_state: FieldElementBase) \
+    def _make_droplet_evolver_numba(self, droplets: SphericalDropletsElement,
+                                    field: FieldElementBase) \
             -> Callable:
-        """ create a function to evolve a single agent from time `t` to `t + dt`
+        """ create a function to evolve a single droplet from time `t` to `t + dt`
         
         Args:
-            agents_state \
-                (:class:`agent_based.agents.point_droplet.DropletAgentsElement`):
-                The state of all droplet agents of this instance
-            background_state (:class:`FieldElementBase`):
-                The state of the background
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+                The state of all the droplets        
+            field (:class:`~sim.elements.fields.FieldElementBase`):
+                The state of the field
 
         Returns:
             callable: A function with signature
@@ -210,28 +205,27 @@ class PointDropletActor(CouplingActorBase):
         else:
             # try compiling in case cEqOut is a function
             calc_cEqOut = jit(cEqOut)
-        cBaseIn = droplets_state.parameters['droplet_concentration']
+        cBaseIn = droplets.parameters['droplet_concentration']
 #         sBaseIn = self.pde._reaction(c=cBaseIn, t=0)
 
         radius = spherical.make_radius_from_volume_compiled(self._cache['dim'])
         volume = spherical.make_volume_from_radius_compiled(self._cache['dim'])
         
-        get_concentration = background_state.make_get_concentration_compiled()
-        add_amount = background_state.make_add_amount_compiled()
+        get_concentration = field.make_get_concentration_compiled()
+        add_amount = field.make_add_amount_compiled()
 
         calc_flux = jit(self._make_flux_outside())
 
 
         @jit(nogil=True)
         def droplet_update(droplet_data: np.ndarray, droplet_id: int,
-                           background_data,
-                           t: float, dt: float):                      
+                           field_data, t: float, dt: float):                      
             """ update a single droplet based on the surrounding field """
             R = droplet_data.radius
             V = volume(R)
 
             # obtain the material flux across the droplet surface
-            cInf = get_concentration(background_data, droplet_data.position)
+            cInf = get_concentration(field_data, droplet_data.position)
             cEqIn = cBaseIn
             cEqOut = calc_cEqOut(droplet_data.position, droplet_data.radius,
                                  droplet_id)
@@ -257,75 +251,73 @@ class PointDropletActor(CouplingActorBase):
                 droplet_data.radius = radius(V + dV)
 
             # update the scalar field at the droplet surface
-            add_amount(background_data, droplet_data.position, -amount_out)
+            add_amount(field_data, droplet_data.position, -amount_out)
 
         return droplet_update  # type: ignore
 
 
-    def make_evolver_numba(self, droplet_state: SphericalDropletsElement,  # type: ignore
-                           background_state: FieldElementBase) -> Callable:
-        """ return a function evolve the agents state from time `t` to `t + dt`
+    def make_evolver_numba(self, droplets: SphericalDropletsElement,  # type: ignore
+                           field: FieldElementBase) -> Callable:
+        """ return a function evolve the state from time `t` to `t + dt`
         
         Args:
-            agents_state (:class:`DropletAgentsElement`):
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
                 The state of all the droplets        
-            background_state (:class:`FieldElementBase`):
-                The state of the background
+            field (:class:`~sim.elements.fields.FieldElementBase`):
+                The state of the field
 
         Returns:
             callable: A function with signature
-                (agents_data: :class:`numpy.ndarray`, t: float, dt: float,
-                background_data), evolving `agents_data`
+                (droplets_data: :class:`numpy.ndarray`, field_data, t: float,
+                dt: float), evolving `droplets_data` and `field_data`
         """
-        self._check_cache(droplet_state, background_state)
+        self._check_cache(droplets, field)
         
         # obtain function for updating a single droplet
-        droplet_update = self._make_droplet_evolver_numba(droplet_state,
-                                                          background_state)
+        droplet_update = self._make_droplet_evolver_numba(droplets, field)
         
         # obtain the signature for the evolver
-        dr_type = nb.typeof(droplet_state.data) 
-        bg_type = nb.typeof(background_state.data)
+        dr_type = nb.typeof(droplets.data) 
+        bg_type = nb.typeof(field.data)
 
         @jit(signature=nb.void(dr_type, bg_type, nb.float64, nb.float64),
              nogil=True)
-        def evolver(agents_data: np.ndarray, background_data,
+        def evolver(droplets_data: np.ndarray, field_data,
                     t: float, dt: float):
-            """ evolve all agents explicitly """
-            for droplet_id, droplet_data in enumerate(agents_data):
+            """ evolve all droplets explicitly """
+            for droplet_id, droplet_data in enumerate(droplets_data):
                 # skip droplets that have disappeared
                 if droplet_data.radius > 0:
-                    droplet_update(droplet_data, droplet_id, background_data,
-                                   t, dt)
+                    droplet_update(droplet_data, droplet_id, field_data, t, dt)
 
         return evolver  # type: ignore
 
 
-    def evolve(self, droplet_state: SphericalDropletsElement,  # type: ignore
-               background_state: FieldElementBase,
+    def evolve(self, droplets: SphericalDropletsElement,  # type: ignore
+               field: FieldElementBase,
                t: float, dt: float) -> None:
-        """ evolve the agents state from time `t` to `t + dt`
+        """ evolve the state from time `t` to `t + dt`
         
         Args:
-            agents_state (:class:`DropletAgentsElement`):
-                The state of all agents described by this instance
-            background_state (:class:`FieldElementBase`):
-                The state of the background
+            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+                The state of all the droplets        
+            field (:class:`~sim.elements.fields.FieldElementBase`):
+                The state of the field
             t (float):
                 The current time point
             dt (float):
                 The time step
         """
-        self._check_cache(droplet_state, background_state)
+        self._check_cache(droplets, field)
         calc_cEqOut = self._cache['cEqOut']
 
-        for droplet_id, droplet in enumerate(droplet_state.droplets):
+        for droplet_id, droplet in enumerate(droplets.droplets):
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
             # obtain the material flux across the droplet surface
-            cInf = background_state.get_concentration(droplet.position)
-            cEqIn = droplet_state.parameters['droplet_concentration']
+            cInf = field.get_concentration(droplet.position)
+            cEqIn = droplets.parameters['droplet_concentration']
             cEqOut = calc_cEqOut(droplet.position, droplet.radius, droplet_id)
 
             # Calculate the integrated fluxes at the droplet surface. The sign
@@ -347,4 +339,4 @@ class PointDropletActor(CouplingActorBase):
                 droplet.volume = droplet.volume + dV
 
             # update the scalar field at the droplet boundary
-            background_state.add_amount(droplet.position, -amount_out)
+            field.add_amount(droplet.position, -amount_out)

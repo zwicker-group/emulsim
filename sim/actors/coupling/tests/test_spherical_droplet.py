@@ -166,7 +166,7 @@ def test_coarsening(dim):
 
     coupling = SphericalDropletActor()
     
-    ceq = coupling.get_equilibrium_concentrations(droplets, field).mean()
+    ceq = coupling.get_equilibrium_concentrations(droplets).mean()
     field.concentration = ceq
     
     total_amount = pytest.approx(field.total_amount + droplets.total_amount)
