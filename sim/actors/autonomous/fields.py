@@ -1,4 +1,4 @@
-'''
+"""
 Provides actors that influence scalar fields
 
 .. autosummary::
@@ -10,7 +10,7 @@ Provides actors that influence scalar fields
    ~ReactionDiffusionActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 
 import inspect
@@ -30,18 +30,20 @@ from .base import AutonomousActorBase
 from ...elements import MeanfieldElement, ScalarFieldElement
 
 
-
 class MeanfieldActor(AutonomousActorBase):
     """ actor simulating mean field chemical reactions """
 
     parameters_default = [
-        Parameter('reaction_flux', '0', str,
-                  "An expression for the reaction flux in the mean field. The "
-                  "expression may depend on the concentration and time."),
+        Parameter(
+            "reaction_flux",
+            "0",
+            str,
+            "An expression for the reaction flux in the mean field. The "
+            "expression may depend on the concentration and time.",
+        ),
     ]
-    
-    element_class: Type[MeanfieldElement] = MeanfieldElement
 
+    element_class: Type[MeanfieldElement] = MeanfieldElement
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -51,26 +53,26 @@ class MeanfieldActor(AutonomousActorBase):
                 :meth:`~MeanfieldActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
-        
-        reaction_flux = self.parameters['reaction_flux']
+
+        reaction_flux = self.parameters["reaction_flux"]
         try:
             from phasesep.reactions import ReactionFluxExpression
-            
+
         except (ModuleNotFoundError, ImportError):
             # fall back to the pde package
-            if str(reaction_flux) not in {'0', '0.0', 'None'}:
-                raise RuntimeError('Reaction fluxes are only supported when '
-                                   'the `py-phasesep` package is available') 
+            if str(reaction_flux) not in {"0", "0.0", "None"}:
+                raise RuntimeError(
+                    "Reaction fluxes are only supported when "
+                    "the `py-phasesep` package is available"
+                )
 
             # mimick the interface of ReactionFluxExpression
-            self._reaction = ScalarExpression(0, signature=['c', 't'])
+            self._reaction = ScalarExpression(0, signature=["c", "t"])
             self._reaction.present = False  # type: ignore
-            
-        else:        
+
+        else:
             # initialize reaction flux
-            self._reaction = ReactionFluxExpression(reaction_flux,
-                                                    with_mu=False)
-        
+            self._reaction = ReactionFluxExpression(reaction_flux, with_mu=False)
 
     def estimate_dt(self, element: MeanfieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the actor
@@ -81,10 +83,9 @@ class MeanfieldActor(AutonomousActorBase):
         """
         s_max = np.abs(self._reaction(np.linspace(0, 1, 32), t=0)).max()
         if s_max == 0:
-            return float('inf')
+            return float("inf")
         else:
             return 0.1 / s_max  # type: ignore
-
 
     def make_evolver_numba(self, element: MeanfieldElement) -> Callable:  # type: ignore
         """ return a function evolve the field from time `t` to `t + dt`
@@ -98,14 +99,13 @@ class MeanfieldActor(AutonomousActorBase):
                 dt: float), which evolves the field_data.
         """
         reation_flux = self._reaction.get_compiled()
-        
+
         @nb.jit
         def evolver(field_data, t: float, dt: float):
             """ evolve the diffusion equation explicitly """
             field_data += dt * reation_flux(field_data, t)
 
         return evolver  # type: ignore
-
 
     def evolve(self, element: MeanfieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
@@ -122,13 +122,10 @@ class MeanfieldActor(AutonomousActorBase):
             element.data += dt * self._reaction(element.data, t)
 
 
-
 class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
     """ base class for actors affecting discretized scalar fields """
 
-
     element_class: Type[ScalarFieldElement] = ScalarFieldElement
-            
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the actor
@@ -141,7 +138,6 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
             float: the time step
         """
         raise NotImplementedError
-
 
     def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
         """ return a function evolving the field from time `t` to `t + dt`
@@ -156,7 +152,6 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-
     @abstractmethod
     def evolve(self, element: ScalarFieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
@@ -170,7 +165,6 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
                 The time step used to evolve the element
         """
         pass
-    
 
 
 class ScalarPDEActor(ScalarFieldActorBase):
@@ -188,22 +182,21 @@ class ScalarPDEActor(ScalarFieldActorBase):
                 :meth:`~ScalarPDEActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
-        
+
         if inspect.isclass(pde):
-            self._logger.warning('Class `%s` has been passed instead of an '
-                                 'instance.', pde)
+            self._logger.warning(
+                "Class `%s` has been passed instead of an " "instance.", pde
+            )
             self.pde = pde()  # type: ignore
         else:
             self.pde = pde
-        
-    
+
     @property
     def info(self) -> Dict[str, Any]:
         """ dict: information about the actor """
         result = super().info
-        result['pde'] = {'class': self.pde.__class__.__name__}
+        result["pde"] = {"class": self.pde.__class__.__name__}
         return result
-
 
     def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
         """ return a function evolving the field from time `t` to `t + dt`
@@ -225,7 +218,6 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
         return evolver  # type: ignore
 
-
     def evolve(self, element: ScalarFieldElement, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
@@ -241,20 +233,26 @@ class ScalarPDEActor(ScalarFieldActorBase):
         element._field += dt * rate  # type: ignore
 
 
-
 class DiffusionActor(ScalarPDEActor):
     """ actor evolving a field according to a simple diffusion equation """
 
     parameters_default = [
-        Parameter('diffusivity', 1, float,
-                  "Diffusivity in the field. This actor only supports constant "
-                  "diffusivities. Diffusivities depending on local "
-                  "concentration are supported by `ReactionDiffusionActor`."),
-        Parameter('boundary_conditions', 'natural', object,
-                  "Defines the boundary conditions on the field." + 
-                  get_text_block('ARG_BOUNDARIES')),
+        Parameter(
+            "diffusivity",
+            1,
+            float,
+            "Diffusivity in the field. This actor only supports constant "
+            "diffusivities. Diffusivities depending on local "
+            "concentration are supported by `ReactionDiffusionActor`.",
+        ),
+        Parameter(
+            "boundary_conditions",
+            "natural",
+            object,
+            "Defines the boundary conditions on the field."
+            + get_text_block("ARG_BOUNDARIES"),
+        ),
     ]
-
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """ 
@@ -264,16 +262,17 @@ class DiffusionActor(ScalarPDEActor):
                 :meth:`~DiffusionActor.show_parameters` for details.
         """
         from pde import DiffusionPDE
-        
+
         # skip calling the parent init since it expects the pde, but we first
         # need to parse the parameters. We thus simply call the grand-parent
         # init method directly
         ScalarFieldActorBase.__init__(self, parameters=parameters)
 
         # initialize diffusion equation
-        self.pde = DiffusionPDE(diffusivity=self.parameters['diffusivity'],
-                                bc=self.parameters['boundary_conditions'])
-
+        self.pde = DiffusionPDE(
+            diffusivity=self.parameters["diffusivity"],
+            bc=self.parameters["boundary_conditions"],
+        )
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the actor
@@ -282,8 +281,7 @@ class DiffusionActor(ScalarPDEActor):
             float: the time step
         """
         dx = float(element.grid.discretization.min())
-        return 0.1 * dx**2 / float(self.pde.diffusivity)
-
+        return 0.1 * dx ** 2 / float(self.pde.diffusivity)
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
@@ -294,17 +292,28 @@ class ReactionDiffusionActor(ScalarPDEActor):
     """
 
     parameters_default = [
-        Parameter('diffusivity', '1', str,
-                  "Diffusivity in the field. This can be an expression "
-                  "depending  on the local concentration that is parsed by "
-                  "sympy. Alternatively, simple numbers are also supported."),
-        Parameter('reaction_flux', '0', str,
-                  "An expression for the reaction flux in the field."),
-        Parameter('boundary_conditions', 'natural', object,
-                  "Defines the boundary conditions on the field." + 
-                  get_text_block('ARG_BOUNDARIES')),
+        Parameter(
+            "diffusivity",
+            "1",
+            str,
+            "Diffusivity in the field. This can be an expression "
+            "depending  on the local concentration that is parsed by "
+            "sympy. Alternatively, simple numbers are also supported.",
+        ),
+        Parameter(
+            "reaction_flux",
+            "0",
+            str,
+            "An expression for the reaction flux in the field.",
+        ),
+        Parameter(
+            "boundary_conditions",
+            "natural",
+            object,
+            "Defines the boundary conditions on the field."
+            + get_text_block("ARG_BOUNDARIES"),
+        ),
     ]
-
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -314,18 +323,19 @@ class ReactionDiffusionActor(ScalarPDEActor):
                 :meth:`~ReactionDiffusionActor.show_parameters` for details
         """
         from phasesep.pdes import ReactionDiffusionPDE
-        
+
         # skip calling the parent init since it expects the pde, but we first
         # need to parse the parameters. We thus simply call the grand-parent
         # init method directly
         ScalarFieldActorBase.__init__(self, parameters=parameters)
 
         # initialize reaction-diffusion equation
-        pde_params = {'diffusivity': self.parameters['diffusivity'],
-                      'reaction_flux': self.parameters['reaction_flux'],
-                      'bc': self.parameters['boundary_conditions']}
+        pde_params = {
+            "diffusivity": self.parameters["diffusivity"],
+            "reaction_flux": self.parameters["reaction_flux"],
+            "bc": self.parameters["boundary_conditions"],
+        }
         self.pde = ReactionDiffusionPDE(pde_params)
-
 
     def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
         """ get the optimal time step for the simulation of the actor
@@ -338,7 +348,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             float: the time step
         """
         # estimate the time step based on the chemical reaction
-        if hasattr(self.pde, '_reaction'):
+        if hasattr(self.pde, "_reaction"):
             # pde seems to be an instance of ReactionDiffusionPDE
             cs = np.linspace(0, 1, 32)
             s_max = np.abs(self.pde._reaction(cs, t=0)).max()
@@ -347,15 +357,14 @@ class ReactionDiffusionActor(ScalarPDEActor):
             # pde seems to be an instance of DiffusionPDE
             s_max = 0
             diffusivity = self.pde.diffusivity
-            
+
         if s_max == 0:
-            dt_reaction = float('inf')
+            dt_reaction = float("inf")
         else:
-            dt_reaction = 0.1 / s_max 
-        
-        # estimate the time step required for diffusion        
+            dt_reaction = 0.1 / s_max
+
+        # estimate the time step required for diffusion
         dx = element.grid.discretization.min()
-        dt_diffusion = 0.2 * dx**2 / diffusivity  
-    
+        dt_diffusion = 0.2 * dx ** 2 / diffusivity
+
         return min(dt_reaction, dt_diffusion)  # type: ignore
-    

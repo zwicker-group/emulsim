@@ -1,8 +1,8 @@
-'''
+"""
 Supplies the base class for actors
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from typing import Dict, Any, Type, Callable  # @UnusedImport
 import logging
@@ -12,12 +12,10 @@ from pde.tools.parameters import Parameterized
 from pde.tools.cache import objects_equal
 
 
-
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """ represents a single actor, which affects one or more elements """
 
     num_elements: int  # the number of elements this actor affects
-
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -29,25 +27,20 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
-    
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
         return objects_equal(self.info, other.info)
-    
-    
+
     @property
     def info(self) -> Dict[str, Any]:
         """ dict: information about the actor """
-        return {'class': self.__class__.__name__,
-                'parameters': self.parameters}
-
+        return {"class": self.__class__.__name__, "parameters": self.parameters}
 
     def copy(self) -> "ActorBase":
-        """ returns a copy the actor """ 
+        """ returns a copy the actor """
         return self.__class__(self.parameters.copy())
-    
 
     def estimate_dt(self, *element_states) -> float:
         """ estimate the maximal time step for simulating this actor 
@@ -60,8 +53,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             float: the maximal time step
         """
         raise NotImplementedError
-    
-    
+
     def _check_cache(self, *element_states) -> None:
         """ checks whether the simulation needs to run :meth:`_update_cache`.
         
@@ -72,15 +64,13 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             *element_states (:class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
         """
-        if hasattr(self, '_update_cache'):
+        if hasattr(self, "_update_cache"):
             # the class uses a cache internally
             state_attributes = tuple(el.attributes for el in element_states)
-            if not objects_equal(self._cache.get('state_attributes'),
-                                 state_attributes):
+            if not objects_equal(self._cache.get("state_attributes"), state_attributes):
                 # the cache is out-of-date
                 self._update_cache(*element_states)  # type: ignore
-                self._cache['state_attributes'] = state_attributes
-
+                self._cache["state_attributes"] = state_attributes
 
     def make_evolver_numba(self, *element_states) -> Callable:
         """ return a function evolve the state from time `t` to `t + dt`
@@ -95,7 +85,6 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 evolving `state_data`
         """
         raise NotImplementedError
-
 
     @abstractmethod
     def evolve(self, element_states, t: float, dt: float):
@@ -115,4 +104,3 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 which evolves the state
         """
         pass
-    

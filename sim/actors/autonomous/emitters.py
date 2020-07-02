@@ -1,8 +1,8 @@
-'''
+"""
 Provides a simple actor that emit mass into a field a predefined positions
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from typing import Callable, Dict, Any, Type, Union  # @UnusedImport
 
@@ -15,32 +15,35 @@ from .base import AutonomousActorBase
 from ...elements.fields import FieldElementBase
 
 
-
 class EmittersActor(AutonomousActorBase):
     """ represents actor that emit mass into a field at defined positions """
 
-
     parameters_default = [
-        Parameter('positions', np.array(tuple()), np.array,
-                  "The positions of all the emitters. This needs to be an "
-                  "array of positions. The dimension of each position needs to "
-                  "be compatible with the dimension of the field."),
-        Parameter('strengths', np.array([1]), np.array,
-                  "The strengths of the emitters, i.e., the mass per unit time "
-                  "that is emitted. This can be an array, setting different "
-                  "strengths for each emitter, or a single number, setting the "
-                  "same strength for all emitters."),
+        Parameter(
+            "positions",
+            np.array(tuple()),
+            np.array,
+            "The positions of all the emitters. This needs to be an "
+            "array of positions. The dimension of each position needs to "
+            "be compatible with the dimension of the field.",
+        ),
+        Parameter(
+            "strengths",
+            np.array([1]),
+            np.array,
+            "The strengths of the emitters, i.e., the mass per unit time "
+            "that is emitted. This can be an array, setting different "
+            "strengths for each emitter, or a single number, setting the "
+            "same strength for all emitters.",
+        ),
     ]
-    
 
     state_class = FieldElementBase
-    
-    
+
     def __len__(self):
         """ int: return the number of dimensions """
-        return len(self.parameters['positions'])
-    
-    
+        return len(self.parameters["positions"])
+
     def estimate_dt(self, element: FieldElementBase) -> float:  # type: ignore
         """ estimate the maximal time step for simulating this actor 
         
@@ -51,8 +54,7 @@ class EmittersActor(AutonomousActorBase):
         Returns:
             float: the maximal time step
         """
-        return float('inf')
-
+        return float("inf")
 
     def make_evolver_numba(self, element: FieldElementBase) -> Callable:  # type: ignore
         """ return a function evolve the field state from time `t` to `t + dt`
@@ -67,10 +69,10 @@ class EmittersActor(AutonomousActorBase):
                 evolving `field_data`
         """
         add_amount = element.make_add_amount_compiled()
-        
-        positions = np.asarray(self.parameters['positions'])
-        strengths = np.broadcast_to(self.parameters['strengths'], (len(positions), ))
-        
+
+        positions = np.asarray(self.parameters["positions"])
+        strengths = np.broadcast_to(self.parameters["strengths"], (len(positions),))
+
         @jit
         def evolver(state_data: np.ndarray, t: float, dt: float):
             """ evolve all emitters explicitly """
@@ -78,7 +80,6 @@ class EmittersActor(AutonomousActorBase):
                 add_amount(state_data, position, dt * strength)
 
         return evolver  # type: ignore
-
 
     def evolve(self, element: FieldElementBase, t: float, dt: float) -> None:
         """ evolve the field state from time `t` to `t + dt`
@@ -91,7 +92,7 @@ class EmittersActor(AutonomousActorBase):
             dt (float):
                 The time step
         """
-        positions = self.parameters['positions']
-        strengths = np.broadcast_to(self.parameters['strengths'], (len(positions), ))
+        positions = self.parameters["positions"]
+        strengths = np.broadcast_to(self.parameters["strengths"], (len(positions),))
         for position, strength in zip(positions, strengths):
             element.add_amount(position, dt * strength)

@@ -1,8 +1,8 @@
-'''
+"""
 Test generic elements functionality
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 import pytest
 import numpy as np
@@ -11,8 +11,13 @@ from pde import UnitGrid, ScalarField
 from pde.tools.misc import skipUnlessModule
 from droplets import SphericalDroplet
 
-from .. import PointsElement, SphericalDropletsElement, MeanfieldElement, ScalarFieldElement, element_from_file
-
+from .. import (
+    PointsElement,
+    SphericalDropletsElement,
+    MeanfieldElement,
+    ScalarFieldElement,
+    element_from_file,
+)
 
 
 def generate_elements(dim=None):
@@ -21,25 +26,24 @@ def generate_elements(dim=None):
         yield PointsElement(np.random.randn(3, 1))
     if dim is None or dim == 2:
         yield PointsElement(np.random.randn(3, 2))
-    
+
     if dim is None or dim == 1:
         emulsion = [SphericalDroplet([0], 1), SphericalDroplet([1], 2)]
         yield SphericalDropletsElement.from_droplets(emulsion)
     if dim is None or dim == 2:
         emulsion = [SphericalDroplet([0, 0], 1), SphericalDroplet([1, 1], 2)]
         yield SphericalDropletsElement.from_droplets(emulsion)
-    
+
     if dim is None or dim == 1:
-        yield MeanfieldElement(0.1, {'bounds': [[0, 1]]})  # 1d 
+        yield MeanfieldElement(0.1, {"bounds": [[0, 1]]})  # 1d
     if dim is None or dim == 2:
-        yield MeanfieldElement(0.1, {'bounds': [[0, 1], [0, 1]]})  # 2d 
-    
+        yield MeanfieldElement(0.1, {"bounds": [[0, 1], [0, 1]]})  # 2d
+
     if dim is None or dim == 2:
         field = ScalarField.random_normal(UnitGrid([3, 3]))
         yield ScalarFieldElement.from_field(field)
 
 
-    
 @pytest.mark.parametrize("element", generate_elements())
 def test_basic(element):
     """ test basic functions of elements """
@@ -47,25 +51,23 @@ def test_basic(element):
     assert isinstance(repr(element), str)
     assert isinstance(element.attributes, dict)
     assert isinstance(element.data, np.ndarray)
-    
+
     e1 = element.copy()
     assert e1 is not element
     assert e1 == element
-    
+
     # test generic plotting
     if isinstance(element, PointsElement) or element.dim == 2:
-        element.plot(action='close')
+        element.plot(action="close")
 
 
-
-@skipUnlessModule('h5py')
+@skipUnlessModule("h5py")
 @pytest.mark.parametrize("element", generate_elements())
 def test_element_io(element, tmp_path):
     """ test writing and reading element states """
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
-    
+
     element.to_file(path)
     element2 = element_from_file(path)
     assert element == element2
     assert element is not element2
-        

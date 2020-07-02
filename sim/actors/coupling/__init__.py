@@ -1,4 +1,4 @@
-'''
+"""
 Provides actors that affect multiple elements in a simulation.
 
 .. autosummary::
@@ -8,7 +8,7 @@ Provides actors that affect multiple elements in a simulation.
    ~spherical_droplet.SphericalDropletActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from .base import CouplingActorBase
 from .point_droplet import PointDropletActor

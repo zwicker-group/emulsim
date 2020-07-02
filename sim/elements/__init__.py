@@ -1,4 +1,4 @@
-'''
+"""
 Provides classes representing elements of a simulation
 
 .. autosummary::
@@ -10,7 +10,7 @@ Provides classes representing elements of a simulation
    ~spherical_droplets.SphericalDropletsElement
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from .base import element_from_file
 from .fields import FieldElementBase, MeanfieldElement, ScalarFieldElement

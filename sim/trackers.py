@@ -1,4 +1,4 @@
-'''
+"""
 Provides classes that track simulation results
 
 .. autosummary::
@@ -8,7 +8,7 @@ Provides classes that track simulation results
    ~DropletElementTracker
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from typing import Union
 import logging
@@ -20,15 +20,14 @@ from droplets.emulsions import EmulsionTimeCourse
 
 from .simulation import State
 
-        
-        
+
 class FieldTracker(TrackerBase):
     """ tracker for analyzing a discretized field in a simulations
     
     This acts as a wrapper around any of the trackers from :mod:`pde.trackers`,
     e.g., `tracker = FieldTracker('background', PlotTracker())`.
     """
-    
+
     def __init__(self, element_name: str, tracker: TrackerBase):
         """
         Args:
@@ -36,15 +35,15 @@ class FieldTracker(TrackerBase):
                 The name of the element of the field
             tracker (TrackerBase):
                 The tracker that will receive the field
-        """ 
+        """
         self.element_name = element_name
         self.tracker = tracker
         self.interval = tracker.interval
         self._logger = logging.getLogger(self.__class__.__name__)
 
-    
-    def initialize(self, state: State,  # type: ignore
-                   info: InfoDict = None) -> float:
+    def initialize(  # type: ignore
+        self, state: State, info: InfoDict = None,
+    ) -> float:
         """ initialize the tracker with information about the simulation
         
         Args:
@@ -58,15 +57,17 @@ class FieldTracker(TrackerBase):
         """
         if isinstance(state[self.element_name], FieldBase):
             field = state[self.element_name]
-        elif (hasattr(state[self.element_name], '_field') and 
-                isinstance(state[self.element_name]._field, FieldBase)):
+        elif hasattr(state[self.element_name], "_field") and isinstance(
+            state[self.element_name]._field, FieldBase
+        ):
             field = state[self.element_name]._field
         else:
-            self._logger.warning(f"Element `{self.element_name}` does not seem "
-                                 "to contain a scalar field")
+            self._logger.warning(
+                f"Element `{self.element_name}` does not seem "
+                "to contain a scalar field"
+            )
         return self.tracker.initialize(field, info)
-        
-    
+
     def handle(self, state: State, t: float) -> None:  # type: ignore
         """ handle data supplied to this tracker
         
@@ -78,15 +79,17 @@ class FieldTracker(TrackerBase):
         """
         if isinstance(state[self.element_name], FieldBase):
             field = state[self.element_name]
-        elif (hasattr(state[self.element_name], '_field') and 
-                isinstance(state[self.element_name]._field, FieldBase)):
+        elif hasattr(state[self.element_name], "_field") and isinstance(
+            state[self.element_name]._field, FieldBase
+        ):
             field = state[self.element_name]._field
         else:
-            self._logger.warning(f"Element `{self.element_name}` does not seem "
-                                 "to contain a scalar field")
+            self._logger.warning(
+                f"Element `{self.element_name}` does not seem "
+                "to contain a scalar field"
+            )
         self.tracker.handle(field, t)
-    
-    
+
     def finalize(self, info: InfoDict = None) -> None:
         """ finalize the tracker, supplying additional information
 
@@ -95,9 +98,8 @@ class FieldTracker(TrackerBase):
                 Extra information from the simulation        
         """
         self.tracker.finalize(info)
-        
-        
-        
+
+
 class DropletElementTracker(TrackerBase):
     """ Tracker storing information about droplets in a simulation
     
@@ -111,13 +113,16 @@ class DropletElementTracker(TrackerBase):
     information, but their structure is different and either one might thus be
     used to analyze the simulation.
     """
-    
-    def __init__(self, element_name: str,
-                 interval: IntervalData = 1,
-                 store_emulsions: Union[bool, str] = True,
-                 store_droplet_tracks: Union[bool, str] = True,
-                 keep_vanished: bool = False,
-                 background_grid: GridBase = None):
+
+    def __init__(
+        self,
+        element_name: str,
+        interval: IntervalData = 1,
+        store_emulsions: Union[bool, str] = True,
+        store_droplet_tracks: Union[bool, str] = True,
+        keep_vanished: bool = False,
+        background_grid: GridBase = None,
+    ):
         """
         Args:
             element_name (str):
@@ -157,10 +162,10 @@ class DropletElementTracker(TrackerBase):
         self.store_droplet_tracks = store_droplet_tracks
         self.keep_vanished = keep_vanished
         self.background_grid = background_grid
-        
 
-    def initialize(self, state: State,  # type: ignore
-                   info: InfoDict = None) -> float:
+    def initialize(  # type: ignore
+        self, state: State, info: InfoDict = None,
+    ) -> float:
         """ 
         Args:
             state (:class:`~sim.state.State`):
@@ -169,19 +174,18 @@ class DropletElementTracker(TrackerBase):
                 Extra information for the simulation        
         """
         if not isinstance(state, State):
-            self._logger.warning('state is not of type `State`')
-        
+            self._logger.warning("state is not of type `State`")
+
         # initialize the tracked data
         if self.store_emulsions is not False:
             self.emulsions = EmulsionTimeCourse()
             self.emulsions.grid = self.background_grid
-            
+
         if self.store_droplet_tracks is not False:
             self.droplet_tracks = DropletTrackList()
-            
+
         return super().initialize(state, info)  # type: ignore
-        
-        
+
     def handle(self, state: State, t: float) -> None:  # type: ignore
         """ handle data supplied to this tracker
         
@@ -192,7 +196,7 @@ class DropletElementTracker(TrackerBase):
                 The associated time
         """
         droplets = state[self.element_name].droplets
-        
+
         # handle emulsion time course
         if self.store_emulsions is not False:
             # remove vanished droplets
@@ -213,11 +217,9 @@ class DropletElementTracker(TrackerBase):
             else:
                 # append to existing tracks
                 for i, droplet in enumerate(droplets):
-                    if (self.keep_vanished or
-                            self.droplet_tracks[i].last.radius > 0):
+                    if self.keep_vanished or self.droplet_tracks[i].last.radius > 0:
                         self.droplet_tracks[i].append(droplet, time=t)
-    
-    
+
     def finalize(self, info: InfoDict = None) -> None:
         """ finalize the tracker, supplying additional information
 
@@ -231,6 +233,6 @@ class DropletElementTracker(TrackerBase):
             self.emulsions.to_file(self.store_emulsions)
         if isinstance(self.store_droplet_tracks, str):
             self.droplet_tracks.to_file(self.store_droplet_tracks)
-        
-        
-__all__ = ['FieldTracker', 'DropletElementTracker']
+
+
+__all__ = ["FieldTracker", "DropletElementTracker"]

@@ -1,8 +1,8 @@
-'''
+"""
 Provides a class representing the full system state of multiple elements
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 import json
 import logging
@@ -16,8 +16,7 @@ from pde.tools.plotting import plot_on_axes
 from .elements.base import ElementBase, element_from_hdf
 
 
-
-class State():
+class State:
     """ defines the state of the simulation """
 
     def __init__(self, elements: Dict[str, ElementBase] = None):
@@ -34,8 +33,7 @@ class State():
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
-    
-    
+
     @classmethod
     def from_hdf_dataset(cls, dataset) -> "State":
         """ construct the instance by reading data from an hdf5 dataset
@@ -43,10 +41,13 @@ class State():
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
-        return cls({name: element_from_hdf(dataset[name])
-                    for name in json.loads(dataset.attrs['elements'])}) 
-     
-     
+        return cls(
+            {
+                name: element_from_hdf(dataset[name])
+                for name in json.loads(dataset.attrs["elements"])
+            }
+        )
+
     @classmethod
     def from_file(cls, path: str) -> "State":
         """ create simulation state instance from data stored in a hdf file
@@ -55,10 +56,9 @@ class State():
             path (str): Path to the hdf file being read
         """
         import h5py
-         
+
         with h5py.File(path, "r") as fp:
             return cls.from_hdf_dataset(fp)
-
 
     def add_element(self, name: str, element: ElementBase):
         """ adds an element to the simulation
@@ -70,14 +70,15 @@ class State():
                 The instance defining the element.
         """
         if name in self.elements:
-            self._logger.warning('Overwriting element `%s` in state', name)
+            self._logger.warning("Overwriting element `%s` in state", name)
         if len(self.elements) == 0:
             self.dim = element.dim
         elif self.dim != element.dim:
-            raise DimensionError(f'Dimension of element ({element.dim}) differs '
-                                 f'from state ({self.dim})')
+            raise DimensionError(
+                f"Dimension of element ({element.dim}) differs "
+                f"from state ({self.dim})"
+            )
         self.elements[name] = element
-
 
     def get_index(self, name: str) -> int:
         """ returns the numerical index of a specific element
@@ -88,60 +89,46 @@ class State():
         for i, element_name in enumerate(self.elements):
             if name == element_name:
                 return i
-        raise KeyError(f'`{name}` not in {self.__class__.__name__}') 
-
+        raise KeyError(f"`{name}` not in {self.__class__.__name__}")
 
     def __getitem__(self, key: Union[str, Sequence[str]]):
         if isinstance(key, str):
             return self.elements[key]
         else:
             return [self.elements[k] for k in key]
-        
-        
+
     def __len__(self) -> int:
         return len(self.elements)
-    
-    
+
     def __iter__(self):
         return iter(self.elements.items())
-        
-        
+
     def __contains__(self, name: str):
         return name in self.elements
 
-        
     def __str__(self):
-        elements_str = ', '.join(f'"{name}": {element!s}'
-                                 for name, element in self)
+        elements_str = ", ".join(f'"{name}": {element!s}' for name, element in self)
         return f"{self.__class__.__name__}({{{elements_str}}})"
-        
-        
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.elements!r})"
-        
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
         if len(self) != len(other):
             return False
-        return all(self.elements[key] == other.elements[key]
-                   for key in self.elements)
-        
-        
+        return all(self.elements[key] == other.elements[key] for key in self.elements)
+
     def copy(self) -> "State":
         """ copy the state """
-        return self.__class__({name: element.copy()
-                               for name, element in self})
-        
+        return self.__class__({name: element.copy() for name, element in self})
 
     @property
     def attributes(self) -> Dict[str, Any]:
         """ dict: information about the state """
-        return {'elements': {name: element.attributes
-                             for name, element in self}}
-        
-        
+        return {"elements": {name: element.attributes for name, element in self}}
+
     def _write_hdf_dataset(self, hdf_path):
         """ write data to a given hdf5 file
         
@@ -152,8 +139,7 @@ class State():
         for name, element in self.elements.items():
             element_names.append(name)
             element._write_hdf_dataset(hdf_path.create_group(name))
-        hdf_write_attributes(hdf_path, {'elements': element_names})
-
+        hdf_write_attributes(hdf_path, {"elements": element_names})
 
     def to_file(self, filename: str, info: Dict[str, Any] = None) -> None:
         r""" store elements in a hdf file
@@ -166,28 +152,23 @@ class State():
                 that the values in this dictionary will be JSON-serialized. 
         """
         import h5py
+
         with h5py.File(filename, "w") as fp:
             self._write_hdf_dataset(fp)
-            hdf_write_attributes(fp, info)            
-            
-        
+            hdf_write_attributes(fp, info)
+
     @property
     def data(self) -> Tuple[Any, ...]:
         """ tuple: the full data of the state  s"""
         return tuple(element.data for element in self.elements.values())
-        
-        
+
     @property
     def degrees_of_freedom(self) -> int:
         """ int: the number of degrees of freedom of the simulation """
-        return sum(element.degrees_of_freedom
-                   for element in self.elements.values())
-        
-             
+        return sum(element.degrees_of_freedom for element in self.elements.values())
+
     @plot_on_axes()
-    def plot(self, ax,
-             element_args: Dict[str, Any] = None,
-             **kwargs):
+    def plot(self, ax, element_args: Dict[str, Any] = None, **kwargs):
         r""" visualize the state
          
         Args:
@@ -204,10 +185,11 @@ class State():
         else:
             element_args = defaultdict(dict)
 
-        # initialize the bounding box            
+        # initialize the bounding box
         from matplotlib.transforms import Bbox
-        limits = Bbox.null() 
-             
+
+        limits = Bbox.null()
+
         # plot all elements individually
         for name, element in self:
             element.plot(ax=ax, **element_args[name], **kwargs)
@@ -215,6 +197,5 @@ class State():
             limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
 
         # set the bounding box to the maximal value
-        ax.set_xlim(*limits.intervalx)        
+        ax.set_xlim(*limits.intervalx)
         ax.set_ylim(*limits.intervaly)
-        

@@ -1,4 +1,4 @@
-'''
+"""
 Provides actors that determine the dynamics of the simulation by modifying the
 state of elements in time.
 
@@ -14,7 +14,7 @@ state of elements in time.
    ~coupling.spherical_droplet.SphericalDropletActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
-'''
+"""
 
 from .autonomous import *
 from .coupling import *
