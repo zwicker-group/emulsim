@@ -3,7 +3,6 @@ TODO
 * Use black style
 * Improve plotting
     - adjust color of droplets
-* Documentation
 * Convenient I/O for states and simulations (actor + couplings)
 * Add napari plotting
 * Add graph representation to simulation connections
