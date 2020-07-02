@@ -343,29 +343,36 @@ class SphericalDropletActor(CouplingActorBase):
         if out is None:
             out = {}
 
-        # parse the equilibrium concentration and the reaction rates
-        for source, dest, signature in [
-            (
-                "equilibrium_concentration",
-                "cEqOut",
-                [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
-            ),
-            (
-                "reaction_inside",
-                "sBaseIn",
-                [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
-            ),
-            ("reaction_outside", "sOut", [["concentration", "phi", "c"], ["i", "id"]]),
-        ]:
+        # define which parameters need to be parsed
+        PARAMETER_TRANSLATE_LIST = [
+            {
+                "from": "equilibrium_concentration",
+                "to": "cEqOut",
+                "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
+            },
+            {
+                "from": "reaction_inside",
+                "to": "sBaseIn",
+                "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
+            },
+            {
+                "from": "reaction_outside",
+                "to": "sOut",
+                "signature": [["concentration", "phi", "c"], ["i", "id"]],
+            },
+        ]
 
-            expr = self.parameters[source]
+        # parse the equilibrium concentration and the reaction rates
+        for translate in PARAMETER_TRANSLATE_LIST:
+
+            expr = self.parameters[translate["from"]]  # type: ignore
             if callable(expr):
                 # assume that the expression supports the correct syntax
-                out[dest] = expr
+                out[translate["to"]] = expr  # type: ignore
             else:
                 # parse the expression
-                out[dest] = expressions.ScalarExpression(
-                    str(expr), signature, allow_indexed=True
+                out[translate["to"]] = expressions.ScalarExpression(  # type: ignore
+                    str(expr), translate["signature"], allow_indexed=True  # type: ignore
                 )
 
         return out
@@ -538,10 +545,9 @@ class SphericalDropletActor(CouplingActorBase):
                     """ flux for 2d droplet with reaction """
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
                     log1pLR = float(np.log1p(L / R))
-                    term = 4 * D * (cEqOut - c_far) + rate * (
-                        2 * R ** 2 * log1pLR - L * (L + 2 * R)
-                    )
-                    return (π / 2) * term / log1pLR
+                    term1 = 4 * D * (cEqOut - c_far)
+                    term2 = rate * (2 * R ** 2 * log1pLR - L * (L + 2 * R))
+                    return (π / 2) * (term1 + term2) / log1pLR
 
         elif self._cache["dim"] == 3:
             if no_reaction:
@@ -559,10 +565,9 @@ class SphericalDropletActor(CouplingActorBase):
                 ) -> float:
                     """ flux for 3d droplet with reaction """
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
-                    term = 2 * D * (1 + R / L) * (cEqOut - c_far) - rate * L * (
-                        L / 3 + R
-                    )
-                    return 2 * π * R * term
+                    term1 = 2 * D * (1 + R / L) * (cEqOut - c_far)
+                    term2 = rate * L * (L / 3 + R)
+                    return 2 * π * R * (term1 - term2)
 
         else:
             raise NotImplementedError("Unsupported dimension: " f"{self._cache['dim']}")
@@ -971,9 +976,7 @@ class SphericalDropletActor(CouplingActorBase):
 
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
+                area = droplet.surface_area
                 droplet.position += (
-                    field.dim
-                    / (cEqIn * droplet.surface_area)
-                    * amount_per_shell_out
-                    @ shell_vectors
+                    field.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
                 )
