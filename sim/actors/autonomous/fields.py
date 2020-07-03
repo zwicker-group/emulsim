@@ -40,7 +40,8 @@ class MeanfieldActor(AutonomousActorBase):
             "0",
             str,
             "An expression for the reaction flux in the mean field. The "
-            "expression may depend on the concentration and time.",
+            "expression may depend on the concentration and time, which are "
+            "denoted by the variables `c` and `t` respectively..",
         ),
     ]
 
@@ -56,24 +57,7 @@ class MeanfieldActor(AutonomousActorBase):
         super().__init__(parameters=parameters)
 
         reaction_flux = self.parameters["reaction_flux"]
-        try:
-            from phasesep.reactions import ReactionFluxExpression
-
-        except (ModuleNotFoundError, ImportError):
-            # fall back to the pde package
-            if str(reaction_flux) not in {"0", "0.0", "None"}:
-                raise RuntimeError(
-                    "Reaction fluxes are only supported when "
-                    "the `py-phasesep` package is available"
-                )
-
-            # mimick the interface of ReactionFluxExpression
-            self._reaction = ScalarExpression(0, signature=["c", "t"])
-            self._reaction.present = False  # type: ignore
-
-        else:
-            # initialize reaction flux
-            self._reaction = ReactionFluxExpression(reaction_flux, with_mu=False)
+        self._reaction = ScalarExpression(reaction_flux, signature=["c", "t"])
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor
@@ -121,8 +105,7 @@ class MeanfieldActor(AutonomousActorBase):
                 The time step used to evolve the element
         """
         (element,) = elements  # extract single element
-        if self._reaction.present:  # type: ignore
-            element.data += dt * self._reaction(element.data, t)
+        element.data += dt * self._reaction(element.data, t)
 
 
 class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):

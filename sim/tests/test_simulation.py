@@ -5,6 +5,7 @@
 from droplets import SphericalDroplet
 
 from pde import UnitGrid, ScalarField
+from pde.tools.misc import module_available
 
 from .. import *
 
@@ -28,5 +29,8 @@ def test_simulation():
     assert isinstance(simulation.info, dict)
     assert len(simulation.info["actors"]) == 2
 
+    if module_available("networkx"):
+        simulation.plot_as_graph()
+
     # run simulation
-    result = simulation.run(t_range=10)
+    simulation.run(t_range=10)

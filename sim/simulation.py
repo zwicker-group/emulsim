@@ -83,6 +83,58 @@ class Simulation:
         assert len(elements) == actor.num_elements
         self.actors.append((elements, actor))
 
+    def get_graph(self):
+        """ return a graph representation of the simulation
+        
+        Returns:
+            :class:`networkx.DiGraph`: A graph where all elements and actors are
+            represented as nodes.
+        """
+        from networkx import DiGraph
+
+        graph = DiGraph()
+
+        for name, element in self.state:
+            graph.add_node(f"element_{name}", obj=element, label=name)
+
+        for actor_id, (element_names, actor) in enumerate(self.actors, 1):
+            actor_name = f"actor_{actor_id}"
+            graph.add_node(actor_name, obj=actor, label=actor.__class__.__name__)
+            for element_name in element_names:
+                graph.add_edge(actor_name, f"element_{element_name}")
+
+        return graph
+
+    def plot_as_graph(self, **kwargs) -> None:
+        """ represent the simulation in a graphical form
+        
+        Args:
+            **kwargs:
+                All arguments are passed to :func:`networkx.draw`
+        """
+        import networkx as nx
+
+        graph = self.get_graph()
+
+        # determine the layout of the graph
+        try:
+            pos = nx.nx_pydot.pydot_layout(graph)
+        except ImportError:
+            pos = nx.spring_layout(graph)
+
+        # draw all nodes
+        node_color = [
+            "tab:blue" if name.startswith("element") else "tab:orange"
+            for name in graph.nodes
+        ]
+        kwargs.setdefault("node_size", 1000)
+        kwargs.setdefault("node_color", node_color)
+        nx.draw(graph, pos, **kwargs)
+
+        # label the nodes
+        labels = {k: v["label"] for k, v in graph.nodes(data=True)}
+        nx.draw_networkx_labels(graph, pos, labels)
+
     def estimate_dt(self, state: State = None) -> float:
         """ get the optimal time step for the simulation
                 

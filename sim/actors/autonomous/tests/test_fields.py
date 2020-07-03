@@ -60,12 +60,24 @@ def test_meanfield_reactions():
     assert actor.num_elements == 1
     assert 0 < actor.estimate_dt(element) < 1
 
+    # numpy version
     actor.evolve((element,), 0, dt=1)
     assert element.concentration == pytest.approx(4)
 
     actor.evolve((element,), 1, dt=1)
     assert element.concentration == pytest.approx(11)
     actor.evolve((element,), 1, dt=0)
+    assert element.concentration == pytest.approx(11)
+
+    # numba version
+    element.concentration = 1
+    evolver = actor.make_evolver_numba((element,))
+    evolver((element.data,), 0, dt=1)
+    assert element.concentration == pytest.approx(4)
+
+    evolver((element.data,), 1, dt=1)
+    assert element.concentration == pytest.approx(11)
+    evolver((element.data,), 1, dt=0)
     assert element.concentration == pytest.approx(11)
 
 

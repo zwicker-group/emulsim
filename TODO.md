@@ -1,12 +1,9 @@
 TODO
 ====
-* Add FieldInteractionActor that couples the dynamics of multiple fields, e.g.
-    mimicking chemical reactions.
 * Improve plotting
     - adjust color of droplets
 * Convenient I/O for states and simulations (actor + couplings)
 * Add napari plotting
-* Add graph representation to simulation connections
 * Allow easy addition of the simulation parameters when writing the state
   to a file (for documentation purposes)
 * Simulation:
