@@ -256,6 +256,9 @@ class ShellCollection:
         return get_shell  # type: ignore
 
 
+ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
+
+
 class SphericalDropletActor(CouplingActorBase):
     """ an actor coupling spherical droplets to a field """
 
@@ -377,17 +380,15 @@ class SphericalDropletActor(CouplingActorBase):
 
         return out
 
-    def _update_cache(
-        self, droplets: SphericalDropletsElement, field: FieldElementBase
-    ) -> None:
+    def _update_cache(self, elements: ActorElementType) -> None:
         """ prepare the simulation doing pre-calculations 
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
         """
+        droplets, field = elements
+
         if droplets.droplets.dim != field.dim:
             raise DimensionError(
                 "Droplets have a different dimension than the "
@@ -416,21 +417,17 @@ class SphericalDropletActor(CouplingActorBase):
         )
         self._cache["shells"] = shells
 
-    def estimate_dt(  # type: ignore
-        self, droplets: SphericalDropletsElement, field: FieldElementBase,
-    ) -> float:
+    def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """ estimate the maximal time step for simulating this actor 
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             float: the maximal time step
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         return L ** 2 / D
@@ -603,8 +600,7 @@ class SphericalDropletActor(CouplingActorBase):
 
     def plot_shell_points(
         self,
-        droplets: SphericalDropletsElement,
-        field: FieldElementBase,
+        elements: ActorElementType,
         state_style: Dict[str, Any] = None,
         point_style: Dict[str, Any] = None,
         shell_style: Dict[str, Any] = None,
@@ -612,10 +608,8 @@ class SphericalDropletActor(CouplingActorBase):
         r""" plot all shell points around the droplets of a given state
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
             state_style (dict, optional):
                 Dictionary with keyword arguments that are used in the
                 :meth:`AgentState.plot` call. This affects the style of
@@ -631,6 +625,8 @@ class SphericalDropletActor(CouplingActorBase):
         """
         import matplotlib.pyplot as plt
         from matplotlib.patches import Wedge
+
+        droplets, field = elements
 
         if field.dim != 2:
             raise NotImplementedError("Can only plot shell points in 2d")
@@ -673,16 +669,12 @@ class SphericalDropletActor(CouplingActorBase):
             points = droplet.position[None, :] + ring_radius * shell_vectors
             plt.plot(points[:, 0], points[:, 1], **point_style)
 
-    def _make_droplet_evolver_numba(
-        self, droplets: SphericalDropletsElement, field: FieldElementBase
-    ) -> Callable:
+    def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
         """ create a function to evolve a single droplet from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             callable: A function with signature
@@ -691,6 +683,7 @@ class SphericalDropletActor(CouplingActorBase):
                 field_update: :class:`numpy.ndarray`), evolving `droplet_data`
                 and updating `field_update`
         """
+        droplets, field = elements
         shell_thickness = self._cache["shell_thickness"]
         drift_enabled = bool(self.parameters["drift_enabled"])
 
@@ -702,12 +695,12 @@ class SphericalDropletActor(CouplingActorBase):
             calc_cEqOut = jit(cEqOut)
         cBaseIn = droplets.parameters["droplet_concentration"]
 
-        sBaseIn = self._cache["sBaseIn"]
-        if hasattr(sBaseIn, "get_compiled"):
-            calc_sBaseIn = sBaseIn.get_compiled()
+        sBaseInFunc = self._cache["sBaseIn"]
+        if hasattr(sBaseInFunc, "get_compiled"):
+            calc_sBaseIn = sBaseInFunc.get_compiled()
         else:
             # try compiling in case sBaseIn is a function
-            calc_sBaseIn = jit(sBaseIn)
+            calc_sBaseIn = jit(sBaseInFunc)
 
         dim = self._cache["dim"]
         radius = spherical.make_radius_from_volume_compiled(dim)
@@ -784,23 +777,20 @@ class SphericalDropletActor(CouplingActorBase):
 
         return droplet_update  # type: ignore
 
-    def make_evolver_numba(  # type: ignore
-        self, droplets: SphericalDropletsElement, field: FieldElementBase,
-    ) -> Callable:
+    def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
         """ return a function evolve the state from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             callable: A function with signature
                 (droplets_data: :class:`numpy.ndarray`, field_data: :class:`numpy.ndarray`,
                 t: float, dt: float), evolving `droplets_data` and `field_data`
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
+        droplets, field = elements
 
         # determine the number of threads to use in the simulation
         num_threads = self.parameters["num_threads"]
@@ -825,7 +815,7 @@ class SphericalDropletActor(CouplingActorBase):
         )
 
         # obtain function for updating a single droplet
-        droplet_update = self._make_droplet_evolver_numba(droplets, field)
+        droplet_update = self._make_droplet_evolver_numba(elements)
 
         # obtain the signature for the evolver
         droplet_type = nb.typeof(droplets.data)
@@ -870,14 +860,10 @@ class SphericalDropletActor(CouplingActorBase):
             data_shape = field.data.shape
             tmp_shape = (num_threads,) + data_shape
 
-            @jit(
-                signature=nb.void(droplet_type, field_type, nb.float64, nb.float64),
-                parallel=True,
-            )
-            def evolver(
-                droplets_data: np.ndarray, field_data: np.ndarray, t: float, dt: float
-            ):
+            @jit(parallel=True)
+            def evolver(elements_data, t: float, dt: float):
                 """ evolve all droplets in parallel chunks """
+                droplets_data, field_data = elements_data
                 field_update = np.empty(tmp_shape)  # allocate temporary memory
                 # calculate size of each chunk
                 size = int(np.ceil(len(droplets_data) / num_threads))
@@ -889,17 +875,15 @@ class SphericalDropletActor(CouplingActorBase):
                     evolve_chunk(
                         droplet_list, i * size, t, dt, field_data, field_update[i]
                     )
-
-                field_data += field_update.sum(axis=0)
+                for i in range(num_threads):
+                    field_data += field_update[i]
 
         else:
             # update all droplets on the same thread
-            @jit(
-                signature=nb.void(droplet_type, field_type, nb.float64, nb.float64),
-                nogil=True,
-            )
-            def evolver(droplets_data: np.ndarray, field_data, t: float, dt: float):
+            @jit
+            def evolver(elements_data, t: float, dt: float):
                 """ evolve all droplets explicitly """
+                droplets_data, field_data = elements_data
                 for droplet_id, droplet_data in enumerate(droplets_data):
                     # skip droplets that have disappeared
                     if droplet_data.radius > 0:
@@ -909,34 +893,28 @@ class SphericalDropletActor(CouplingActorBase):
 
         return evolver  # type: ignore
 
-    def evolve(  # type: ignore
-        self,
-        droplets: SphericalDropletsElement,
-        field: FieldElementBase,
-        t: float,
-        dt: float,
-    ) -> None:
+    def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
         """ evolve the state from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
             t (float):
                 The current time point
             dt (float):
                 The time step
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
+        shells = self._cache["shells"]
+        calc_sBaseIn = self._cache["sBaseIn"]
+
+        droplets, field = elements
 
         for droplet_id, droplet in enumerate(droplets.droplets):
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
-            shell_vectors, shell_weights = self._cache["shells"].get_shell(
-                droplet.radius
-            )
+            shell_vectors, shell_weights = shells.get_shell(droplet.radius)
 
             # get concentration distribution outside the droplet
             shell_radius = droplet.radius + self._cache["shell_thickness"]
@@ -954,9 +932,7 @@ class SphericalDropletActor(CouplingActorBase):
             amount_per_shell_out = -dt * flux_out * shell_weights
             amount_total_out = amount_per_shell_out.sum()
             # amount produced inside the droplet
-            sBaseIn = self._cache["sBaseIn"](
-                droplet.position, droplet.radius, droplet_id
-            )
+            sBaseIn = calc_sBaseIn(droplet.position, droplet.radius, droplet_id)
             amount_total_in = dt * sBaseIn * droplet.volume
 
             # update the droplet volume

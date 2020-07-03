@@ -23,11 +23,11 @@ def test_emitters():
 
     assert len(emitters) == 1
 
-    emitters.evolve(background, 0, 0.5)
+    emitters.evolve((background,), 0, 0.5)
     assert background.total_amount == pytest.approx(0.5)
 
-    evolver = emitters.make_evolver_numba(background)
-    evolver(background.data, 0, 0.5)
+    evolver = emitters.make_evolver_numba((background,))
+    evolver((background.data,), 0, 0.5)
     assert background.total_amount == pytest.approx(1)
 
     emitters2 = emitters.copy()

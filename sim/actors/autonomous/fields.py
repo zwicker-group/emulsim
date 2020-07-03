@@ -15,7 +15,7 @@ Provides actors that influence scalar fields
 
 import inspect
 from abc import abstractmethod, ABCMeta
-from typing import Dict, Any, Callable, Type  # @UnusedImport
+from typing import Dict, Any, Callable, Type, Tuple  # @UnusedImport
 
 import numpy as np
 import numba as nb
@@ -27,6 +27,7 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 
 from .base import AutonomousActorBase
+from ..base import ElementsType
 from ...elements import MeanfieldElement, ScalarFieldElement
 
 
@@ -74,11 +75,11 @@ class MeanfieldActor(AutonomousActorBase):
             # initialize reaction flux
             self._reaction = ReactionFluxExpression(reaction_flux, with_mu=False)
 
-    def estimate_dt(self, element: MeanfieldElement) -> float:  # type: ignore
+    def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
         """
         s_max = np.abs(self._reaction(np.linspace(0, 1, 32), t=0)).max()
@@ -87,11 +88,11 @@ class MeanfieldActor(AutonomousActorBase):
         else:
             return 0.1 / s_max  # type: ignore
 
-    def make_evolver_numba(self, element: MeanfieldElement) -> Callable:  # type: ignore
+    def make_evolver_numba(self, elements: ElementsType) -> Callable:
         """ return a function evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -101,23 +102,25 @@ class MeanfieldActor(AutonomousActorBase):
         reation_flux = self._reaction.get_compiled()
 
         @nb.jit
-        def evolver(field_data, t: float, dt: float):
+        def evolver(fields_data, t: float, dt: float):
             """ evolve the diffusion equation explicitly """
+            (field_data,) = fields_data
             field_data += dt * reation_flux(field_data, t)
 
         return evolver  # type: ignore
 
-    def evolve(self, element: MeanfieldElement, t: float, dt: float):
+    def evolve(self, elements: ElementsType, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point
             dt (float):
                 The time step used to evolve the element
         """
+        (element,) = elements  # extract single element
         if self._reaction.present:  # type: ignore
             element.data += dt * self._reaction(element.data, t)
 
@@ -127,11 +130,11 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
 
     element_class: Type[ScalarFieldElement] = ScalarFieldElement
 
-    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
+    def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
                 
         Returns:
@@ -139,11 +142,11 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
+    def make_evolver_numba(self, elements: ElementsType) -> Callable:
         """ return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -153,11 +156,11 @@ class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def evolve(self, element: ScalarFieldElement, t: float, dt: float):
+    def evolve(self, elements: ElementsType, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point
@@ -198,38 +201,41 @@ class ScalarPDEActor(ScalarFieldActorBase):
         result["pde"] = {"class": self.pde.__class__.__name__}
         return result
 
-    def make_evolver_numba(self, element: ScalarFieldElement) -> Callable:  # type: ignore
+    def make_evolver_numba(self, elements: ElementsType) -> Callable:
         """ return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
                 
         Returns:
             callable: A function with signature (field_data, t: float,
                 dt: float), which evolves the field_data.
         """
-        pde_rhs = self.pde._make_pde_rhs_numba(element._field)
+        (element,) = elements  # extract single element
+        pde_rhs = self.pde._make_pde_rhs_numba(element._field)  # type: ignore
 
         @jit
-        def evolver(field_data, t: float, dt: float):
+        def evolver(fields_data, t: float, dt: float):
             """ evolve the PDE explicitly """
+            (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
         return evolver  # type: ignore
 
-    def evolve(self, element: ScalarFieldElement, t: float, dt: float):
+    def evolve(self, elements: ElementsType, t: float, dt: float):
         """ evolve the field from time `t` to `t + dt`
         
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point
             dt (float):
                 The time step used to evolve the element
         """
-        rate = self.pde.evolution_rate(element._field, t)
+        (element,) = elements  # extract single element
+        rate = self.pde.evolution_rate(element._field, t)  # type: ignore
         element._field += dt * rate  # type: ignore
 
 
@@ -274,13 +280,18 @@ class DiffusionActor(ScalarPDEActor):
             bc=self.parameters["boundary_conditions"],
         )
 
-    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
+    def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor
+        
+        Args:
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
         
         Returns:
             float: the time step
         """
-        dx = float(element.grid.discretization.min())
+        (element,) = elements  # extract single element
+        dx = float(element.grid.discretization.min())  # type: ignore
         return 0.1 * dx ** 2 / float(self.pde.diffusivity)
 
 
@@ -337,16 +348,18 @@ class ReactionDiffusionActor(ScalarPDEActor):
         }
         self.pde = ReactionDiffusionPDE(pde_params)
 
-    def estimate_dt(self, element: ScalarFieldElement) -> float:  # type: ignore
+    def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor
         
         Args:
-            element (:class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
         
         Returns:
             float: the time step
         """
+        (element,) = elements  # extract single element
+
         # estimate the time step based on the chemical reaction
         if hasattr(self.pde, "_reaction"):
             # pde seems to be an instance of ReactionDiffusionPDE
@@ -364,7 +377,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             dt_reaction = 0.1 / s_max
 
         # estimate the time step required for diffusion
-        dx = element.grid.discretization.min()
+        dx = element.grid.discretization.min()  # type: ignore
         dt_diffusion = 0.2 * dx ** 2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore

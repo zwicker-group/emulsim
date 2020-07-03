@@ -95,7 +95,7 @@ class State:
         if isinstance(key, str):
             return self.elements[key]
         else:
-            return [self.elements[k] for k in key]
+            return tuple(self.elements[k] for k in key)
 
     def __len__(self) -> int:
         return len(self.elements)

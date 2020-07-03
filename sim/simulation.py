@@ -99,11 +99,9 @@ class Simulation:
         dts: List[float] = [np.inf]
         for elements, actor in self.actors:
             try:
-                dt = actor.estimate_dt(*state[elements])
+                dt = actor.estimate_dt(state[elements])
             except NotImplementedError:
-                self._logger.info(
-                    "Could not determine time step for actor " f'"{actor}"'
-                )
+                self._logger.info(f'Unknown time step for actor "{actor}"')
             else:
                 dts.append(dt)
 
@@ -127,7 +125,7 @@ class Simulation:
         for elements, actor in self.actors:
             actor_data = {
                 "actor": actor,
-                "evolver": actor.make_evolver_numba(*state[elements]),
+                "evolver": actor.make_evolver_numba(state[elements]),
                 "element_indices": tuple(state.get_index(name) for name in elements),
             }
             actors.append(actor_data)
@@ -150,7 +148,7 @@ class Simulation:
                 @jit
                 def wrap(state_data, t: float, dt: float):
                     inner(state_data, t, dt)
-                    evolver(state_data[i], t, dt)
+                    evolver((state_data[i],), t, dt)
 
             elif num_elements == 2:
                 i, j = element_indices
@@ -158,7 +156,7 @@ class Simulation:
                 @jit
                 def wrap(state_data, t: float, dt: float):
                     inner(state_data, t, dt)
-                    evolver(state_data[i], state_data[j], t, dt)
+                    evolver((state_data[i], state_data[j]), t, dt)
 
             if actor_id < len(actors) - 1:
                 # there are more items in the chain
@@ -182,7 +180,7 @@ class Simulation:
                 The time step
         """
         for elements, actor in self.actors:
-            actor.evolve(*state[elements], t, dt)
+            actor.evolve(state[elements], t, dt)
 
     def run(
         self,

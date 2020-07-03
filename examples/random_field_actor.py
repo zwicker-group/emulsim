@@ -12,19 +12,21 @@ class RandomFieldActor(AutonomousActorBase):
     """ actor that sets a new random field each time step """
 
 
-    def evolve(self, element, t, dt):
+    def evolve(self, elements, t, dt):
         # mandatory python implementation of the background evolution
-        element.data = np.random.uniform(0, 0.1, element.data.shape)
+        field, = elements
+        field.data = np.random.uniform(0, 0.1, field.data.shape)
         
 
-    def make_evolver_numba(self, element):
+    def make_evolver_numba(self, elements):
         """ implementing the compiled version is optional """
         # this function is optional and can be used to speed up calculations
         @nb.jit
-        def evolver(element_state, t: float, dt: float):
+        def evolver(elements_state, t: float, dt: float):
             """ evolve the diffusion equation explicitly """
-            for i in range(element_state.size):
-                element_state.flat[i] = np.random.uniform(0, 0.1)
+            field_state, = elements_state
+            for i in range(field_state.size):
+                field_state.flat[i] = np.random.uniform(0, 0.1)
         return evolver  # type: ignore
     
 

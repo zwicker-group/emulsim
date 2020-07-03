@@ -4,18 +4,21 @@ Provides an actor coupling point-like droplets to a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable
+from typing import Callable, Tuple
 
 import numpy as np
-import numba as nb
 
 from pde.grids.base import DimensionError
-from pde.tools import spherical, expressions
+from pde.tools import spherical
+from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 from pde.tools.numba import jit
 
 from .base import CouplingActorBase
 from ...elements import SphericalDropletsElement, FieldElementBase
+
+
+ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class PointDropletActor(CouplingActorBase):
@@ -63,21 +66,17 @@ class PointDropletActor(CouplingActorBase):
         else:
             # parse the expression
             signature = [["position", "pos", "x"], ["radius", "R"], ["i", "id"]]
-            return expressions.ScalarExpression(
-                str(expr), signature, allow_indexed=True
-            )
+            return ScalarExpression(str(expr), signature, allow_indexed=True)
 
-    def _update_cache(
-        self, droplets: SphericalDropletsElement, field: FieldElementBase
-    ) -> None:
+    def _update_cache(self, elements: ActorElementType) -> None:
         """ prepare the simulation doing pre-calculations 
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
         """
+        droplets, field = elements
+
         if droplets.droplets.dim != field.dim:
             raise DimensionError(
                 "Droplets have a different dimension than the "
@@ -88,21 +87,18 @@ class PointDropletActor(CouplingActorBase):
         self._cache["dim"] = field.dim
         self._cache["cEqOut"] = self._parse_equilibrium_concentration()
 
-    def estimate_dt(  # type: ignore
-        self, droplets: SphericalDropletsElement, field: FieldElementBase,
-    ) -> float:
+    def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """ estimate the maximal time step for simulating this actor 
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             float: the maximal time step
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
+        droplets, _ = elements
         D = float(self.parameters["diffusivity"])
         L = float(droplets.data["radius"].mean())
         return L ** 2 / D
@@ -131,9 +127,8 @@ class PointDropletActor(CouplingActorBase):
 
         else:
             raise NotImplementedError(
-                f"{self.__class__.__name__} only works "
-                "in three dimensions (current dimension "
-                f"is {self._cache['dim']})"
+                f"{self.__class__.__name__} only works in three dimensions (current "
+                f"dimension is {self._cache['dim']})"
             )
 
     def _make_flux_outside(self) -> Callable:
@@ -156,9 +151,8 @@ class PointDropletActor(CouplingActorBase):
 
         else:
             raise NotImplementedError(
-                f"{self.__class__.__name__} only works "
-                "in three dimensions (current dimension "
-                f"is {self._cache['dim']})"
+                f"{self.__class__.__name__} only works in three dimensions (current "
+                f"dimension is {self._cache['dim']})"
             )
 
         return flux_outside
@@ -190,16 +184,12 @@ class PointDropletActor(CouplingActorBase):
 
         return np.array(result)
 
-    def _make_droplet_evolver_numba(
-        self, droplets: SphericalDropletsElement, field: FieldElementBase
-    ) -> Callable:
+    def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
         """ create a function to evolve a single droplet from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             callable: A function with signature
@@ -208,6 +198,8 @@ class PointDropletActor(CouplingActorBase):
                 field_update: :class:`numpy.ndarray`), evolving `droplet_data`
                 and updating `field_update`
         """
+        droplets, field = elements
+
         cEqOut = self._cache["cEqOut"]
         if hasattr(cEqOut, "get_compiled"):
             calc_cEqOut = cEqOut.get_compiled()
@@ -263,34 +255,27 @@ class PointDropletActor(CouplingActorBase):
 
         return droplet_update  # type: ignore
 
-    def make_evolver_numba(  # type: ignore
-        self, droplets: SphericalDropletsElement, field: FieldElementBase,
-    ) -> Callable:
+    def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
         """ return a function evolve the state from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
 
         Returns:
             callable: A function with signature
                 (droplets_data: :class:`numpy.ndarray`, field_data, t: float,
                 dt: float), evolving `droplets_data` and `field_data`
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
 
         # obtain function for updating a single droplet
-        droplet_update = self._make_droplet_evolver_numba(droplets, field)
+        droplet_update = self._make_droplet_evolver_numba(elements)
 
-        # obtain the signature for the evolver
-        dr_type = nb.typeof(droplets.data)
-        bg_type = nb.typeof(field.data)
-
-        @jit(signature=nb.void(dr_type, bg_type, nb.float64, nb.float64), nogil=True)
-        def evolver(droplets_data: np.ndarray, field_data, t: float, dt: float):
+        @jit
+        def evolver(elements_data, t: float, dt: float):
             """ evolve all droplets explicitly """
+            droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):
                 # skip droplets that have disappeared
                 if droplet_data.radius > 0:
@@ -298,26 +283,19 @@ class PointDropletActor(CouplingActorBase):
 
         return evolver  # type: ignore
 
-    def evolve(  # type: ignore
-        self,
-        droplets: SphericalDropletsElement,
-        field: FieldElementBase,
-        t: float,
-        dt: float,
-    ) -> None:
+    def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
         """ evolve the state from time `t` to `t + dt`
         
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-            field (:class:`~sim.elements.fields.FieldElementBase`):
-                The state of the field
+            elements (tuple):
+                The state of all the droplets and of the field
             t (float):
                 The current time point
             dt (float):
                 The time step
         """
-        self._check_cache(droplets, field)
+        self._check_cache(elements)
+        droplets, field = elements
         calc_cEqOut = self._cache["cEqOut"]
 
         for droplet_id, droplet in enumerate(droplets.droplets):

@@ -1,6 +1,7 @@
 TODO
 ====
-* Use black style
+* Add FieldInteractionActor that couples the dynamics of multiple fields, e.g.
+    mimicking chemical reactions.
 * Improve plotting
     - adjust color of droplets
 * Convenient I/O for states and simulations (actor + couplings)

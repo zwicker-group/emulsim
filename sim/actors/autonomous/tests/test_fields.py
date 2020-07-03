@@ -23,7 +23,7 @@ def test_diffusion_actor():
     element = ScalarFieldElement.from_field(ScalarField(grid, 3))
     assert element.grid == grid
     actor = DiffusionActor()
-    assert isinstance(actor.estimate_dt(element), float)
+    assert isinstance(actor.estimate_dt((element,)), float)
     assert actor.num_elements == 1
 
 
@@ -38,12 +38,12 @@ def test_diffusion_vs_pde():
     assert isinstance(a1.info, dict)
     assert isinstance(a2.info, dict)
 
-    a1.evolve(e1, 0, 0.1)
-    a2.evolve(e2, 0, 0.1)
+    a1.evolve((e1,), 0, 0.1)
+    a2.evolve((e2,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
-    a1.make_evolver_numba(e1)(e1.data, 0, 0.1)
-    a2.make_evolver_numba(e2)(e2.data, 0, 0.1)
+    a1.make_evolver_numba((e1,))((e1.data,), 0, 0.1)
+    a2.make_evolver_numba((e2,))((e2.data,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
@@ -60,12 +60,12 @@ def test_meanfield_reactions():
     assert actor.num_elements == 1
     assert 0 < actor.estimate_dt(element) < 1
 
-    actor.evolve(element, 0, dt=1)
+    actor.evolve((element,), 0, dt=1)
     assert element.concentration == pytest.approx(4)
 
-    actor.evolve(element, 1, dt=1)
+    actor.evolve((element,), 1, dt=1)
     assert element.concentration == pytest.approx(11)
-    actor.evolve(element, 1, dt=0)
+    actor.evolve((element,), 1, dt=0)
     assert element.concentration == pytest.approx(11)
 
 
@@ -79,12 +79,12 @@ def test_diffusion_vs_reaction_diffusion():
     a1 = DiffusionActor()
     a2 = ReactionDiffusionActor()
 
-    a1.evolve(e1, 0, 0.1)
-    a2.evolve(e2, 0, 0.1)
+    a1.evolve((e1,), 0, 0.1)
+    a2.evolve((e2,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
-    a1.make_evolver_numba(e1)(e1.data, 0, 0.1)
-    a2.make_evolver_numba(e2)(e2.data, 0, 0.1)
+    a1.make_evolver_numba((e1,))((e1.data,), 0, 0.1)
+    a2.make_evolver_numba((e2,))((e2.data,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
@@ -94,9 +94,9 @@ def test_reaction_diffusion_background():
     field = ScalarField.random_uniform(UnitGrid([10]))
     element = ScalarFieldElement.from_field(field)
     actor = ReactionDiffusionActor(parameters={"reaction_flux": "-c"})
-    dt = actor.estimate_dt(element)
+    dt = actor.estimate_dt((element,))
 
     for _ in range(100):
-        actor.evolve(element, 0, dt)
+        actor.evolve((element,), 0, dt)
 
     np.testing.assert_allclose(element.data, 0, atol=1e-4)

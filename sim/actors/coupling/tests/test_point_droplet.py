@@ -29,18 +29,18 @@ def test_point_droplets(dim):
     assert isinstance(coupling.info, dict)
     assert coupling.num_elements == 2
 
-    assert 0 < coupling.estimate_dt(droplets, field) < 1000
+    assert 0 < coupling.estimate_dt((droplets, field)) < 1000
     total_amount = pytest.approx(droplets.total_amount)
 
-    coupling.evolve(droplets, field, 0, 0.5)
+    coupling.evolve((droplets, field), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     radius = pytest.approx(droplets.data[0].radius)
 
-    evolver = coupling.make_evolver_numba(droplets, field)
+    evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver(droplets.data, field.data, 0, 0.5)
+    evolver((droplets.data, field.data), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
@@ -53,7 +53,7 @@ def test_point_droplets(dim):
     droplets = SphericalDropletsElement.from_droplets([SphericalDroplet([1], 1)])
     coupling = PointDropletActor()
     with pytest.raises(DimensionError):
-        coupling.make_evolver_numba(droplets, field)
+        coupling.make_evolver_numba((droplets, field))
 
 
 @pytest.mark.parametrize("dim", [3])
@@ -79,7 +79,7 @@ def test_point_droplet_coarsening(dim):
 
     total_amount = pytest.approx(field.total_amount + droplets.total_amount)
 
-    coupling.evolve(droplets, field, 0, 0.1)
+    coupling.evolve((droplets, field), 0, 0.1)
     assert field.total_amount + droplets.total_amount == total_amount
 
     assert emulsion[0].radius < 0.1

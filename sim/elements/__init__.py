@@ -12,7 +12,7 @@ Provides classes representing elements of a simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .base import element_from_file
+from .base import ElementBase, element_from_file
 from .fields import FieldElementBase, MeanfieldElement, ScalarFieldElement
 from .points import PointsElement
 from .spherical_droplets import SphericalDropletsElement

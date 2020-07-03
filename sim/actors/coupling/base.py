@@ -15,7 +15,7 @@ from ...elements.base import ElementBase
 class CouplingActorBase(ActorBase, metaclass=ABCMeta):
     """ base class for actors affecting multiple elements """
 
-    state_classes: Tuple[Type[ElementBase], Type[ElementBase]]
+    state_classes: Tuple[Type[ElementBase], ...]
 
     @classproperty
     def num_elements(self) -> int:  # type: ignore

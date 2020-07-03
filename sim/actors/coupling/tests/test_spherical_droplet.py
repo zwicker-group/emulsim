@@ -59,18 +59,18 @@ def test_spherical_droplets(dim):
     assert isinstance(coupling.info, dict)
     assert coupling.num_elements == 2
 
-    assert 0 < coupling.estimate_dt(droplets, field) < 1000
+    assert 0 < coupling.estimate_dt((droplets, field)) < 1000
     total_amount = pytest.approx(droplets.total_amount)
 
-    coupling.evolve(droplets, field, 0, 0.5)
+    coupling.evolve((droplets, field), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     radius = pytest.approx(droplets.data[0].radius)
 
-    evolver = coupling.make_evolver_numba(droplets, field)
+    evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver(droplets.data, field.data, 0, 0.5)
+    evolver((droplets.data, field.data), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
@@ -81,7 +81,7 @@ def test_spherical_droplets(dim):
 
     # test whether plotting works in principle
     if dim == 2:
-        coupling.plot_shell_points(droplets, field)
+        coupling.plot_shell_points((droplets, field))
 
     # test incompatible dimensions
     droplet_dim = (None, 2, 1, 1)[dim]
@@ -90,7 +90,7 @@ def test_spherical_droplets(dim):
     )
     coupling = SphericalDropletActor()
     with pytest.raises(DimensionError):
-        coupling.make_evolver_numba(droplets, field)
+        coupling.make_evolver_numba((droplets, field))
 
 
 @pytest.mark.parametrize("compiled", [False, True])
@@ -170,7 +170,7 @@ def test_coarsening(dim):
 
     total_amount = pytest.approx(field.total_amount + droplets.total_amount)
 
-    coupling.evolve(droplets, field, 0, 0.1)
+    coupling.evolve((droplets, field), 0, 0.1)
     assert field.total_amount + droplets.total_amount == total_amount
 
     assert droplets.data[0].radius < 0.1
@@ -231,10 +231,10 @@ def test_multithreading():
     coupling1 = SphericalDropletActor({"num_threads": 1})
     coupling2 = SphericalDropletActor({"num_threads": 2})
 
-    evolver1 = coupling1.make_evolver_numba(droplets1, field1)
-    evolver2 = coupling2.make_evolver_numba(droplets2, field2)
+    evolver1 = coupling1.make_evolver_numba((droplets1, field1))
+    evolver2 = coupling2.make_evolver_numba((droplets2, field2))
 
-    evolver1(droplets1.data, field1.data, 0, 0.001)
-    evolver2(droplets2.data, field2.data, 0, 0.001)
+    evolver1((droplets1.data, field1.data), 0, 0.001)
+    evolver2((droplets2.data, field2.data), 0, 0.001)
 
     np.testing.assert_allclose(field1.data, field2.data, rtol=0.1)
