@@ -5,7 +5,7 @@ import numpy as np
 import sim
 
 
-class BrownianParticlesActor(sim.AutonomousActorBase):
+class BrownianParticlesActor(sim.ActorBase):
 
     diffusivity = 1
 

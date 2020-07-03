@@ -11,12 +11,11 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 from pde.tools.numba import jit
 
-from .base import CouplingActorBase
-from ..base import ElementsType
+from ..base import ActorBase, ElementsType
 from ...elements import FieldElementBase
 
 
-class FieldCouplingActor(CouplingActorBase):
+class FieldCouplingActor(ActorBase):
     """ actor that couples multiple fields by local interactions """
 
     parameters_default = [
@@ -50,7 +49,7 @@ class FieldCouplingActor(CouplingActorBase):
             raise ValueError('Field name must not be "t", since this signifies time')
 
         self.num_fields = len(self.parameters["fields"])
-        self.state_classes = (FieldElementBase,) * self.num_fields
+        self.element_classes = (FieldElementBase,) * self.num_fields
 
     def _update_cache(self, fields: ElementsType) -> None:
         """ prepare the simulation doing pre-calculations 

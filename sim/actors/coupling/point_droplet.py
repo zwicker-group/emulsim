@@ -14,14 +14,14 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 from pde.tools.numba import jit
 
-from .base import CouplingActorBase
+from ..base import ActorBase
 from ...elements import SphericalDropletsElement, FieldElementBase
 
 
 ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 
 
-class PointDropletActor(CouplingActorBase):
+class PointDropletActor(ActorBase):
     """ actor that couples points-like droplets to a field
     
     For simplicity, these droplets interact with the field only at one point
@@ -49,7 +49,7 @@ class PointDropletActor(CouplingActorBase):
         ),
     ]
 
-    state_classes = (SphericalDropletsElement, FieldElementBase)
+    element_classes = (SphericalDropletsElement, FieldElementBase)
 
     def _parse_equilibrium_concentration(self) -> Callable:
         """ parse the expression for the equilibrium concentration

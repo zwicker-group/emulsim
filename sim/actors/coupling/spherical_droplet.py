@@ -27,7 +27,7 @@ from pde.tools import spherical, expressions
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from .base import CouplingActorBase
+from ..base import ActorBase
 from ...elements import SphericalDropletsElement, FieldElementBase
 
 
@@ -259,7 +259,7 @@ class ShellCollection:
 ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 
 
-class SphericalDropletActor(CouplingActorBase):
+class SphericalDropletActor(ActorBase):
     """ an actor coupling spherical droplets to a field """
 
     parameters_default = [
@@ -328,7 +328,7 @@ class SphericalDropletActor(CouplingActorBase):
         ),
     ]
 
-    state_classes = (SphericalDropletsElement, FieldElementBase)
+    element_classes = (SphericalDropletsElement, FieldElementBase)
 
     def _parse_equilibrium_concentration(
         self, out: Dict[str, Any] = None

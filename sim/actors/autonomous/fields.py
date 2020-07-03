@@ -26,12 +26,11 @@ from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
 from pde.tools.parameters import Parameter
 
-from .base import AutonomousActorBase
-from ..base import ElementsType
+from ..base import ActorBase, ElementsType
 from ...elements import MeanfieldElement, ScalarFieldElement
 
 
-class MeanfieldActor(AutonomousActorBase):
+class MeanfieldActor(ActorBase):
     """ actor simulating mean field chemical reactions """
 
     parameters_default = [
@@ -45,7 +44,7 @@ class MeanfieldActor(AutonomousActorBase):
         ),
     ]
 
-    element_class: Type[MeanfieldElement] = MeanfieldElement
+    element_classes = (MeanfieldElement,)
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -108,10 +107,10 @@ class MeanfieldActor(AutonomousActorBase):
         element.data += dt * self._reaction(element.data, t)
 
 
-class ScalarFieldActorBase(AutonomousActorBase, metaclass=ABCMeta):
+class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
     """ base class for actors affecting discretized scalar fields """
 
-    element_class: Type[ScalarFieldElement] = ScalarFieldElement
+    element_classes = (ScalarFieldElement,)
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """ get the optimal time step for the simulation of the actor

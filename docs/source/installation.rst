@@ -57,6 +57,8 @@ features:
 Package      Usage                                      
 ===========  =========
 h5py         Storing data in the hierarchical file format
+networkx     Representing simulation as a graph
+pydot        Nicer plot of the graph representation
 pytest       Running tests
 sphinx       Building the documentation
 tqdm         Display progress bars during calculations

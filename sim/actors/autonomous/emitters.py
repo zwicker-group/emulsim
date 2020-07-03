@@ -11,12 +11,12 @@ import numpy as np
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from .base import AutonomousActorBase
+from ..base import ActorBase
 from ..base import ElementsType
 from ...elements.fields import FieldElementBase
 
 
-class EmittersActor(AutonomousActorBase):
+class EmittersActor(ActorBase):
     """ represents actor that emit mass into a field at defined positions """
 
     parameters_default = [
@@ -39,7 +39,7 @@ class EmittersActor(AutonomousActorBase):
         ),
     ]
 
-    state_class = FieldElementBase
+    element_classes = (FieldElementBase,)
 
     def __len__(self):
         """ int: return the number of dimensions """

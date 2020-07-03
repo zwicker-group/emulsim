@@ -20,7 +20,10 @@ ElementsType = Tuple[ElementBase, ...]
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """ represents a single actor, which affects one or more elements """
 
-    num_elements: int  # the number of elements this actor affects
+    element_classes: Tuple[Type[ElementBase], ...] = (ElementBase,)
+    """ tuple: defines the elements this actor handles and in what order they
+    need to be supplied. The default assumes a single generic element. If an
+    actor affects multiple elements, this values needs to be sepcified."""
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -37,6 +40,12 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         if not isinstance(other, self.__class__):
             return NotImplemented
         return objects_equal(self.info, other.info)
+
+    @property
+    def num_elements(self) -> int:
+        """ int: the number of elements this actor affects. This value is 
+        determined from the `element_classes` attribute """
+        return len(self.element_classes)
 
     @property
     def info(self) -> Dict[str, Any]:

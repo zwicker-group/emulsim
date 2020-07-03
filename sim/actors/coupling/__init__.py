@@ -10,6 +10,6 @@ Provides actors that affect multiple elements in a simulation.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .base import CouplingActorBase
+from .fields import FieldCouplingActor
 from .point_droplet import PointDropletActor
 from .spherical_droplet import SphericalDropletActor

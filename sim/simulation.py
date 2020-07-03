@@ -80,7 +80,11 @@ class Simulation:
         if isinstance(elements, str):
             elements = (elements,)
 
-        assert len(elements) == actor.num_elements
+        if len(elements) != actor.num_elements:
+            raise ValueError(
+                f"Actor {actor.__class__.__name__} expects "
+                f"{actor.num_elements} elements, but {len(elements)} were given."
+            )
         self.actors.append((elements, actor))
 
     def get_graph(self):
@@ -124,7 +128,7 @@ class Simulation:
 
         # draw all nodes
         node_color = [
-            "tab:blue" if name.startswith("element") else "tab:orange"
+            "tab:orange" if name.startswith("element") else "tab:blue"
             for name in graph.nodes
         ]
         kwargs.setdefault("node_size", 1000)
@@ -134,6 +138,44 @@ class Simulation:
         # label the nodes
         labels = {k: v["label"] for k, v in graph.nodes(data=True)}
         nx.draw_networkx_labels(graph, pos, labels)
+
+    def get_interacting_elements(self):
+        """ return a graph representation the interacting elements of a simulation
+        
+        Returns:
+            :class:`networkx.DiGraph`: A graph where all elements are represented as nodes
+            and their interactions are represented as edges.
+        """
+        from networkx import Graph
+
+        graph = Graph()
+
+        for name, element in self.state:
+            graph.add_node(name, element=element)
+
+        for names, actor in self.actors:
+            for i in range(len(names)):
+                for j in range(i + 1, len(names)):
+                    graph.add_edge(names[i], names[j], actor=actor)
+
+        return graph
+
+    def plot_interacting_elements(self, **kwargs) -> None:
+        """ plot all interacting elements as a graph """
+        import networkx as nx
+
+        graph = self.get_interacting_elements()
+
+        # determine the layout of the graph
+        try:
+            pos = nx.nx_pydot.pydot_layout(graph)
+        except ImportError:
+            pos = nx.spring_layout(graph)
+
+        # draw all nodes
+        kwargs.setdefault("with_labels", True)
+        kwargs.setdefault("node_color", "tab:orange")
+        nx.draw(graph, pos, **kwargs)
 
     def estimate_dt(self, state: State = None) -> float:
         """ get the optimal time step for the simulation

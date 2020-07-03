@@ -31,6 +31,7 @@ def test_simulation():
 
     if module_available("networkx"):
         simulation.plot_as_graph()
+        simulation.plot_interacting_elements()
 
     # run simulation
     simulation.run(t_range=10)

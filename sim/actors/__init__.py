@@ -5,6 +5,7 @@ state of elements in time.
 .. autosummary::
    :nosignatures:
 
+   ActorBase
    ~autonomous.fields.MeanfieldActor
    ~autonomous.fields.ScalarPDEActor
    ~autonomous.fields.DiffusionActor
@@ -16,5 +17,6 @@ state of elements in time.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from .base import ActorBase
 from .autonomous import *
 from .coupling import *

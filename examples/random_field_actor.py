@@ -5,12 +5,10 @@ import numba as nb
 
 from pde import UnitGrid
 import sim
-from sim.actors.autonomous.base import AutonomousActorBase
 
 
-class RandomFieldActor(AutonomousActorBase):
+class RandomFieldActor(sim.ActorBase):
     """ actor that sets a new random field each time step """
-
 
     def evolve(self, elements, t, dt):
         # mandatory python implementation of the background evolution

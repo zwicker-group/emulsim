@@ -81,7 +81,7 @@ class SphericalDropletsElement(ElementBase):
         # create class without calling its __init__
         obj = cls.__new__(cls)
         # call the parent __init__
-        super(cls, obj).__init__(None, parameters=parameters)
+        ElementBase.__init__(obj, None, parameters=parameters)
 
         # initialize droplets
         obj.droplets = Emulsion(droplets, copy=copy)

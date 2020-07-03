@@ -13,7 +13,6 @@ Provides actors that affect single elements in a simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .base import AutonomousActorBase
 from .fields import (
     MeanfieldActor,
     ScalarPDEActor,
