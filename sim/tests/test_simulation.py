@@ -2,8 +2,9 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from droplets import SphericalDroplet
+import pytest
 
+from droplets import SphericalDroplet
 from pde import UnitGrid, ScalarField
 from pde.tools.misc import module_available
 
@@ -23,6 +24,11 @@ def test_simulation():
     # setup simulation
     simulation = Simulation(state, actors=[("background", DiffusionActor())])
     simulation.add_actor(("droplets", "background"), SphericalDropletActor())
+
+    with pytest.raises(ValueError):
+        simulation.add_actor("nonsense", DiffusionActor())
+    with pytest.raises(ValueError):
+        simulation.add_actor(("background", "background"), DiffusionActor())
 
     assert isinstance(str(simulation), str)
     assert isinstance(repr(simulation), str)

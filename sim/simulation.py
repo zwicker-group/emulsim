@@ -85,6 +85,11 @@ class Simulation:
                 f"Actor {actor.__class__.__name__} expects "
                 f"{actor.num_elements} elements, but {len(elements)} were given."
             )
+
+        for element in elements:
+            if element not in self.state.elements:
+                raise ValueError(f'Element "{element}" is not in state')
+
         self.actors.append((elements, actor))
 
     def get_graph(self):

@@ -167,6 +167,38 @@ class State:
         """ int: the number of degrees of freedom of the simulation """
         return sum(element.degrees_of_freedom for element in self.elements.values())
 
+    def get_quantity(self, property_name: str, total: bool = True):
+        """ returns quantities obtained from the elements
+        
+        Quantities are typically implemented as properties or attributes. If
+        an element does not have a property, it is silently ignored and not
+        included in the result.
+        
+        Args:
+            property_name (str):
+                The name of the property or attribute that is analyzed
+            total (bool):
+                Flag determining whether the sum of all values is returned.
+        
+        Returns:
+            float or dict: A total value is returned if total is `True`.
+            Otherwise, the value for each element is returned in a dictionary.
+        """
+        if total:
+            # return the sum over all properties
+            return sum(
+                getattr(element, property_name)
+                for element in self.elements.values()
+                if hasattr(element, property_name)
+            )
+        else:
+            # return a dictionary with the quantity result
+            result: Dict[str, Any] = {}
+            for element_name, element in self:
+                if hasattr(element, property_name):
+                    result[element_name] = getattr(element, property_name)
+            return result
+
     @plot_on_axes()
     def plot(self, ax, element_args: Dict[str, Any] = None, **kwargs):
         r""" visualize the state
