@@ -7,7 +7,15 @@ Provides a class representing the full system state of multiple elements
 import json
 import logging
 from collections import OrderedDict, defaultdict
-from typing import Any, Dict, Optional, Sequence, Tuple, Union  # @UnusedImport
+from typing import (
+    Any,
+    Dict,
+    Optional,  # @UnusedImport
+    Sequence,
+    Tuple,
+    Union,
+    Iterable,
+)
 
 from pde.grids.base import DimensionError
 from pde.tools.misc import hdf_write_attributes
@@ -200,13 +208,21 @@ class State:
             return result
 
     @plot_on_axes()
-    def plot(self, ax, element_args: Dict[str, Any] = None, **kwargs):
+    def plot(
+        self,
+        ax,
+        element_args: Dict[str, Any] = None,
+        ignore_elements: Iterable[str] = None,
+        **kwargs,
+    ):
         r""" visualize the state
          
         Args:
             element_args (dict):
                 A dictionary with arguments passed to the plotting functions of
                 individual elements
+            ignore_elements (list):
+                A list of elements that will not be plotted.
             {PLOT_ARGS}
             **kwargs:
                 All additional arguments are passed to all plotting functions
@@ -217,6 +233,8 @@ class State:
         else:
             element_args = defaultdict(dict)
 
+        ignore_elements = set([] if ignore_elements is None else ignore_elements)
+
         # initialize the bounding box
         from matplotlib.transforms import Bbox
 
@@ -224,9 +242,10 @@ class State:
 
         # plot all elements individually
         for name, element in self:
-            element.plot(ax=ax, **element_args[name], **kwargs)
-            # keep track of the maximal bounding box
-            limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
+            if name not in ignore_elements:
+                element.plot(ax=ax, **element_args[name], **kwargs)
+                # keep track of the maximal bounding box
+                limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
 
         # set the bounding box to the maximal value
         ax.set_xlim(*limits.intervalx)

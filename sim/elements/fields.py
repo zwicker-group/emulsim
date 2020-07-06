@@ -60,6 +60,11 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """ float: the total material amount in the field """
         pass
 
+    @property
+    def average_concentration(self) -> float:
+        """ float: the average material concentration in the field """
+        return self.total_amount / self.volume
+
     @abstractmethod
     def get_concentration(self, points):
         """ determine concentration at the given points
@@ -198,18 +203,19 @@ class MeanfieldElement(FieldElementBase):
                 color specifications are allowed.
             {PLOT_ARGS}
         """
-        if self.dim != 2:
-            raise RuntimeError("Can only plot data in two dimensions.")
-
         # create the rectangle representing the background
         from matplotlib import patches
 
         rect = patches.Rectangle(
-            self._cuboid.pos, *self._cuboid.size, edgecolor="none", facecolor=color
+            self._cuboid.pos[:2],
+            *self._cuboid.size[:2],
+            edgecolor="none",
+            facecolor=color,
         )
         ax.add_patch(rect)
         ax.set_xlim(*self.bounds[0])
         ax.set_ylim(*self.bounds[1])
+        ax.set_aspect(1)
 
     def get_concentration(self, points: np.ndarray):
         """ determine concentration at the given points

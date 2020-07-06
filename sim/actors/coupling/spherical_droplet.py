@@ -471,17 +471,15 @@ class SphericalDropletActor(ActorBase):
         elif self._cache["dim"] == 2:
             # flux for 2d droplet
             log1pLR = np.log1p(L / radius)
-            term = 4 * D * (cEqOut - c_far) + sOut * (
-                2 * radius ** 2 * log1pLR - L * (L + 2 * radius)
-            )
-            return (π / 2) * term / log1pLR  # type: ignore
+            term_diff = 4 * D * (cEqOut - c_far)
+            term_react = sOut * (2 * radius ** 2 * log1pLR - L * (L + 2 * radius))
+            return (π / 2) * (term_diff + term_react) / log1pLR  # type: ignore
 
         elif self._cache["dim"] == 3:
             # flux for 3d droplet
-            term = 2 * D * (1 + radius / L) * (cEqOut - c_far) - sOut * L * (
-                L / 3 + radius
-            )
-            return 2 * π * radius * term  # type: ignore
+            term_diff = 2 * D * (1 + radius / L) * (cEqOut - c_far)
+            term_react = -sOut * L * (L / 3 + radius)
+            return 2 * π * radius * (term_diff + term_react)  # type: ignore
 
         else:
             raise NotImplementedError("Unsupported dimension: " f"{self._cache['dim']}")
@@ -541,9 +539,9 @@ class SphericalDropletActor(ActorBase):
                     """ flux for 2d droplet with reaction """
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
                     log1pLR = float(np.log1p(L / R))
-                    term1 = 4 * D * (cEqOut - c_far)
-                    term2 = rate * (2 * R ** 2 * log1pLR - L * (L + 2 * R))
-                    return (π / 2) * (term1 + term2) / log1pLR
+                    term_diff = 4 * D * (cEqOut - c_far)
+                    term_react = rate * (2 * R ** 2 * log1pLR - L * (L + 2 * R))
+                    return (π / 2) * (term_diff + term_react) / log1pLR
 
         elif self._cache["dim"] == 3:
             if no_reaction:
@@ -561,9 +559,9 @@ class SphericalDropletActor(ActorBase):
                 ) -> float:
                     """ flux for 3d droplet with reaction """
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
-                    term1 = 2 * D * (1 + R / L) * (cEqOut - c_far)
-                    term2 = rate * L * (L / 3 + R)
-                    return 2 * π * R * (term1 - term2)
+                    term_diff = 2 * D * (1 + R / L) * (cEqOut - c_far)
+                    term_react = -rate * L * (L / 3 + R)
+                    return 2 * π * R * (term_diff + term_react)
 
         else:
             raise NotImplementedError("Unsupported dimension: " f"{self._cache['dim']}")

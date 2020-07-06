@@ -22,6 +22,8 @@ from pde.tools.numba import jit
 from .actors.base import ActorBase
 from .state import State
 
+_logger = logging.getLogger(__name__)
+
 
 class Simulation:
     """ Class defining the simulation state """
@@ -129,6 +131,7 @@ class Simulation:
         try:
             pos = nx.nx_pydot.pydot_layout(graph)
         except ImportError:
+            _logger.warning("Suboptimal graph layout since `pydot` is not available")
             pos = nx.spring_layout(graph)
 
         # draw all nodes
@@ -287,7 +290,8 @@ class Simulation:
         dt: float = None,
         tracker: TrackerCollectionDataType = ["progress"],
         backend: str = "auto",
-    ) -> State:
+        ret_info: bool = False,
+    ) -> Union[State, Tuple[State, Dict[str, Any]]]:
         """ run the simulation to advance the state in time 
         
         Args:
@@ -308,14 +312,27 @@ class Simulation:
                 Determines how the function is created. Accepted  values are
                 'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
                 for the most optimal backend.
+            ret_info (bool):
+                Flag determining whether diagnostic information about the solver
+                process should be returned.
             
         Returns:
             :class:`SimulationState`:
-                The state of the simulation at the last time point 
+                The state of the simulation at the last time point. In the case
+                `ret_info == True`, a tuple with the final state and a
+                dictionary with additional information is returned.
         """
         solver = SimulationSolver(self, backend=backend)
         controller = Controller(solver, t_range=t_range, tracker=tracker)
-        return controller.run(self.state, dt)  # type: ignore
+        final_state = controller.run(self.state, dt)
+
+        if ret_info:
+            info = controller.info.copy()
+            info.pop("solver_class")  # remove redundant information
+            info["solver"] = solver.info.copy()
+            return final_state, info
+        else:
+            return final_state  # type: ignore
 
 
 class SimulationSolver(SolverBase):
