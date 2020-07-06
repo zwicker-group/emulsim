@@ -5,7 +5,7 @@
 import pytest
 
 from droplets import SphericalDroplet
-from pde import UnitGrid, ScalarField
+from pde import ScalarField, UnitGrid
 from pde.tools.misc import module_available
 
 from .. import *

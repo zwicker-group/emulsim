@@ -5,14 +5,14 @@ Provides an actor coupling two or more fields
 """
 
 from collections import OrderedDict
-from typing import Callable, Dict, Any
+from typing import Any, Callable, Dict
 
 from pde.tools.expressions import ScalarExpression
-from pde.tools.parameters import Parameter
 from pde.tools.numba import jit
+from pde.tools.parameters import Parameter
 
-from ..base import ActorBase, ElementsType
 from ...elements import FieldElementBase
+from ..base import ActorBase, ElementsType
 
 
 class FieldCouplingActor(ActorBase):

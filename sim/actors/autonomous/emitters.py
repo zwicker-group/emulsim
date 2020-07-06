@@ -4,16 +4,15 @@ Provides a simple actor that emit mass into a field a predefined positions
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Dict, Any, Type, Union, Tuple  # @UnusedImport
+from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
 
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ..base import ActorBase
-from ..base import ElementsType
 from ...elements.fields import FieldElementBase
+from ..base import ActorBase, ElementsType
 
 
 class EmittersActor(ActorBase):

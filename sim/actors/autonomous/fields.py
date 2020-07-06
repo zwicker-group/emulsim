@@ -14,20 +14,20 @@ Provides actors that influence scalar fields
 
 
 import inspect
-from abc import abstractmethod, ABCMeta
-from typing import Dict, Any, Callable, Type, Tuple  # @UnusedImport
+from abc import ABCMeta, abstractmethod
+from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
 
-import numpy as np
 import numba as nb
+import numpy as np
 
 from pde.pdes.base import PDEBase
-from pde.tools.numba import jit
 from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
+from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ..base import ActorBase, ElementsType
 from ...elements import MeanfieldElement, ScalarFieldElement
+from ..base import ActorBase, ElementsType
 
 
 class MeanfieldActor(ActorBase):

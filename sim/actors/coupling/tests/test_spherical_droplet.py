@@ -3,16 +3,16 @@
 """
 
 
-import pytest
 import numpy as np
+import pytest
 
-from pde import UnitGrid, ScalarField
+from droplets import Emulsion, SphericalDroplet
+from pde import ScalarField, UnitGrid
 from pde.grids.base import DimensionError
-from droplets import SphericalDroplet, Emulsion
 
-from ..spherical_droplet import SphericalDropletActor, ShellCollection
+from .... import Simulation, State
 from ....elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
-from .... import State, Simulation
+from ..spherical_droplet import ShellCollection, SphericalDropletActor
 
 
 def recarrays_allclose(a, b):

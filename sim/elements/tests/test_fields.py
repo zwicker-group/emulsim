@@ -4,8 +4,8 @@ Test generic elements functionality
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from pde import CartesianGrid, UnitGrid
 

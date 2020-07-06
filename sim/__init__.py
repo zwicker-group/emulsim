@@ -8,8 +8,8 @@ introducing couplings.
 
 __version__ = "0.1"
 
-from .elements import *
-from .state import State
 from .actors import *
+from .elements import *
 from .simulation import Simulation
+from .state import State
 from .trackers import *

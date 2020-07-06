@@ -4,18 +4,18 @@ Test generic elements functionality
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import pytest
 import numpy as np
+import pytest
 
-from pde import UnitGrid, ScalarField
-from pde.tools.misc import skipUnlessModule
 from droplets import SphericalDroplet
+from pde import ScalarField, UnitGrid
+from pde.tools.misc import skipUnlessModule
 
 from .. import (
-    PointsElement,
-    SphericalDropletsElement,
     MeanfieldElement,
+    PointsElement,
     ScalarFieldElement,
+    SphericalDropletsElement,
     element_from_file,
 )
 

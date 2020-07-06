@@ -6,8 +6,8 @@ Provides a class representing the full system state of multiple elements
 
 import json
 import logging
-from typing import Any, Dict, Union, Sequence, Tuple, Optional  # @UnusedImport
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
+from typing import Any, Dict, Optional, Sequence, Tuple, Union  # @UnusedImport
 
 from pde.grids.base import DimensionError
 from pde.tools.misc import hdf_write_attributes

@@ -10,17 +10,17 @@ Provides elements that represent extended, discretized fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from abc import abstractmethod, abstractproperty, ABCMeta
-from typing import Dict, Any, Sequence, Tuple, Callable
+from abc import ABCMeta, abstractmethod, abstractproperty
+from typing import Any, Callable, Dict, Sequence, Tuple
 
-import numpy as np
 import numba as nb
+import numpy as np
 
-from pde.grids.cartesian import CartesianGridBase, GridBase
 from pde.fields import ScalarField
 from pde.grids import CartesianGrid
-from pde.tools.parameters import Parameter
+from pde.grids.cartesian import CartesianGridBase, GridBase
 from pde.tools.cuboid import Cuboid
+from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 
 from .base import ElementBase
@@ -284,7 +284,7 @@ class ScalarFieldElement(FieldElementBase):
             "its extension.",
             extra={
                 "serializer": lambda grid: grid.state_serialized,
-                "unserializer": lambda state: GridBase.from_state(state),
+                "unserializer": GridBase.from_state,
             },
         ),
         Parameter("label", "", str, "The name of the field"),

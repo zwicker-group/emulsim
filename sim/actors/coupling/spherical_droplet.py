@@ -15,21 +15,20 @@ local size compared to all other shell sectors.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Dict, Any, Callable, Sequence, Tuple
 import warnings
+from typing import Any, Callable, Dict, Sequence, Tuple
 
-import numpy as np
 import numba as nb
+import numpy as np
 
 from pde import ScalarField
 from pde.grids.base import DimensionError
-from pde.tools import spherical, expressions
+from pde.tools import expressions, spherical
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
+from ...elements import FieldElementBase, SphericalDropletsElement
 from ..base import ActorBase
-from ...elements import SphericalDropletsElement, FieldElementBase
-
 
 π = float(np.pi)
 

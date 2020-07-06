@@ -4,7 +4,7 @@ Provides an element that represents a collection of points
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 

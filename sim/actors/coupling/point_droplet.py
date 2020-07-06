@@ -11,12 +11,11 @@ import numpy as np
 from pde.grids.base import DimensionError
 from pde.tools import spherical
 from pde.tools.expressions import ScalarExpression
-from pde.tools.parameters import Parameter
 from pde.tools.numba import jit
+from pde.tools.parameters import Parameter
 
+from ...elements import FieldElementBase, SphericalDropletsElement
 from ..base import ActorBase
-from ...elements import SphericalDropletsElement, FieldElementBase
-
 
 ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 

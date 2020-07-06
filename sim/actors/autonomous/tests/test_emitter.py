@@ -7,8 +7,8 @@ import pytest
 
 from pde.grids import UnitGrid
 
-from .. import EmittersActor
 from ....elements import MeanfieldElement
+from .. import EmittersActor
 
 
 def test_emitters():

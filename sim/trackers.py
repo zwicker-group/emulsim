@@ -10,13 +10,13 @@ Provides classes that track simulation results
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Union
 import logging
+from typing import Union
 
-from pde.fields.base import FieldBase, GridBase
-from pde.trackers.base import TrackerBase, IntervalData, InfoDict
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
+from pde.fields.base import FieldBase, GridBase
+from pde.trackers.base import InfoDict, IntervalData, TrackerBase
 
 from .simulation import State
 

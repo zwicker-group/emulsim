@@ -4,15 +4,14 @@ Supplies the base class for actors
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Dict, Any, Type, Callable, Tuple  # @UnusedImport
 import logging
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
+from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
 
-from pde.tools.parameters import Parameterized
 from pde.tools.cache import objects_equal
+from pde.tools.parameters import Parameterized
 
 from ..elements import ElementBase
-
 
 ElementsType = Tuple[ElementBase, ...]
 

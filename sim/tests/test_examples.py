@@ -5,16 +5,15 @@
 
 import glob
 import os
-import sys
 import subprocess as sp
-from typing import List  # @UnusedImport
+import sys
 from pathlib import Path
+from typing import List  # @UnusedImport
 
-import pytest
 import numba as nb
+import pytest
 
 from pde.tools.misc import module_available
-
 
 PACKAGEPATH = Path(__file__).parents[2].resolve()
 EXAMPLE_PATH = PACKAGEPATH / "examples"

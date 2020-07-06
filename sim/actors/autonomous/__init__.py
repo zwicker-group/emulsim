@@ -13,10 +13,10 @@ Provides actors that affect single elements in a simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .fields import (
-    MeanfieldActor,
-    ScalarPDEActor,
-    DiffusionActor,
-    ReactionDiffusionActor,
-)
 from .emitters import EmittersActor
+from .fields import (
+    DiffusionActor,
+    MeanfieldActor,
+    ReactionDiffusionActor,
+    ScalarPDEActor,
+)

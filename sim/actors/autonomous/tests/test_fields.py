@@ -2,18 +2,18 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import pytest
 import numpy as np
+import pytest
 
-from pde import UnitGrid, CartesianGrid, ScalarField, DiffusionPDE
+from pde import CartesianGrid, DiffusionPDE, ScalarField, UnitGrid
 from pde.tools.misc import skipUnlessModule
 
-from ....elements import ScalarFieldElement, MeanfieldElement
+from ....elements import MeanfieldElement, ScalarFieldElement
 from ..fields import (
-    MeanfieldActor,
-    ScalarPDEActor,
     DiffusionActor,
+    MeanfieldActor,
     ReactionDiffusionActor,
+    ScalarPDEActor,
 )
 
 

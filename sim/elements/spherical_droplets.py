@@ -4,12 +4,12 @@ Provides a simulation element representing spherical droplets
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 
+from droplets import Emulsion, SphericalDroplet
 from pde.tools.parameters import Parameter
-from droplets import SphericalDroplet, Emulsion
 
 from .base import ElementBase
 

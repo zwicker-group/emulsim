@@ -11,10 +11,4 @@ TODO
   to a file (for documentation purposes)
 * Simulation:
 	Add diagnostic information (dt, step_count, degrees of freedom)
-* Improve analysis and post-processing
-    # analysis
-    result.get_quantity('total_amount')
-    result.plot()
-    result.to_file('result.hdf5')
-    
-    loaded = State.from_file('result.hdf5')
+ 

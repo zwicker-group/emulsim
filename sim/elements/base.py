@@ -5,16 +5,15 @@ Module defining the abstract base class of elements
 """
 
 import copy
-import logging
 import json
-from typing import Dict, Any, Type, Callable, Union  # @UnusedImport
+import logging
 from abc import ABCMeta
+from typing import Any, Callable, Dict, Type, Union  # @UnusedImport
 
 import numpy as np
 
-from pde.tools.parameters import Parameterized
 from pde.tools.cache import objects_equal
-
+from pde.tools.parameters import Parameterized
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -120,7 +119,16 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         # serialize all remaining attributes
         attributes = self.attributes
         attributes["parameters"] = parameters
-        return {key: json.dumps(value) for key, value in attributes.items()}
+
+        result = {}
+        for key, value in attributes.items():
+            try:
+                result[key] = json.dumps(value)
+            except TypeError as e:
+                raise TypeError(
+                    f'Attribute "{key}" of "{self.__class__.__name__}" cannot be serialized'
+                ) from e
+        return result
 
     @classmethod
     def unserialize_attributes(cls, attributes: Dict[str, str]) -> Dict[str, Any]:

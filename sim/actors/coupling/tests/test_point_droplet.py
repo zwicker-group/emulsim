@@ -3,15 +3,15 @@
 """
 
 
-import pytest
 import numpy as np
+import pytest
 
+from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
 from pde.grids.base import DimensionError
-from droplets import SphericalDroplet, Emulsion
 
-from ..point_droplet import PointDropletActor
 from ....elements import MeanfieldElement, SphericalDropletsElement
+from ..point_droplet import PointDropletActor
 
 
 @pytest.mark.parametrize("dim", [3])

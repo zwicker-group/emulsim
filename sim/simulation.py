@@ -11,12 +11,12 @@ Provides a class representing the full simulation
 """
 
 import logging
-from typing import Callable, Any, Dict, Union, List, Tuple  # @UnusedImport
+from typing import Any, Callable, Dict, List, Tuple, Union  # @UnusedImport
 
 import numpy as np
 
 from pde.solvers.base import SolverBase
-from pde.solvers.controller import Controller, TRangeType, TrackerCollectionDataType
+from pde.solvers.controller import Controller, TrackerCollectionDataType, TRangeType
 from pde.tools.numba import jit
 
 from .actors.base import ActorBase

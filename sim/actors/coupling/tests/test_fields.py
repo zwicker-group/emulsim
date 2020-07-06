@@ -3,13 +3,13 @@
 """
 
 
-import pytest
 import numpy as np
+import pytest
 
-from pde import UnitGrid, ScalarField
+from pde import ScalarField, UnitGrid
 
-from ..fields import FieldCouplingActor
 from ....elements import MeanfieldElement, ScalarFieldElement
+from ..fields import FieldCouplingActor
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])

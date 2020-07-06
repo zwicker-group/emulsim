@@ -6,8 +6,8 @@ import pytest
 
 from pde.tools.misc import skipUnlessModule
 
-from ..state import State
 from ..elements.tests.test_generic import generate_elements
+from ..state import State
 
 
 @pytest.mark.parametrize("dim", [1, 2])
@@ -30,6 +30,14 @@ def test_state(dim):
     name = list(s.elements.keys())[0]
     assert name in s
     assert s[name] is s.elements[name]
+
+    # test get_quantities
+    quantities = s.get_quantity("total_amount", total=False)
+    quantity_els = [name for name, element in s if hasattr(element, "total_amount")]
+    assert set(quantities.keys()) == set(quantity_els)
+    assert s.get_quantity("total_amount", total=True) > 0
+    assert len(s.get_quantity("nonsense", total=False)) == 0
+    assert s.get_quantity("nonsense", total=True) == 0
 
     if dim == 2:
         s.plot()
