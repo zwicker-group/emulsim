@@ -55,11 +55,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """ returns a copy the actor """
         return self.__class__(self.parameters.copy())
 
-    def estimate_dt(self, element_states: ElementsType) -> float:
+    def estimate_dt(self, elements: ElementsType) -> float:
         """ estimate the maximal time step for simulating this actor 
         
         Args:
-            element_states (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -67,29 +67,29 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def _check_cache(self, element_states: ElementsType) -> None:
+    def _check_cache(self, elements: ElementsType) -> None:
         """ checks whether the simulation needs to run :meth:`_update_cache`.
         
         Subclasses can defined `_update_cache` to populate `self._cache` with
         pre-computed data, which is then available in later.
         
         Args:
-            element_states (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
         """
         if hasattr(self, "_update_cache"):
             # the class uses a cache internally
-            state_attributes = tuple(el.attributes for el in element_states)
+            state_attributes = tuple(el.attributes for el in elements)
             if not objects_equal(self._cache.get("state_attributes"), state_attributes):
                 # the cache is out-of-date
-                self._update_cache(element_states)  # type: ignore
+                self._update_cache(elements)  # type: ignore
                 self._cache["state_attributes"] = state_attributes
 
-    def make_evolver_numba(self, element_states: ElementsType) -> Callable:
+    def make_evolver_numba(self, elements: ElementsType) -> Callable:
         """ return a function evolve the state from time `t` to `t + dt`
         
         Args:
-            *element_states (tuple of :class:`~sim.elements.base.ElementBase`):
+            *elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -100,11 +100,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def evolve(self, element_states: ElementsType, t: float, dt: float):
+    def evolve(self, elements: ElementsType, t: float, dt: float):
         """ evolve the state from time `t` to `t + dt`
         
         Args:
-            element_states (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point

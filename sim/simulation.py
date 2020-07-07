@@ -90,7 +90,7 @@ class Simulation:
 
         for element in elements:
             if element not in self.state.elements:
-                raise ValueError(f'Element "{element}" is not in state')
+                raise ValueError(f'No element "{element}" in state')
 
         self.actors.append((elements, actor))
 
