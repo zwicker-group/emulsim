@@ -2,13 +2,14 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import numpy as np
 from typing import Callable, Tuple
 
-from pde.tools.numba import jit
-from pde.tools import spherical
-from ...elements import SphericalDropletsElement
+import numpy as np
 
+from pde.tools import spherical
+from pde.tools.numba import jit
+
+from ...elements import SphericalDropletsElement
 from ..base import ActorBase, ElementsType
 
 
@@ -52,10 +53,15 @@ class CoalescenceDropletActor(ActorBase):
                 for drop2 in indices[i + 1 :]:
                     dist = np.linalg.norm(data[drop1].position - data[drop2].position)
                     if dist < radii[drop1] + radii[drop2]:  # overlapping droplets
-                        vol = volume(data[drop1].radius) + volume(data[drop2].radius)
-                        data[drop1].radius = 0  # remove first droplet
-                        data[drop2].radius = radius(vol)
-                        # TODO: adjust position
+                        vol1 = volume(data[drop1].radius)
+                        vol2 = volume(data[drop2].radius)
+                        vol_tot = vol1 + vol2
+                        data[drop1].radius = 0
+                        data[drop2].radius = radius(vol_tot)
+                        # adjust droplet position
+                        pos1 = data[drop1].position
+                        pos2 = data[drop2].position
+                        data[drop2].position[:] = (vol1 * pos1 + vol2 * pos2) / vol_tot
                         break
 
         return evolver  # type: ignore
@@ -87,8 +93,13 @@ class CoalescenceDropletActor(ActorBase):
             for drop2 in indices[i + 1 :]:
                 dist = np.linalg.norm(positions[drop1] - positions[drop2])
                 if dist < radii[drop1] + radii[drop2]:  # overlapping droplets
-                    vol = droplets[drop1].volume + droplets[drop2].volume
+                    vol1 = droplets[drop1].volume
+                    vol2 = droplets[drop2].volume
+                    vol_tot = vol1 + vol2
                     droplets[drop1].radius = 0  # remove first droplet
-                    droplets[drop2].volume = vol
-                    # TODO: adjust position
+                    droplets[drop2].volume = vol_tot
+                    # adjust droplet position
+                    pos1 = positions[drop1]
+                    pos2 = positions[drop2]
+                    droplets[drop2].position = (vol1 * pos1 + vol2 * pos2) / vol_tot
                     break

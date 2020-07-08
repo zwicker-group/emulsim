@@ -2,12 +2,13 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from pde.tools.misc import skipUnlessModule
+
+from .... import Simulation, State
 from .. import CoalescenceDropletActor
-from .... import State, Simulation
 
 
 @skipUnlessModule("droplets")

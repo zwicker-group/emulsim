@@ -5,6 +5,7 @@ Provides actors that affect single elements in a simulation
    :nosignatures:
 
    ~brownian_motion.BrownianMotionPointActor
+   ~brownian_motion.BrownianMotionDropletActor
    ~coalescence.CoalescenceDropletActor
    ~fields.MeanfieldActor
    ~fields.ScalarPDEActor
@@ -15,7 +16,7 @@ Provides actors that affect single elements in a simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .brownian_motion import BrownianMotionPointActor, BrownianMotionDropletActor
+from .brownian_motion import BrownianMotionDropletActor, BrownianMotionPointActor
 from .coalescence import CoalescenceDropletActor
 from .emitters import EmittersActor
 from .fields import (

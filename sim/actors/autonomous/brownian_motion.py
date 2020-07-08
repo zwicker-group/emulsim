@@ -1,15 +1,17 @@
 """
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
-import numpy as np
-import numba as nb
+
 from typing import Callable, Tuple
 
-from pde.tools.parameters import Parameter
-from pde.tools.numba import jit
-from pde.tools.expressions import ScalarExpression
-from ...elements import PointsElement, SphericalDropletsElement
+import numba as nb
+import numpy as np
 
+from pde.tools.expressions import ScalarExpression
+from pde.tools.numba import jit
+from pde.tools.parameters import Parameter
+
+from ...elements import PointsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType
 
 
@@ -132,9 +134,10 @@ class BrownianMotionDropletActor(ActorBase):
             """ evolve all points explicitly """
             (droplets_data,) = state_data
             for droplet_data in droplets_data:
-                scale = np.sqrt(dt * diffusivity(droplet_data.radius, t))
-                for i in range(dim):
-                    droplet_data.position[i] += scale * np.random.randn()
+                if droplet_data.radius > 0:
+                    scale = np.sqrt(dt * diffusivity(droplet_data.radius, t))
+                    for i in range(dim):
+                        droplet_data.position[i] += scale * np.random.randn()
 
         return evolver  # type: ignore
 
@@ -155,5 +158,6 @@ class BrownianMotionDropletActor(ActorBase):
         dim = droplets.dim
 
         for droplet in droplets.droplets:  # type: ignore
-            scale = np.sqrt(dt * diffusivity(droplet.radius, t))
-            droplet.position += scale * np.random.randn(dim)
+            if droplet.radius > 0:
+                scale = np.sqrt(dt * diffusivity(droplet.radius, t))
+                droplet.position += scale * np.random.randn(dim)

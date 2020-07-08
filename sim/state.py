@@ -7,15 +7,8 @@ Provides a class representing the full system state of multiple elements
 import json
 import logging
 from collections import OrderedDict, defaultdict
-from typing import (
-    Any,
-    Dict,
-    Optional,  # @UnusedImport
-    Sequence,
-    Tuple,
-    Union,
-    Iterable,
-)
+from typing import Optional  # @UnusedImport
+from typing import Any, Dict, Iterable, Sequence, Tuple, Union
 
 from pde.grids.base import DimensionError
 from pde.tools.misc import hdf_write_attributes

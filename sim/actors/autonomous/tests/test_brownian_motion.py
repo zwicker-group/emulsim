@@ -6,8 +6,9 @@
 import numpy as np
 
 from pde.tools.misc import skipUnlessModule
+
 from ....elements import PointsElement
-from .. import BrownianMotionPointActor, BrownianMotionDropletActor
+from .. import BrownianMotionDropletActor, BrownianMotionPointActor
 
 
 def test_brownian_motion_points():

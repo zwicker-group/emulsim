@@ -5,7 +5,10 @@ state of elements in time.
 .. autosummary::
    :nosignatures:
 
-   ActorBase
+   ~base.ActorBase
+   ~autonomous.brownian_motion.BrownianMotionPointActor
+   ~autonomous.brownian_motion.BrownianMotionDropletActor
+   ~autonomous.coalescence.CoalescenceDropletActor
    ~autonomous.fields.MeanfieldActor
    ~autonomous.fields.ScalarPDEActor
    ~autonomous.fields.DiffusionActor
