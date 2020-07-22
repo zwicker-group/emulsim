@@ -1,7 +1,7 @@
 TODO
 ====
 * Allow adding (periodic) boundaries for Brownian motion
-* Add option of creating actor from factor function.
+* Add option of creating actor from factory function.
     - The function would receive the elements and return an evolver
     - This factor function could be directly used in `add_actor` 
 * Improve plotting
