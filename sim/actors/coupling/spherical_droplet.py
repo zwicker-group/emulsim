@@ -20,7 +20,6 @@ from typing import Any, Callable, Dict, Sequence, Tuple
 
 import numba as nb
 import numpy as np
-
 from pde import ScalarField
 from pde.grids.base import DimensionError
 from pde.tools import expressions, spherical

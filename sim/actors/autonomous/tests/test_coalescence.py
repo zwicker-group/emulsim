@@ -4,7 +4,6 @@
 
 import numpy as np
 import pytest
-
 from pde.tools.misc import skipUnlessModule
 
 from .... import Simulation, State
@@ -14,8 +13,9 @@ from .. import CoalescenceDropletActor
 @skipUnlessModule("droplets")
 def test_coalescence():
     """ simple test of droplet coalescence """
-    from ....elements import SphericalDropletsElement
     from droplets import SphericalDroplet
+
+    from ....elements import SphericalDropletsElement
 
     droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)

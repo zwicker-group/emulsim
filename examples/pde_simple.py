@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import sim
 from pde import DiffusionPDE, ScalarField, UnitGrid
+
+import sim
 
 # setup state
 field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))

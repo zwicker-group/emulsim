@@ -7,7 +7,6 @@ Provides an actor coupling point-like droplets to a field
 from typing import Callable, Tuple
 
 import numpy as np
-
 from pde.grids.base import DimensionError
 from pde.tools import spherical
 from pde.tools.expressions import ScalarExpression

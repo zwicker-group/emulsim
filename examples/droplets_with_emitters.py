@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import sim
 from droplets import SphericalDroplet
 from pde import UnitGrid
+
+import sim
 
 # setup state
 grid = UnitGrid([32, 32], periodic=True)

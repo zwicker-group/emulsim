@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+from droplets import SphericalDroplet
 from numba import jit
+from pde import CartesianGrid, ScalarField, UnitGrid
 
 import sim
-from droplets import SphericalDroplet
-from pde import CartesianGrid, ScalarField, UnitGrid
 
 # setup state
 grid = UnitGrid([32, 32], periodic=True)

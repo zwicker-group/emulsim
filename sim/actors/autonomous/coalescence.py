@@ -5,7 +5,6 @@
 from typing import Callable, Tuple
 
 import numpy as np
-
 from pde.tools import spherical
 from pde.tools.numba import jit
 

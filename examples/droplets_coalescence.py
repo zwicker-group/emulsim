@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
-
 import pde
-import sim
 from droplets import SphericalDroplet
+
+import sim
 
 # setup state
 droplets = [SphericalDroplet(50 * np.random.randn(2), 5) for i in range(100)]

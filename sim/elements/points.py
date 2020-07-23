@@ -7,7 +7,6 @@ Provides an element that represents a collection of points
 from typing import Any, Dict
 
 import numpy as np
-
 from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 
