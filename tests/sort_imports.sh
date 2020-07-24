@@ -1,1 +1,0 @@
-isort -y ../sim/**/*.py
