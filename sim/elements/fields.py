@@ -115,11 +115,10 @@ class MeanfieldElement(FieldElementBase):
         Parameter(
             "bounds",
             None,
-            description="Sets the size of the Cartesian space covered by "
-            "this element. This should be a list of tuples, "
-            "where each element denotes the lower and upper "
-            "bounds of an axis. The number of elements then "
-            "determines the dimension of the space",
+            description="Sets the size of the Cartesian space covered by this element. "
+            "This should be a list of tuples, where each element denotes the lower and "
+            "upper bounds of an axis. The number of elements then determines the "
+            "dimension of the space",
         )
     ]
 
@@ -284,9 +283,8 @@ class ScalarFieldElement(FieldElementBase):
         Parameter(
             "grid",
             None,
-            description="The grid on which the field is discretized. The "
-            "grid also determines the space dimension and "
-            "its extension.",
+            description="The grid on which the field is discretized. The grid also "
+            "determines the space dimension and its extension.",
             extra={
                 "serializer": lambda grid: grid.state_serialized,
                 "unserializer": GridBase.from_state,

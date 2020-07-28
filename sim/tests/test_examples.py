@@ -24,7 +24,7 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 def test_examples(path):
     """ runs an example script given by path """
     if path.endswith("active_droplets.py") and not module_available("phasesep"):
-        pytest.skip("The example active_droplets.py requires the `phasesep` " "package")
+        pytest.skip("The example active_droplets.py requires the `phasesep` package")
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PACKAGEPATH) + ":" + env.get("PYTHONPATH", "")

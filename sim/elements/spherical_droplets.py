@@ -23,8 +23,8 @@ class SphericalDropletsElement(ElementBase):
             "droplet_concentration",
             1,
             float,
-            "Concentration inside droplets that is used to calculate the "
-            "total amount of material in droplets",
+            "Concentration inside droplets that is used to calculate the total amount "
+            "of material in droplets",
         )
     ]
 
@@ -47,12 +47,8 @@ class SphericalDropletsElement(ElementBase):
             )
 
         super().__init__(None, parameters)
-        self.droplets = Emulsion(
-            [
-                self.droplet_class.from_data(data_row)  # type: ignore
-                for data_row in data
-            ]
-        )
+        droplets = [self.droplet_class.from_data(data_row) for data_row in data]
+        self.droplets = Emulsion(droplets)  # type: ignore
         if len(self.droplets) == 0:
             raise ValueError(
                 "At least a single droplet needs to be defined to "
@@ -87,10 +83,7 @@ class SphericalDropletsElement(ElementBase):
         for droplet in obj.droplets:
             if not isinstance(droplet, obj.droplet_class):
                 cls_name = droplet.__class__.__name__
-                raise ValueError(
-                    "DropletAgentsElement does not support droplets "
-                    f"of class `{cls_name}`"
-                )
+                raise ValueError(f"DropletAgentsElement does not support `{cls_name}`")
 
         obj.data = obj.droplets.get_linked_data()
         obj.dim = obj.droplets.dim

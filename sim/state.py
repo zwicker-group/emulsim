@@ -42,12 +42,9 @@ class State:
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
-        return cls(
-            {
-                name: element_from_hdf(dataset[name])
-                for name in json.loads(dataset.attrs["elements"])
-            }
-        )
+        element_names = json.loads(dataset.attrs["elements"])
+        elements = {name: element_from_hdf(dataset[name]) for name in element_names}
+        return cls(elements)
 
     @classmethod
     def from_file(cls, path: str) -> "State":
@@ -154,9 +151,12 @@ class State:
         """
         import h5py
 
+        if info is not None and "elements" in info:
+            self._logger.warning("`elements` entry of `info` will be overwritten")
+
         with h5py.File(filename, "w") as fp:
-            self._write_hdf_dataset(fp)
             hdf_write_attributes(fp, info)
+            self._write_hdf_dataset(fp)
 
     @property
     def data(self) -> Tuple[Any, ...]:

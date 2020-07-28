@@ -128,13 +128,12 @@ class ShellCollection:
         if dim == 1:
             # special case since only one shell exists
             shell = spherical.PointsOnSphere.make_uniform(dim=1)
-            data = [
-                {
-                    "vectors": shell.points,
-                    "weights": shell.get_area_weights(),
-                    "radius_threshold": np.inf,
-                }
-            ]
+            shell_data = {
+                "vectors": shell.points,
+                "weights": shell.get_area_weights(),
+                "radius_threshold": np.inf,
+            }
+            data = [shell_data]
 
         else:  # higher dimensions
             # estimate maximal sector area from linear sector size
@@ -168,13 +167,12 @@ class ShellCollection:
                 radius_thresh = spherical.radius_from_surface(surface_thresh, dim=dim)
                 weights = shell.get_area_weights(balance_axes=True)
 
-                data.append(
-                    {
-                        "vectors": shell.points,
-                        "weights": weights,
-                        "radius_threshold": radius_thresh,
-                    }
-                )
+                shell_data = {
+                    "vectors": shell.points,
+                    "weights": weights,
+                    "radius_threshold": radius_thresh,
+                }
+                data.append(shell_data)
                 sector_count_approx *= np.sqrt(2)
 
         return cls.from_dictlist(data, info_dict=info_dict)
@@ -221,8 +219,7 @@ class ShellCollection:
         i = np.searchsorted(self.max_radii, radius)
         if i >= len(self.max_radii):
             warnings.warn(
-                "Requested shell from collection for radius larger "
-                "than the prepared range."
+                "Shell with radius larger than the prepared range was requested"
             )
             i = len(self.max_radii) - 1
 
@@ -265,13 +262,12 @@ class SphericalDropletActor(ActorBase):
             "equilibrium_concentration",
             "1e-5 / radius",
             object,
-            "Expression for the equilibrium concentration. This "
-            "expression can contain the variables `radius` and "
-            "`position` denoting the droplet radius and its position "
-            "vector, respectively. Alternatively, the value can also be "
-            "an instance defining a __call__ method that returns the "
-            "equilibrium concentration and a `get_compiled` method that "
-            "returns a numba compiled function for calculating it.",
+            "Expression for the equilibrium concentration. This expression can contain "
+            "the variables `radius` and `position` denoting the droplet radius and its "
+            "position vector, respectively. Alternatively, the value can also be an "
+            "instance defining a __call__ method that returns the equilibrium "
+            "concentration and a `get_compiled` method that returns a numba compiled "
+            "function for calculating it.",
         ),
         Parameter(
             "diffusivity",
@@ -283,16 +279,15 @@ class SphericalDropletActor(ActorBase):
             "reaction_outside",
             "0",
             str,
-            "Reaction rate outside the droplet (in the shell region), "
-            "given as an expression that might depend on position and "
-            "the local concentration value.",
+            "Reaction rate outside the droplet (in the shell region), given as an "
+            "expression that can depend on position and the local concentration value",
         ),
         Parameter(
             "reaction_inside",
             "0",
             str,
-            "Reaction rate inside the droplet, given as an expression "
-            "that might depend on the location of the droplet.",
+            "Reaction rate inside the droplet, given as an expression that can depend "
+            "on the location of the droplet.",
         ),
         Parameter(
             "drift_enabled", True, bool, "Flag determining whether droplets can move"
@@ -301,28 +296,27 @@ class SphericalDropletActor(ActorBase):
             "shell_thickness",
             "1",
             str,
-            "The thickness of the shell around droplets. This can be "
-            "either a length in non-dimensional units or an expression "
-            "that can be parsed with sympy. In the latter case, the grid "
-            "discretization is available as the variable `dx`",
+            "The thickness of the shell around droplets. This can be either a length "
+            "in non-dimensional units or an expression that can be parsed with sympy. "
+            "In the latter case, the grid discretization is available as the variable "
+            "`dx`",
         ),
         Parameter(
             "shell_sector_size",
             "1",
             str,
-            "The typical azimuthal size of a shell sector. This can be "
-            "either a length in non-dimensional units or an expression "
-            "that can be parsed with sympy. In the latter case, the grid "
-            "discretization is available as the variable `dx`",
+            "The typical azimuthal size of a shell sector. This can be either a length "
+            "in non-dimensional units or an expression that can be parsed with sympy. "
+            "In the latter case, the grid discretization is available as the variable "
+            "`dx`",
         ),
         Parameter(
             "num_threads",
             "1",
             object,
-            "The number of threads to use in the parallel update of the "
-            "droplets. This can either be a positive integer or `auto`, in "
-            "which case the number of threads are based on the value of "
-            "numba.config.NUMBA_NUM_THREADS.",
+            "The number of threads to use in the parallel update of the droplets. This "
+            "can either be a positive integer or `auto`, in which case the number of "
+            "threads are based on the value of numba.config.NUMBA_NUM_THREADS.",
         ),
     ]
 
@@ -481,7 +475,7 @@ class SphericalDropletActor(ActorBase):
             return 2 * π * radius * (term_diff + term_react)  # type: ignore
 
         else:
-            raise NotImplementedError("Unsupported dimension: " f"{self._cache['dim']}")
+            raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
 
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
         """ create a function that calculates the integrated outwards flux at
@@ -563,7 +557,7 @@ class SphericalDropletActor(ActorBase):
                     return 2 * π * R * (term_diff + term_react)
 
         else:
-            raise NotImplementedError("Unsupported dimension: " f"{self._cache['dim']}")
+            raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
 
         return flux_outside
 
@@ -796,7 +790,7 @@ class SphericalDropletActor(ActorBase):
             num_threads = int(num_threads)
         except TypeError:
             self._logger.warning(
-                "Cannot use num_threads == %s. Using a single " "thread instead.",
+                "Cannot use num_threads == %s. Using a single thread instead.",
                 num_threads,
             )
             num_threads = 1  # safe choice

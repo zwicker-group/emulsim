@@ -22,18 +22,17 @@ class EmittersActor(ActorBase):
             "positions",
             np.array(tuple()),
             np.array,
-            "The positions of all the emitters. This needs to be an "
-            "array of positions. The dimension of each position needs to "
-            "be compatible with the dimension of the field.",
+            "The positions of all the emitters. This needs to be an array of "
+            "positions. The dimension of each position needs to be compatible with "
+            "the dimension of the field.",
         ),
         Parameter(
             "strengths",
             np.array([1]),
             np.array,
-            "The strengths of the emitters, i.e., the mass per unit time "
-            "that is emitted. This can be an array, setting different "
-            "strengths for each emitter, or a single number, setting the "
-            "same strength for all emitters.",
+            "The strengths of the emitters, i.e., the mass per unit time that is "
+            "emitted. This can be an array, setting different strengths for each "
+            "emitter, or a single number, setting the same strength for all emitters.",
         ),
     ]
 

@@ -33,11 +33,10 @@ class PointDropletActor(ActorBase):
             "equilibrium_concentration",
             "1e-5 / radius",
             str,
-            "Expression for the equilibrium concentration. This "
-            "expression can contain the variables `radius` and "
-            "`position` denoting the droplet radius and its position "
-            "vector, respectively. Alternatively, the value can also be "
-            "an instance defining a __call__ method.",
+            "Expression for the equilibrium concentration. This expression can contain "
+            "the variables `radius` and `position` denoting the droplet radius and its "
+            "position vector, respectively. Alternatively, the value can also be an "
+            "instance defining a __call__ method.",
         ),
         Parameter(
             "diffusivity",
@@ -77,9 +76,8 @@ class PointDropletActor(ActorBase):
 
         if droplets.droplets.dim != field.dim:
             raise DimensionError(
-                "Droplets have a different dimension than the "
-                f"background ({droplets.droplets.dim} "
-                f"!= {field.dim})"
+                "Droplets have a different dimension than the background "
+                f"({droplets.droplets.dim} != {field.dim})"
             )
 
         self._cache["dim"] = field.dim

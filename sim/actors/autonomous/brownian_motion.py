@@ -82,8 +82,8 @@ class BrownianMotionDropletActor(ActorBase):
             "diffusivity",
             "1",
             str,
-            "Expression that determines the strength of the Brownian motion of droplets. "
-            "The expression may depend on the droplet radius and time.",
+            "Expression that determines the strength of the Brownian motion of "
+            "droplets. The expression may depend on the droplet radius and time.",
         ),
     ]
 

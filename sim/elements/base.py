@@ -60,8 +60,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         if "class" in attributes and attributes["class"] != cls.__name__:
             logger = logging.getLogger(__name__)
             logger.warning(
-                f"Initialize `{cls.__name__}` with data from "
-                f'`{attributes["class"]}`'
+                f'Initialize `{cls.__name__}` with data from `{attributes["class"]}`'
             )
         return cls(data, attributes.get("parameters", None))
 
@@ -124,9 +123,8 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             try:
                 result[key] = json.dumps(value)
             except TypeError as e:
-                raise TypeError(
-                    f'Attribute "{key}" of "{self.__class__.__name__}" cannot be serialized'
-                ) from e
+                msg = f'Cannot serialize "{key}" of "{self.__class__.__name__}"'
+                raise TypeError(msg) from e
         return result
 
     @classmethod
@@ -195,9 +193,8 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         """
         if data is None:
             data = self.data.copy()
-        return self.__class__.from_state(
-            attributes=copy.deepcopy(self.attributes), data=data
-        )
+        attributes = copy.deepcopy(self.attributes)
+        return self.__class__.from_state(attributes=attributes, data=data)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -212,7 +209,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return int(np.asanyarray(self.data).size)
 
     def plot(self, ax=None, *args, **kwargs):
-        """ plot the elements """
+        """ plot the element """
         pass
 
 
@@ -229,9 +226,7 @@ def element_from_hdf(hdf_path) -> ElementBase:
         # assume a single field is stored in the data
         dataset_names = list(hdf_path.keys())
         if len(dataset_names) > 1:
-            logging.getLogger(__name__).warning(
-                "Found multiple datasets in " "file. Using only first one."
-            )
+            logging.getLogger(__name__).warning("Using only the first of many datasets")
 
         dataset = hdf_path[dataset_names[0]]  # retrieve first dataset
 

@@ -37,9 +37,9 @@ class MeanfieldActor(ActorBase):
             "reaction_flux",
             "0",
             str,
-            "An expression for the reaction flux in the mean field. The "
-            "expression may depend on the concentration and time, which are "
-            "denoted by the variables `c` and `t` respectively..",
+            "An expression for the reaction flux in the mean field. The expression may "
+            "depend on the concentration and time, which are denoted by the variables "
+            "`c` and `t` respectively.",
         ),
     ]
 
@@ -168,9 +168,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
         super().__init__(parameters=parameters)
 
         if inspect.isclass(pde):
-            self._logger.warning(
-                "Class `%s` has been passed instead of an " "instance.", pde
-            )
+            self._logger.warning("Got class `%s` instead of an instance", pde)
             self.pde = pde()  # type: ignore
         else:
             self.pde = pde
@@ -229,8 +227,8 @@ class DiffusionActor(ScalarPDEActor):
             1,
             float,
             "Diffusivity in the field. This actor only supports constant "
-            "diffusivities. Diffusivities depending on local "
-            "concentration are supported by `ReactionDiffusionActor`.",
+            "diffusivities. Diffusivities depending on local concentration are "
+            "supported by `ReactionDiffusionActor`.",
         ),
         Parameter(
             "boundary_conditions",
@@ -288,9 +286,9 @@ class ReactionDiffusionActor(ScalarPDEActor):
             "diffusivity",
             "1",
             str,
-            "Diffusivity in the field. This can be an expression "
-            "depending  on the local concentration that is parsed by "
-            "sympy. Alternatively, simple numbers are also supported.",
+            "Diffusivity in the field. This can be an expression depending  on the "
+            "local concentration that is parsed by `sympy`. Alternatively, simple "
+            "numbers are also supported.",
         ),
         Parameter(
             "reaction_flux",
