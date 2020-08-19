@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from droplets import SphericalDroplet
 from numba import jit
+
+from droplets import SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
 
 import sim

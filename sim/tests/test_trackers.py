@@ -3,6 +3,7 @@
 """
 
 import numpy as np
+
 from droplets import SphericalDroplet
 from pde import MemoryStorage, ScalarField, UnitGrid
 

@@ -7,6 +7,7 @@ Provides a simulation element representing spherical droplets
 from typing import Any, Dict
 
 import numpy as np
+
 from droplets import Emulsion, SphericalDroplet
 from pde.tools.parameters import Parameter
 

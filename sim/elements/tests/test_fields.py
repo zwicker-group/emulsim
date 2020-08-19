@@ -6,6 +6,7 @@ Test generic elements functionality
 
 import numpy as np
 import pytest
+
 from pde import CartesianGrid, UnitGrid
 
 from .. import MeanfieldElement, ScalarFieldElement

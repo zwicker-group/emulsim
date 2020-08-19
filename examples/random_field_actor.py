@@ -2,6 +2,7 @@
 
 import numba as nb
 import numpy as np
+
 from pde import UnitGrid
 
 import sim

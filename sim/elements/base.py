@@ -11,6 +11,7 @@ from abc import ABCMeta
 from typing import Any, Callable, Dict, Type, Union  # @UnusedImport
 
 import numpy as np
+
 from pde.tools.cache import objects_equal
 from pde.tools.parameters import Parameterized
 

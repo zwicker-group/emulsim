@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+
 import pde
 from droplets import SphericalDroplet
 

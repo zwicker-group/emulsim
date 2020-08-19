@@ -3,6 +3,7 @@
 """
 
 import pytest
+
 from pde.tools.misc import skipUnlessModule
 
 from ..elements.tests.test_generic import generate_elements

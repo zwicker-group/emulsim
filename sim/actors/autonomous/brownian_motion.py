@@ -6,6 +6,7 @@ from typing import Callable, Tuple
 
 import numba as nb
 import numpy as np
+
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter

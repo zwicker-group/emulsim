@@ -3,6 +3,7 @@
 """
 
 import pytest
+
 from droplets import SphericalDroplet
 from pde import ScalarField, UnitGrid
 from pde.tools.misc import module_available

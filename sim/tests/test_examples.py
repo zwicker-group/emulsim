@@ -12,6 +12,7 @@ from typing import List  # @UnusedImport
 
 import numba as nb
 import pytest
+
 from pde.tools.misc import module_available
 
 PACKAGEPATH = Path(__file__).parents[2].resolve()

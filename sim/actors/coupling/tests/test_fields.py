@@ -5,6 +5,7 @@
 
 import numpy as np
 import pytest
+
 from pde import ScalarField, UnitGrid
 
 from ....elements import MeanfieldElement, ScalarFieldElement

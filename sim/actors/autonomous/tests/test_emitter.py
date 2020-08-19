@@ -4,6 +4,7 @@
 
 
 import pytest
+
 from pde.grids import UnitGrid
 
 from ....elements import MeanfieldElement

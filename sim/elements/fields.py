@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Sequence, Tuple
 
 import numba as nb
 import numpy as np
+
 from pde.fields import ScalarField
 from pde.grids import CartesianGrid
 from pde.grids.cartesian import CartesianGridBase, GridBase

@@ -4,6 +4,7 @@
 
 import numpy as np
 import pytest
+
 from pde.tools.misc import skipUnlessModule
 
 from .... import Simulation, State

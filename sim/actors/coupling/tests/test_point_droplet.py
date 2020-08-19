@@ -5,6 +5,7 @@
 
 import numpy as np
 import pytest
+
 from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
 from pde.grids.base import DimensionError

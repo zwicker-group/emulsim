@@ -7,6 +7,7 @@ Provides a simple actor that emit mass into a field a predefined positions
 from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
+
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
