@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export PYTHONPATH=../../py-pde:../../py-droplets:../../py-phasesep:$PYTHONPATH
+export NUMBA_BOUNDSCHECK=1
 export NUMBA_WARNINGS=1
 export MPLBACKEND="agg"
 
