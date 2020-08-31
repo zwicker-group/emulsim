@@ -260,6 +260,22 @@ class Simulation:
                     inner(state_data, t, dt)
                     evolver((state_data[i], state_data[j]), t, dt)
 
+            elif num_elements == 3:
+                i, j, k = element_indices
+
+                @jit
+                def wrap(state_data, t: float, dt: float):
+                    inner(state_data, t, dt)
+                    evolver((state_data[i], state_data[j],state_data[k]), t, dt)
+
+            elif num_elements == 4:
+                i, j, k, l = element_indices
+
+                @jit
+                def wrap(state_data, t: float, dt: float):
+                    inner(state_data, t, dt)
+                    evolver((state_data[i], state_data[j],state_data[k],state_data[l]), t, dt)
+                     
             if actor_id < len(actors) - 1:
                 # there are more items in the chain
                 return chain(actor_id + 1, inner=wrap)
