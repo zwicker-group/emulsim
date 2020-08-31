@@ -30,8 +30,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
     """ base class for field elements """
 
     def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
-        """ set the boundaries of the field
-        
+        """set the boundaries of the field
+
         Args:
             bounds (sequence):
                 A sequence of tuples specifying the lower and upper bound for
@@ -48,8 +48,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         return CartesianGrid(self.bounds, 1)
 
     def plot(self, ax=None, **kwargs):
-        """ plot the background field
-        
+        """plot the background field
+
         Args:
             {PLOT_ARGS}
         """
@@ -67,8 +67,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
     @abstractmethod
     def get_concentration(self, points):
-        """ determine concentration at the given points
-        
+        """determine concentration at the given points
+
         Args:
             points (:class:`numpy.ndarray`):
                 The coordinates of the single point or the list of points at
@@ -78,8 +78,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
     @abstractmethod
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the field
-        
+        """add the given amount to the field
+
         Args:
             point (:class:`numpy.ndarray`):
                 Point where the amount is added to the field
@@ -89,8 +89,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         pass
 
     def make_get_concentration_compiled(self) -> Callable:
-        """ get a compiled function for obtaining concentrations
-        
+        """get a compiled function for obtaining concentrations
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
@@ -99,8 +99,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         raise NotImplementedError
 
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the field
-        
+        """get a compiled function for adding amount to the field
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`
@@ -124,14 +124,14 @@ class MeanfieldElement(FieldElementBase):
     ]
 
     def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
-        """ initialize the meanfield element
-        
+        """initialize the meanfield element
+
         Args:
             data (float):
                 The initial concentration in the field
             parameters (dict):
                 Additional parameters determining how the element behaves. Most
-                importantly, the entry 'bounds' determines the size of the 
+                importantly, the entry 'bounds' determines the size of the
                 element. It needs to be a sequence of tuples specifying the
                 lower and upper bound for each axis. The number of entries sets
                 the space dimension.
@@ -157,8 +157,8 @@ class MeanfieldElement(FieldElementBase):
 
     @concentration.setter
     def concentration(self, value: float):
-        """ set the field concentration
-        
+        """set the field concentration
+
         Args:
             value (float):
                 The new concentration
@@ -172,8 +172,8 @@ class MeanfieldElement(FieldElementBase):
 
     @total_amount.setter
     def total_amount(self, amount: float):
-        """ set the total material amount in the field
-        
+        """set the total material amount in the field
+
         Args:
             amount (float):
                 The new total amount
@@ -194,8 +194,8 @@ class MeanfieldElement(FieldElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color="tab:blue", **kwargs):
-        """ plot the field
-        
+        """plot the field
+
         Args:
             color:
                 The color in which the background is shown. All matplotlib
@@ -217,8 +217,8 @@ class MeanfieldElement(FieldElementBase):
         ax.set_aspect(1)
 
     def get_concentration(self, points: np.ndarray):
-        """ determine concentration at the given points
-        
+        """determine concentration at the given points
+
         Args:
             points (:class:`numpy.ndarray`):
                 The coordinates of the single point or the list of points at
@@ -235,8 +235,8 @@ class MeanfieldElement(FieldElementBase):
             raise ValueError("Expected single point of list of points")
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the field
-        
+        """add the given amount to the field
+
         Args:
             point:
                 Not used and only retained to match the interface
@@ -246,8 +246,8 @@ class MeanfieldElement(FieldElementBase):
         self.data[0] += amount / self.volume
 
     def make_get_concentration_compiled(self) -> Callable:
-        """ get a compiled function for obtaining concentrations
-        
+        """get a compiled function for obtaining concentrations
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
@@ -261,8 +261,8 @@ class MeanfieldElement(FieldElementBase):
         return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the field
-        
+        """get a compiled function for adding amount to the field
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`
@@ -295,13 +295,13 @@ class ScalarFieldElement(FieldElementBase):
     ]
 
     def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
-        """ 
+        """
         Args:
             data (:class:`numpy.ndarray` or float, optional):
                 Field values at the support points of the grid
             parameters (dict):
                 Additional parameters determining how the element behaves. Most
-                importantly, the entry 'grid' determines the discretization grid 
+                importantly, the entry 'grid' determines the discretization grid
                 on which this field is defined.
         """
         super().__init__(data, parameters)
@@ -319,12 +319,12 @@ class ScalarFieldElement(FieldElementBase):
 
     @classmethod
     def from_field(cls, field: ScalarField) -> "ScalarFieldElement":
-        """ create a scalar field element from a scalar field
-        
+        """create a scalar field element from a scalar field
+
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
                 The scalar field that initializes the element
-        
+
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
         """
@@ -346,11 +346,11 @@ class ScalarFieldElement(FieldElementBase):
         return int(np.product(self.grid.shape))
 
     def plot(self, ax=None, **kwargs):
-        """ plot the field
-        
+        """plot the field
+
         This simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
         arguments are forwarded.
-        
+
         Args:
             color:
                 The color in which the background is shown. All matplotlib
@@ -365,8 +365,8 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.integral
 
     def get_concentration(self, points: np.ndarray):
-        """ determine concentration at the given points
-        
+        """determine concentration at the given points
+
         Args:
             points (:class:`numpy.ndarray`):
                 The coordinates of the single point or the list of points at
@@ -375,8 +375,8 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.interpolate(points)
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """ add the given amount to the field
-        
+        """add the given amount to the field
+
         Args:
             point (:class:`numpy.ndarray`):
                 Point where the amount is added to the field
@@ -386,8 +386,8 @@ class ScalarFieldElement(FieldElementBase):
         self._field.add_interpolated(point, amount)
 
     def make_get_concentration_compiled(self) -> Callable:
-        """ get a compiled function for obtaining concentrations
-        
+        """get a compiled function for obtaining concentrations
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`), which determines the concentration
@@ -396,8 +396,8 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.grid.make_interpolator_compiled()
 
     def make_add_amount_compiled(self) -> Callable:
-        """ get a compiled function for adding amount to the field
-        
+        """get a compiled function for adding amount to the field
+
         Returns:
             callable: a function with signature (data: :class:`numpy.ndarray`,
             point: :class:`numpy.ndarray`, amount: float), which adds `amount`

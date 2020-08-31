@@ -54,8 +54,8 @@ class PointsElement(ElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color="red", **kwargs):
-        """ plot all points of this element
-        
+        """plot all points of this element
+
         Args:
             color (matplotlib color):
                 The color with which the points are shown

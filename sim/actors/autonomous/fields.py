@@ -59,8 +59,8 @@ class MeanfieldActor(ActorBase):
         self._reaction = ScalarExpression(reaction_flux, signature=["c", "t"])
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ get the optimal time step for the simulation of the actor
-        
+        """get the optimal time step for the simulation of the actor
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
@@ -72,8 +72,8 @@ class MeanfieldActor(ActorBase):
             return 0.1 / s_max  # type: ignore
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the field from time `t` to `t + dt`
-        
+        """return a function evolve the field from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
@@ -93,8 +93,8 @@ class MeanfieldActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """ evolve the field from time `t` to `t + dt`
-        
+        """evolve the field from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
@@ -113,19 +113,19 @@ class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
     element_classes = (ScalarFieldElement,)
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ get the optimal time step for the simulation of the actor
-        
+        """get the optimal time step for the simulation of the actor
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
-                
+
         Returns:
             float: the time step
         """
         raise NotImplementedError
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolving the field from time `t` to `t + dt`
+        """return a function evolving the field from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
@@ -139,8 +139,8 @@ class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
 
     @abstractmethod
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """ evolve the field from time `t` to `t + dt`
-        
+        """evolve the field from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
@@ -156,8 +156,8 @@ class ScalarPDEActor(ScalarFieldActorBase):
     """ actor evolving a field according to a PDE """
 
     def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
-        """ initialize the actor and its PDE
-        
+        """initialize the actor and its PDE
+
         Args:
             pde (:class:`~pde.pdes.base.PDEBase`):
                 The partial differential equation describing the dynamics of the
@@ -182,12 +182,12 @@ class ScalarPDEActor(ScalarFieldActorBase):
         return result
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolving the field from time `t` to `t + dt`
+        """return a function evolving the field from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
-                
+
         Returns:
             callable: A function with signature (field_data, t: float,
                 dt: float), which evolves the field_data.
@@ -204,8 +204,8 @@ class ScalarPDEActor(ScalarFieldActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """ evolve the field from time `t` to `t + dt`
-        
+        """evolve the field from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
@@ -241,7 +241,7 @@ class DiffusionActor(ScalarPDEActor):
     ]
 
     def __init__(self, parameters: Dict[str, Any] = None):
-        """ 
+        """
         Args:
             parameters (dict):
                 Parameters affecting the actor. Call
@@ -261,12 +261,12 @@ class DiffusionActor(ScalarPDEActor):
         )
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ get the optimal time step for the simulation of the actor
-        
+        """get the optimal time step for the simulation of the actor
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
-        
+
         Returns:
             float: the time step
         """
@@ -276,8 +276,8 @@ class DiffusionActor(ScalarPDEActor):
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
-    """ actor evolving a field according to a reaction-diffusion equation
-    
+    """actor evolving a field according to a reaction-diffusion equation
+
     This class relies on the optional `phasesep` package, which needs to be
     installed separately.
     """
@@ -329,12 +329,12 @@ class ReactionDiffusionActor(ScalarPDEActor):
         self.pde = ReactionDiffusionPDE(pde_params)
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ get the optimal time step for the simulation of the actor
-        
+        """get the optimal time step for the simulation of the actor
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
-        
+
         Returns:
             float: the time step
         """

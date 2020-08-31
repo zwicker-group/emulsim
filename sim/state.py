@@ -37,8 +37,8 @@ class State:
 
     @classmethod
     def from_hdf_dataset(cls, dataset) -> "State":
-        """ construct the instance by reading data from an hdf5 dataset
-         
+        """construct the instance by reading data from an hdf5 dataset
+
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
@@ -48,8 +48,8 @@ class State:
 
     @classmethod
     def from_file(cls, path: str) -> "State":
-        """ create simulation state instance from data stored in a hdf file
-          
+        """create simulation state instance from data stored in a hdf file
+
         Args:
             path (str): Path to the hdf file being read
         """
@@ -59,8 +59,8 @@ class State:
             return cls.from_hdf_dataset(fp)
 
     def add_element(self, name: str, element: ElementBase):
-        """ adds an element to the simulation
-        
+        """adds an element to the simulation
+
         Args:
             name (str):
                 The identifier for the element.
@@ -79,10 +79,10 @@ class State:
         self.elements[name] = element
 
     def get_index(self, name: str) -> int:
-        """ returns the numerical index of a specific element
-        
+        """returns the numerical index of a specific element
+
         Args:
-            name (str): The name of the element        
+            name (str): The name of the element
         """
         for i, element_name in enumerate(self.elements):
             if name == element_name:
@@ -128,11 +128,11 @@ class State:
         return {"elements": {name: element.attributes for name, element in self}}
 
     def _write_hdf_dataset(self, hdf_path):
-        """ write data to a given hdf5 file
-        
+        """write data to a given hdf5 file
+
         Args:
             dataset: the hdf5 dataset (in an already opened file)
-         """
+        """
         element_names = []
         for name, element in self.elements.items():
             element_names.append(name)
@@ -140,14 +140,14 @@ class State:
         hdf_write_attributes(hdf_path, {"elements": element_names})
 
     def to_file(self, filename: str, info: Dict[str, Any] = None) -> None:
-        r""" store elements in a hdf file
-        
+        r"""store elements in a hdf file
+
         Args:
             filename (str):
                 Path where the data is stored
             info (dict):
                 Extra information that is written to the hdf attributes. Note
-                that the values in this dictionary will be JSON-serialized. 
+                that the values in this dictionary will be JSON-serialized.
         """
         import h5py
 
@@ -169,18 +169,18 @@ class State:
         return sum(element.degrees_of_freedom for element in self.elements.values())
 
     def get_quantity(self, property_name: str, total: bool = True):
-        """ returns quantities obtained from the elements
-        
+        """returns quantities obtained from the elements
+
         Quantities are typically implemented as properties or attributes. If
         an element does not have a property, it is silently ignored and not
         included in the result.
-        
+
         Args:
             property_name (str):
                 The name of the property or attribute that is analyzed
             total (bool):
                 Flag determining whether the sum of all values is returned.
-        
+
         Returns:
             float or dict: A total value is returned if total is `True`.
             Otherwise, the value for each element is returned in a dictionary.
@@ -208,8 +208,8 @@ class State:
         ignore_elements: Iterable[str] = None,
         **kwargs,
     ):
-        r""" visualize the state
-         
+        r"""visualize the state
+
         Args:
             element_args (dict):
                 A dictionary with arguments passed to the plotting functions of

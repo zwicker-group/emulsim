@@ -42,8 +42,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def num_elements(self) -> int:
-        """ int: the number of elements this actor affects. This value is 
-        determined from the `element_classes` attribute """
+        """int: the number of elements this actor affects. This value is
+        determined from the `element_classes` attribute"""
         return len(self.element_classes)
 
     @property
@@ -56,8 +56,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         return self.__class__(self.parameters.copy())
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
@@ -68,11 +68,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError
 
     def _check_cache(self, elements: ElementsType) -> None:
-        """ checks whether the simulation needs to run :meth:`_update_cache`.
-        
+        """checks whether the simulation needs to run :meth:`_update_cache`.
+
         Subclasses can defined `_update_cache` to populate `self._cache` with
         pre-computed data, which is then available in later.
-        
+
         Args:
             elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
@@ -86,8 +86,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 self._cache["state_attributes"] = state_attributes
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the state from time `t` to `t + dt`
-        
+        """return a function evolve the state from time `t` to `t + dt`
+
         Args:
             *elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
@@ -101,8 +101,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
     @abstractmethod
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """ evolve the state from time `t` to `t + dt`
-        
+        """evolve the state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects

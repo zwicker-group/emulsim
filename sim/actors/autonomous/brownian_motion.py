@@ -25,8 +25,8 @@ class BrownianMotionPointActor(ActorBase):
     element_classes = (PointsElement,)
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
                 The points element that is affected by the Brownian motion
@@ -37,8 +37,8 @@ class BrownianMotionPointActor(ActorBase):
         return float("inf")
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the field state from time `t` to `t + dt`
-        
+        """return a function evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
                 The points element that is affected by the Brownian motion
@@ -60,8 +60,8 @@ class BrownianMotionPointActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """ evolve the field state from time `t` to `t + dt`
-        
+        """evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
                 The points element that is affected by the Brownian motion
@@ -91,8 +91,8 @@ class BrownianMotionDropletActor(ActorBase):
     element_classes = (SphericalDropletsElement,)
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
                 The field element that is effected by the Brownian motion
@@ -103,8 +103,8 @@ class BrownianMotionDropletActor(ActorBase):
         return float("inf")
 
     def _update_cache(self, elements: ElementsType) -> None:
-        """ prepare the simulation doing pre-calculations 
-        
+        """prepare the simulation doing pre-calculations
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -114,8 +114,8 @@ class BrownianMotionDropletActor(ActorBase):
         )
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the field state from time `t` to `t + dt`
-        
+        """return a function evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
                 The field element that is effected by the Brownian motion
@@ -142,8 +142,8 @@ class BrownianMotionDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """ evolve the field state from time `t` to `t + dt`
-        
+        """evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
                 The field element that is effected by the Brownian motion

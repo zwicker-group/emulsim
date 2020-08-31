@@ -21,8 +21,8 @@ ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class PointDropletActor(ActorBase):
-    """ actor that couples points-like droplets to a field
-    
+    """actor that couples points-like droplets to a field
+
     For simplicity, these droplets interact with the field only at one point
     (their position). This approximation only works in three dimension where it
     accelerates calculations and is usually a good approximation when the
@@ -50,8 +50,8 @@ class PointDropletActor(ActorBase):
     element_classes = (SphericalDropletsElement, FieldElementBase)
 
     def _parse_equilibrium_concentration(self) -> Callable:
-        """ parse the expression for the equilibrium concentration
-                
+        """parse the expression for the equilibrium concentration
+
         Returns:
             callable: A function that can be evaluated to obtain the equilibrium
             concentration at a certain position and radius of a droplet
@@ -67,8 +67,8 @@ class PointDropletActor(ActorBase):
             return ScalarExpression(str(expr), signature, allow_indexed=True)
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """ prepare the simulation doing pre-calculations 
-        
+        """prepare the simulation doing pre-calculations
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -85,8 +85,8 @@ class PointDropletActor(ActorBase):
         self._cache["cEqOut"] = self._parse_equilibrium_concentration()
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -101,9 +101,9 @@ class PointDropletActor(ActorBase):
         return L ** 2 / D
 
     def get_flux_outside(self, radius: float, c_far: float, cEqOut: float) -> float:
-        """ returns the integrated outwards flux at the droplet surface given
+        """returns the integrated outwards flux at the droplet surface given
         some imposed concentration value at the outer shell
-        
+
         Args:
             radius (float):
                 The current droplet radius
@@ -112,9 +112,9 @@ class PointDropletActor(ActorBase):
             cEqOut (float):
                 The concentration right at the inner side of the shell sector,
                 right at the droplet surface.
-            
+
         Returns:
-            float: the integrated flux in the outward normal direction. 
+            float: the integrated flux in the outward normal direction.
         """
         D = float(self.parameters["diffusivity"])
 
@@ -129,10 +129,10 @@ class PointDropletActor(ActorBase):
             )
 
     def _make_flux_outside(self) -> Callable:
-        """ create a function that calculates the integrated outwards flux at
+        """create a function that calculates the integrated outwards flux at
         the droplet surface given some imposed concentration value at the outer
         shell.
-        
+
         Returns:
             callable: the function with the signature
                 (radius: float, c_far: float, cEqOut: float)
@@ -157,12 +157,12 @@ class PointDropletActor(ActorBase):
     def get_equilibrium_concentrations(
         self, droplets: SphericalDropletsElement
     ) -> np.ndarray:
-        """ returns the equilibrium concentration outside each droplet
-        
+        """returns the equilibrium concentration outside each droplet
+
         Args:
             droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-        
+                The state of all the droplets
+
         Returns:
             :class:`numpy.ndarray`: The equilibrium concentration for each
                 droplet with non-zero radius.
@@ -182,8 +182,8 @@ class PointDropletActor(ActorBase):
         return np.array(result)
 
     def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
-        """ create a function to evolve a single droplet from time `t` to `t + dt`
-        
+        """create a function to evolve a single droplet from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -253,8 +253,8 @@ class PointDropletActor(ActorBase):
         return droplet_update  # type: ignore
 
     def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
-        """ return a function evolve the state from time `t` to `t + dt`
-        
+        """return a function evolve the state from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -281,8 +281,8 @@ class PointDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """ evolve the state from time `t` to `t + dt`
-        
+        """evolve the state from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field

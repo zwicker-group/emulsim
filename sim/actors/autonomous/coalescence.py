@@ -19,8 +19,8 @@ class CoalescenceDropletActor(ActorBase):
     element_classes = (SphericalDropletsElement,)
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the field state from time `t` to `t + dt`
-        
+        """return a function evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
                 The field element that is effected by the Brownian motion
@@ -67,8 +67,8 @@ class CoalescenceDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """ evolve the field state from time `t` to `t + dt`
-        
+        """evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
                 The field element that is effected by the Brownian motion

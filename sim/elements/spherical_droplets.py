@@ -35,7 +35,7 @@ class SphericalDropletsElement(ElementBase):
             data (:class:`numpy.ndarray`):
                 The positions and radii of all points. This should be a
                 structured array as returned by
-                :attr:`droplets.emulsions.Emulsion.data`               
+                :attr:`droplets.emulsions.Emulsion.data`
             parameters (dict):
                 Additional parameters. Call
                 :meth:`~SphericalDropletsElement.show_parameters` for details.
@@ -102,8 +102,8 @@ class SphericalDropletsElement(ElementBase):
 
     @property
     def droplet_count(self) -> int:
-        """ int: the number of droplets in the emulsion
-        
+        """int: the number of droplets in the emulsion
+
         This only counts droplets with non-zero radius.
         """
         return sum(droplet.radius > 0 for droplet in self.droplets)
@@ -115,8 +115,8 @@ class SphericalDropletsElement(ElementBase):
         return float(self.parameters["droplet_concentration"]) * total_volume
 
     def plot(self, ax=None, *args, **kwargs):
-        """ plot all droplets of this element
-        
+        """plot all droplets of this element
+
         Args:
             {PLOT_ARGS}
             **kwargs:

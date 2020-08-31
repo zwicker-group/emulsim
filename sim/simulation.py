@@ -33,7 +33,7 @@ class Simulation:
         Args:
             state (:class:`~sim.state.State`):
                 The initial simulation state defining the elements in the
-                simulation. 
+                simulation.
             actors (dict, optional):
                 The actors in the simulation. This should be an iterable
                 returning an (element_name, actor) pair for each item. Actors
@@ -68,8 +68,8 @@ class Simulation:
         return {"state": self.state.attributes, "actors": actor_infos}
 
     def add_actor(self, elements: Union[str, Tuple[str]], actor: ActorBase):
-        """ adds a new actor to the simulation
-        
+        """adds a new actor to the simulation
+
         Args:
             elements (str or tuple of str):
                 The elements this actor acts upon. This needs to have the exact
@@ -95,8 +95,8 @@ class Simulation:
         self.actors.append((elements, actor))
 
     def get_graph(self):
-        """ return a graph representation of the simulation
-        
+        """return a graph representation of the simulation
+
         Returns:
             :class:`networkx.DiGraph`: A graph where all elements and actors are
             represented as nodes.
@@ -117,8 +117,8 @@ class Simulation:
         return graph
 
     def plot_as_graph(self, **kwargs) -> None:
-        """ represent the simulation in a graphical form
-        
+        """represent the simulation in a graphical form
+
         Args:
             **kwargs:
                 All arguments are passed to :func:`networkx.draw`
@@ -148,8 +148,8 @@ class Simulation:
         nx.draw_networkx_labels(graph, pos, labels)
 
     def get_interacting_elements(self):
-        """ return a graph representation the interacting elements of a simulation
-        
+        """return a graph representation the interacting elements of a simulation
+
         Returns:
             :class:`networkx.DiGraph`: A graph where all elements are represented as nodes
             and their interactions are represented as edges.
@@ -186,12 +186,12 @@ class Simulation:
         nx.draw(graph, pos, **kwargs)
 
     def estimate_dt(self, state: State = None) -> float:
-        """ get the optimal time step for the simulation
-                
+        """get the optimal time step for the simulation
+
         Args:
             state (:class:`~sim.state.State`):
                 A state, which may influence the calculation of the time step
-                
+
         Returns:
             float: the time step
         """
@@ -210,12 +210,12 @@ class Simulation:
         return min(dts)
 
     def make_evolver_numba(self, state: State = None) -> Callable:
-        """ return a function evolving the state from time `t` to `t + dt`
-        
+        """return a function evolving the state from time `t` to `t + dt`
+
         Args:
             state (:class:`~sim.state.State`):
                 A state defining the degrees of freedom of the simulation.
-                
+
         Returns:
             callable: A function with signature (state_data, t: float,
             dt: float), which evolves the state in time
@@ -271,8 +271,8 @@ class Simulation:
         return chain(0, innermost)
 
     def evolve(self, state: State, t: float, dt: float):
-        """ evolve the state from time `t` to `t + dt`
-        
+        """evolve the state from time `t` to `t + dt`
+
         Args:
             state (:class:`~sim.state.State`):
                 The state of the simulation
@@ -292,12 +292,12 @@ class Simulation:
         backend: str = "auto",
         ret_info: bool = False,
     ) -> Union[State, Tuple[State, Dict[str, Any]]]:
-        """ run the simulation to advance the state in time 
-        
+        """run the simulation to advance the state in time
+
         Args:
             t_range (float or tuple of floats):
                 Sets the time range for which the simulation is run. If only a
-                single value `t_end` is given, the time range is assumed to be 
+                single value `t_end` is given, the time range is assumed to be
                 `[0, t_end]`.
             dt (float):
                 Time step of the explicit stepping. If `None`, the time step
@@ -307,7 +307,7 @@ class Simulation:
                 Defines trackers that process the state of the simulation at
                 fixed time intervals. Multiple trackers can be specified as a
                 list. The default value simply displays a progress bar. To
-                disable trackers, set the value to `None`.        
+                disable trackers, set the value to `None`.
             backend (str):
                 Determines how the function is created. Accepted  values are
                 'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
@@ -315,7 +315,7 @@ class Simulation:
             ret_info (bool):
                 Flag determining whether diagnostic information about the solver
                 process should be returned.
-            
+
         Returns:
             :class:`SimulationState`:
                 The state of the simulation at the last time point. In the case
@@ -339,8 +339,8 @@ class SimulationSolver(SolverBase):
     """ Solver for actor-based simulation """
 
     def __init__(self, simulation: Simulation, backend: str = "auto"):
-        """ initialize the explicit solver for the actor-based simulation
-        
+        """initialize the explicit solver for the actor-based simulation
+
         Args:
             simulation (:class:`Simulation`):
                 The simulation that will be run
@@ -355,11 +355,11 @@ class SimulationSolver(SolverBase):
         self.backend = backend
 
     def _make_stepper_numpy(self, dt: float) -> Callable:
-        """ return function evolving state from time `t_start` to `t_end`
-        
+        """return function evolving state from time `t_start` to `t_end`
+
         Args:
             dt (float): The time step
-            
+
         Returns:
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
@@ -380,17 +380,17 @@ class SimulationSolver(SolverBase):
         return stepper
 
     def _make_stepper_numba(self, state: State, dt: float) -> Callable:
-        """ return function evolving state from time `t_start` to `t_end`
-        
+        """return function evolving state from time `t_start` to `t_end`
+
         This function uses compiled functions for the actors.
-        
+
         Args:
             state (:class:`~sim.state.State`):
                 A state determining the degrees of freedom. If `None`, the state
                 given by `self.simulation` will be used.
             dt (float):
                 The time step
-                
+
         Returns:
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
@@ -412,11 +412,11 @@ class SimulationSolver(SolverBase):
         return stepper
 
     def make_stepper(self, state: State, dt: float = None) -> Callable:
-        r""" return a stepper function using an explicit scheme
-        
+        r"""return a stepper function using an explicit scheme
+
         Note that if the `numba` backend is chosen, the state supplied to this
-        function must be the identical state that is also used in the stepper.  
-        
+        function must be the identical state that is also used in the stepper.
+
         Args:
             state (:class:`~sim.state.State`):
                 An example of the simulation state, which defines the degrees of
@@ -430,7 +430,7 @@ class SimulationSolver(SolverBase):
         Returns:
             Function that can be called to advance the `state` from time
             `t_start` to time `t_end`. The function call signature is
-            `(state: AgentSimulation, t_start: float, t_end: float)`        
+            `(state: AgentSimulation, t_start: float, t_end: float)`
         """
         if dt is None:
             dt = self.simulation.estimate_dt(state)

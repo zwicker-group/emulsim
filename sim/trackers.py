@@ -22,8 +22,8 @@ from .simulation import State
 
 
 class FieldTracker(TrackerBase):
-    """ tracker for analyzing a discretized field in a simulations
-    
+    """tracker for analyzing a discretized field in a simulations
+
     This acts as a wrapper around any of the trackers from :mod:`pde.trackers`,
     e.g., `tracker = FieldTracker('background', PlotTracker())`.
     """
@@ -42,16 +42,18 @@ class FieldTracker(TrackerBase):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(  # type: ignore
-        self, state: State, info: InfoDict = None,
+        self,
+        state: State,
+        info: InfoDict = None,
     ) -> float:
-        """ initialize the tracker with information about the simulation
-        
+        """initialize the tracker with information about the simulation
+
         Args:
             state (:class:`~sim.state.State`):
                 An example of the data that will be analyzed by the tracker
             info (dict):
-                Extra information from the simulation        
-                
+                Extra information from the simulation
+
         Returns:
             float: The first time the tracker needs to handle data
         """
@@ -68,8 +70,8 @@ class FieldTracker(TrackerBase):
         return self.tracker.initialize(field, info)
 
     def handle(self, state: State, t: float) -> None:  # type: ignore
-        """ handle data supplied to this tracker
-        
+        """handle data supplied to this tracker
+
         Args:
             state (:class:`~sim.state.State`):
                 The current state of the simulation
@@ -90,24 +92,24 @@ class FieldTracker(TrackerBase):
         self.tracker.handle(field, t)
 
     def finalize(self, info: InfoDict = None) -> None:
-        """ finalize the tracker, supplying additional information
+        """finalize the tracker, supplying additional information
 
         Args:
             info (dict):
-                Extra information from the simulation        
+                Extra information from the simulation
         """
         self.tracker.finalize(info)
 
 
 class DropletElementTracker(TrackerBase):
-    """ Tracker storing information about droplets in a simulation
-    
+    """Tracker storing information about droplets in a simulation
+
     Attributes:
         emulsions (:class:`~droplets.analysis.emulsions.EmulsionTimeCourse`):
             An object describing the emulsion at the determined intervals
         droplet_tracks (:class:`~droplets.analysis.droplets.DropletTrackList`):
             An object describing the time course of individual droplets.
-            
+
     The two attributes `emulsions` and `droplet_tracks` contain equivalent
     information, but their structure is different and either one might thus be
     used to analyze the simulation.
@@ -152,8 +154,8 @@ class DropletElementTracker(TrackerBase):
                 are still stored. The default is to filter these droplets.
             background_grid (:class:`pde.grids.base.GridBase`):
                 The grid on which the droplets are defined. This is stored in
-                the emulsion object to calculate distances and other geometric 
-                quantities. 
+                the emulsion object to calculate distances and other geometric
+                quantities.
         """
         super().__init__(interval=interval)
         self.element_name = element_name
@@ -163,14 +165,16 @@ class DropletElementTracker(TrackerBase):
         self.background_grid = background_grid
 
     def initialize(  # type: ignore
-        self, state: State, info: InfoDict = None,
+        self,
+        state: State,
+        info: InfoDict = None,
     ) -> float:
-        """ 
+        """
         Args:
             state (:class:`~sim.state.State`):
                 The initial state of the simulation
             info (dict):
-                Extra information for the simulation        
+                Extra information for the simulation
         """
         if not isinstance(state, State):
             self._logger.warning("state is not of type `State`")
@@ -186,8 +190,8 @@ class DropletElementTracker(TrackerBase):
         return super().initialize(state, info)  # type: ignore
 
     def handle(self, state: State, t: float) -> None:  # type: ignore
-        """ handle data supplied to this tracker
-        
+        """handle data supplied to this tracker
+
         Args:
             state (:class:`~sim.state.State`):
                 The current state of the simulation
@@ -220,11 +224,11 @@ class DropletElementTracker(TrackerBase):
                         self.droplet_tracks[i].append(droplet, time=t)
 
     def finalize(self, info: InfoDict = None) -> None:
-        """ finalize the tracker, supplying additional information
+        """finalize the tracker, supplying additional information
 
         Args:
             info (dict):
-                Extra information from the simulation        
+                Extra information from the simulation
         """
         super().finalize(info)
         # write data to files, if requested

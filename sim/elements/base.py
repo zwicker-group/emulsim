@@ -48,13 +48,13 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def from_state(cls, attributes: Dict[str, Any], data=None) -> "ElementBase":
-        """ create the element state from attributes and data
-        
+        """create the element state from attributes and data
+
         Args:
             attributes (dict):
                 Attributes of the element. This carries information about
                 parameters and possibly additional parts that do not depend on
-                time. 
+                time.
             data (:class:`numpy.ndarray`):
                 The numerical data associated with the state of the element
         """
@@ -67,8 +67,8 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def from_hdf_dataset(cls, dataset) -> "ElementBase":
-        """ construct the element by reading data from an hdf5 dataset
-        
+        """construct the element by reading data from an hdf5 dataset
+
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
@@ -130,12 +130,12 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def unserialize_attributes(cls, attributes: Dict[str, str]) -> Dict[str, Any]:
-        """ unserializes the given attributes
-        
+        """unserializes the given attributes
+
         Args:
             attributes (dict):
                 The serialized attributes
-                
+
         Returns:
             dict: The unserialized attributes
         """
@@ -159,13 +159,13 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return attributes
 
     def to_file(self, filename: str, **kwargs):
-        r""" store element state in a file
-        
+        r"""store element state in a file
+
         Args:
             filename (str):
                 Path where the data is stored
             \**kwargs:
-                Additional parameters may be supported for some formats 
+                Additional parameters may be supported for some formats
         """
         import h5py
 
@@ -173,10 +173,10 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             self._write_hdf_dataset(fp, **kwargs)
 
     def _write_hdf_dataset(self, hdf_path, key: str = "data"):
-        """ write data to a given hdf5 file pointer `hdf_path`
-        
+        """write data to a given hdf5 file pointer `hdf_path`
+
         Args:
-            hdf_path: the hdf5 dataset (in an already opened file)        
+            hdf_path: the hdf5 dataset (in an already opened file)
         """
         dataset = hdf_path.create_dataset(key, data=self.data)
 
@@ -185,8 +185,8 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             dataset.attrs[key] = value
 
     def copy(self, data=None):
-        """ create a copy of the element
-        
+        """create a copy of the element
+
         Args:
             data:
                 New data to overwrite the data of the current element. If
@@ -215,8 +215,8 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
 
 def element_from_hdf(hdf_path) -> ElementBase:
-    """ create element instance from a stored state
-     
+    """create element instance from a stored state
+
     Args:
         hdf_path: HDF path in an already opened file
     """
@@ -240,8 +240,8 @@ def element_from_hdf(hdf_path) -> ElementBase:
 
 
 def element_from_file(path: str) -> ElementBase:
-    """ create element instance from a stored state
-     
+    """create element instance from a stored state
+
     Args:
         path (str): Path to the file being read
     """

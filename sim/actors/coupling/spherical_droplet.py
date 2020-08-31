@@ -78,8 +78,8 @@ class ShellCollection:
     def from_dictlist(
         cls, dictlist: Sequence[Dict[str, Any]], info_dict: Dict[str, Any] = None
     ) -> "ShellCollection":
-        """ create shell collection from a list of dictionaries
-        
+        """create shell collection from a list of dictionaries
+
         Args:
             dictlist (list of dicts):
                 a list of shells, where each shell is characterized by a
@@ -87,7 +87,7 @@ class ShellCollection:
                 'radius_threshold'.
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
-        
+
         Returns:
             :class:`ShellCollection`
         """
@@ -106,8 +106,8 @@ class ShellCollection:
         radius_max: float = np.inf,
         info_dict: Dict[str, Any] = None,
     ) -> "ShellCollection":
-        """ generate a :class:`ShellCollection` for a simulation
-        
+        """generate a :class:`ShellCollection` for a simulation
+
         Args:
             dim (int):
                 The dimension of space
@@ -117,12 +117,12 @@ class ShellCollection:
                 The maximal radius of the sphere that needs to be considered
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
-            
+
         Note:
             One-dimensional shells are special in that there can only be exactly
             two sectors. Consequently, `max_sector_size` and `radius_max` are
             not used in this case.
-        
+
         Returns:
             :class:`ShellCollection`
         """
@@ -179,12 +179,12 @@ class ShellCollection:
         return cls.from_dictlist(data, info_dict=info_dict)
 
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        """ obtain the i-th shell
-        
+        """obtain the i-th shell
+
         Args:
             index (int):
                 The index of the shell
-            
+
         Returns:
             (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
                 associated weights. The shell vectors are unit vectors pointing
@@ -204,12 +204,12 @@ class ShellCollection:
             yield self[i]
 
     def get_shell(self, radius: float) -> Tuple[np.ndarray, np.ndarray]:
-        """ return shell corresponding to droplet of given radius
-        
+        """return shell corresponding to droplet of given radius
+
         Args:
             radius (float):
                 The radius of the droplet
-            
+
         Returns:
             (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
                 associated weights. The shell vectors are unit vectors pointing
@@ -228,10 +228,10 @@ class ShellCollection:
         return self[i]
 
     def make_shell_getter_compiled(self) -> Callable[[float], Tuple[np.ndarray, float]]:
-        """ returns a function for obtaining shells
-        
+        """returns a function for obtaining shells
+
         Returns:
-            callable: A function that is called with a radius and returns a 
+            callable: A function that is called with a radius and returns a
                 tuple (numpy.ndarray, numpy.ndarray) of the shell vectors and
                 the associated weights. The shell vectors are unit vectors
                 pointing from the droplet center to the shell center. The
@@ -326,12 +326,12 @@ class SphericalDropletActor(ActorBase):
     def _parse_equilibrium_concentration(
         self, out: Dict[str, Any] = None
     ) -> Dict[str, Any]:
-        """ parse expressions that depend on droplet variables
-        
+        """parse expressions that depend on droplet variables
+
         Args:
             out (dict, optional):
                 Dictionary into which the expressions are stored
-                
+
         Returns:
             A dictionary with the expressions. This is `out` if it was supplied.
             Otherwise, a new dictionary is returned.
@@ -374,8 +374,8 @@ class SphericalDropletActor(ActorBase):
         return out
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """ prepare the simulation doing pre-calculations 
-        
+        """prepare the simulation doing pre-calculations
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -411,8 +411,8 @@ class SphericalDropletActor(ActorBase):
         self._cache["shells"] = shells
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -428,14 +428,14 @@ class SphericalDropletActor(ActorBase):
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
     ) -> float:
-        """ returns the integrated outwards flux at the droplet surface given
+        """returns the integrated outwards flux at the droplet surface given
         some imposed concentration value at the outer shell
-        
+
         Note:
             We assume that the flux is integrated over the entire spherical
-            surface, so that it needs to be multiplied by the surface fraction 
+            surface, so that it needs to be multiplied by the surface fraction
             when only a sector is considered.
-        
+
         Args:
             radius (float):
                 The current droplet radius
@@ -449,9 +449,9 @@ class SphericalDropletActor(ActorBase):
                 droplet list. This is ignored in the standard implementation
                 given here, but is required by the interface since it is useful
                 in other situations.
-            
+
         Returns:
-            float: the integrated flux in the outward normal direction. 
+            float: the integrated flux in the outward normal direction.
         """
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
@@ -479,10 +479,10 @@ class SphericalDropletActor(ActorBase):
             raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
 
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
-        """ create a function that calculates the integrated outwards flux at
+        """create a function that calculates the integrated outwards flux at
         the droplet surface given some imposed concentration value at the outer
         shell.
-        
+
         Returns:
             callable: the function with the signature
                 (radius: float, c_far: float, cEqOut: float, droplet_id: int)
@@ -565,12 +565,12 @@ class SphericalDropletActor(ActorBase):
     def get_equilibrium_concentrations(
         self, droplets: SphericalDropletsElement
     ) -> np.ndarray:
-        """ returns the equilibrium concentration outside each droplet
-        
+        """returns the equilibrium concentration outside each droplet
+
         Args:
             droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
-                The state of all the droplets        
-        
+                The state of all the droplets
+
         Returns:
             :class:`numpy.ndarray`: The equilibrium concentration for each
                 droplet with non-zero radius.
@@ -596,8 +596,8 @@ class SphericalDropletActor(ActorBase):
         point_style: Dict[str, Any] = None,
         shell_style: Dict[str, Any] = None,
     ):
-        r""" plot all shell points around the droplets of a given state
-        
+        r"""plot all shell points around the droplets of a given state
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -608,11 +608,11 @@ class SphericalDropletActor(ActorBase):
             point_style (dict, optional):
                 Dictionary with keyword arguments that are used in the
                 :meth:`matplotlib.pyplot.plot` call. This affects the style of
-                the shell points. 
+                the shell points.
             shell_style (dict, optional):
                 Dictionary with keyword arguments that are used in the
                 :meth:`matplotlib.patches.Wedge` call that is responsible for
-                drawing the shell area. 
+                drawing the shell area.
         """
         import matplotlib.pyplot as plt
         from matplotlib.patches import Wedge
@@ -661,8 +661,8 @@ class SphericalDropletActor(ActorBase):
             plt.plot(points[:, 0], points[:, 1], **point_style)
 
     def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
-        """ create a function to evolve a single droplet from time `t` to `t + dt`
-        
+        """create a function to evolve a single droplet from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -698,6 +698,7 @@ class SphericalDropletActor(ActorBase):
         surface = spherical.make_surface_from_radius_compiled(dim)
         volume = spherical.make_volume_from_radius_compiled(dim)
 
+        normalize_point = field.grid.make_normalize_point_compiled()
         get_concentration = field.make_get_concentration_compiled()
         add_amount = field.make_add_amount_compiled()
 
@@ -765,12 +766,13 @@ class SphericalDropletActor(ActorBase):
                         droplet_data.position[j] += (
                             factor * amount_per_shell_out[i] * shell_vectors[i, j]
                         )
+                    normalize_point(droplet_data.position)
 
         return droplet_update  # type: ignore
 
     def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
-        """ return a function evolve the state from time `t` to `t + dt`
-        
+        """return a function evolve the state from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -885,8 +887,8 @@ class SphericalDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """ evolve the state from time `t` to `t + dt`
-        
+        """evolve the state from time `t` to `t + dt`
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -944,6 +946,5 @@ class SphericalDropletActor(ActorBase):
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
                 area = droplet.surface_area
-                droplet.position += (
-                    field.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
-                )
+                dx = field.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
+                droplet.position = field.grid.normalize_point(droplet.position + dx)

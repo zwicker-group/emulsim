@@ -44,8 +44,8 @@ class EmittersActor(ActorBase):
         return len(self.parameters["positions"])
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """ estimate the maximal time step for simulating this actor 
-        
+        """estimate the maximal time step for simulating this actor
+
         Args:
             element (:class:`~sim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters
@@ -56,8 +56,8 @@ class EmittersActor(ActorBase):
         return float("inf")
 
     def make_evolver_numba(self, elements: ElementsType) -> Callable:
-        """ return a function evolve the field state from time `t` to `t + dt`
-        
+        """return a function evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters
@@ -82,8 +82,8 @@ class EmittersActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """ evolve the field state from time `t` to `t + dt`
-        
+        """evolve the field state from time `t` to `t + dt`
+
         Args:
             elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters

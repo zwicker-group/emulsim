@@ -52,8 +52,8 @@ class FieldCouplingActor(ActorBase):
         self.element_classes = (FieldElementBase,) * self.num_fields
 
     def _update_cache(self, fields: ElementsType) -> None:
-        """ prepare the simulation doing pre-calculations 
-        
+        """prepare the simulation doing pre-calculations
+
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
                 The state of the individual fields
@@ -75,8 +75,8 @@ class FieldCouplingActor(ActorBase):
         self._cache["rhs_expressions"] = rhs_expressions
 
     def make_evolver_numba(self, fields: ElementsType) -> Callable:
-        """ return a function evolve the state from time `t` to `t + dt`
-        
+        """return a function evolve the state from time `t` to `t + dt`
+
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
                 The state of the individual fields
@@ -124,8 +124,8 @@ class FieldCouplingActor(ActorBase):
         return chain(0, innermost)
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
-        """ evolve the state from time `t` to `t + dt`
-        
+        """evolve the state from time `t` to `t + dt`
+
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
                 The state of the individual fields
