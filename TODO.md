@@ -1,5 +1,7 @@
 TODO
 ====
+* Add interactive plotting using napari
+    - add interactive tracker (need to update droplet radius, too!)
 * Allow adding (periodic) boundaries for Brownian motion
 * Add option of creating actor from factory function.
     - The function would receive the elements and return an evolver
@@ -13,4 +15,3 @@ TODO
   to a file (for documentation purposes)
 * Simulation:
 	Add diagnostic information (dt, step_count, degrees of freedom)
- 

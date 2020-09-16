@@ -47,14 +47,6 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """ :class:`pde.grids.cartesian.CartesianGrid`: discretization grid """
         return CartesianGrid(self.bounds, 1)
 
-    def plot(self, ax=None, **kwargs):
-        """plot the background field
-
-        Args:
-            {PLOT_ARGS}
-        """
-        pass
-
     @abstractproperty
     def total_amount(self) -> float:
         """ float: the total material amount in the field """
@@ -108,9 +100,24 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
+    def plot(self, ax=None, **kwargs):
+        """plot the field"""
+        pass
+
+    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+        """returns data for plotting on a single napari layer
+
+        Args:
+            **kwargs: Extra arguments are passed to plotting function
+
+        Returns:
+            dict: all the information necessary to plot this field
+        """
+        return self.field._get_napari_layer_data(**kwargs)  # type: ignore
+
 
 class MeanfieldElement(FieldElementBase):
-    """ an element representing a meanfield background """
+    """ an element representing a homogeneous field """
 
     parameters_default = [
         Parameter(
@@ -166,6 +173,11 @@ class MeanfieldElement(FieldElementBase):
         self.data[0] = value
 
     @property
+    def field(self) -> ScalarField:
+        """:class:`~pde.fields.scalar.ScalarField`: representation as a scalar field """
+        return ScalarField(self.grid, data=self.concentration)
+
+    @property
     def total_amount(self) -> float:
         """ float: the total material amount in the field """
         return self.concentration * self.volume
@@ -198,7 +210,7 @@ class MeanfieldElement(FieldElementBase):
 
         Args:
             color:
-                The color in which the background is shown. All matplotlib
+                The color in which the field is shown. All matplotlib
                 color specifications are allowed.
             {PLOT_ARGS}
         """
@@ -349,13 +361,7 @@ class ScalarFieldElement(FieldElementBase):
         """plot the field
 
         This simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
-        arguments are forwarded.
-
-        Args:
-            color:
-                The color in which the background is shown. All matplotlib
-                color specifications are allowed.
-            {PLOT_ARGS}
+        arguments are forwarded to this method.
         """
         return self._field.plot(ax=ax, **kwargs)
 

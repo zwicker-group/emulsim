@@ -83,3 +83,24 @@ class PointsElement(ElementBase):
         xmax, ymax = positions.max(axis=0) + radius
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(ymin, ymax)
+
+    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+        """returns data for plotting on a single napari layer
+
+        Args:
+            size (float):
+                The size of the points
+            **kwargs:
+                Additional arguments returned in the result, which affect how the layer
+                is shown.
+
+        Returns:
+            dict: all the information necessary to plot the points
+        """
+        result = kwargs
+
+        result.setdefault("size", 1)
+        result["type"] = "points"
+        result["data"] = self.data
+
+        return result

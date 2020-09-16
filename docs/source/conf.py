@@ -256,6 +256,7 @@ intersphinx_mapping = {
     "http://docs.h5py.org/en/latest/": None,
     "https://py-pde.readthedocs.io/en/latest": None,
     "https://py-droplets.readthedocs.io/en/latest": None,
+    "https://napari.org/docs": None,
 }
 
 

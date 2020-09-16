@@ -213,6 +213,14 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         """ plot the element """
         pass
 
+    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+        """returns data for plotting on a single napari layer
+
+        Returns:
+            dict: all the information necessary to plot this element
+        """
+        raise NotImplementedError
+
 
 def element_from_hdf(hdf_path) -> ElementBase:
     """create element instance from a stored state

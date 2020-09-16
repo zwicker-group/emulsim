@@ -19,7 +19,13 @@ class BrownianMotionPointActor(ActorBase):
     """ represents actor that moves points according to Brownian motion """
 
     parameters_default = [
-        Parameter("diffusivity", 1, float, "The strength of the Brownian motion"),
+        Parameter(
+            "diffusivity",
+            1,
+            float,
+            "The diffusivity of the particles, which determines the strength of the "
+            "Brownian motion.",
+        ),
     ]
 
     element_classes = (PointsElement,)

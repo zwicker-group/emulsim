@@ -10,9 +10,9 @@ from collections import OrderedDict, defaultdict
 from typing import Optional  # @UnusedImport
 from typing import Any, Dict, Iterable, Sequence, Tuple, Union
 
-from pde.grids.base import DimensionError
+from pde.grids.base import DimensionError, GridBase
 from pde.tools.misc import hdf_write_attributes
-from pde.tools.plotting import plot_on_axes
+from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import ElementBase, element_from_hdf
 
@@ -134,7 +134,7 @@ class State:
             dataset: the hdf5 dataset (in an already opened file)
         """
         element_names = []
-        for name, element in self.elements.items():
+        for name, element in self:
             element_names.append(name)
             element._write_hdf_dataset(hdf_path.create_group(name))
         hdf_write_attributes(hdf_path, {"elements": element_names})
@@ -243,3 +243,57 @@ class State:
         # set the bounding box to the maximal value
         ax.set_xlim(*limits.intervalx)
         ax.set_ylim(*limits.intervaly)
+
+    def plot_interactive(
+        self, grid: GridBase = None, viewer_args: Dict[str, Any] = None, **kwargs
+    ):
+        """create an interactive plot of the field using :mod:`napari`
+
+        Args:
+            grid (:~pde.grids.base.GridBase`):
+                The grid that defines the space in which the simulation takes place. If
+                omitted, we try to determine it automatically from the elements in the
+                state.
+            viewer_args (dict):
+                Arguments passed to :class:`napari.viewer.Viewer` to affect the viewer
+            **kwargs:
+                Extra arguments passed to all plotting function
+        """
+        from pde.tools.plotting import napari_viewer
+
+        if viewer_args is None:
+            viewer_args = {}
+
+        # try finding the best field that could serve to define the space
+        layers_data = {}
+        for name, element in self.elements.items():
+            try:
+                layer_data = element._get_napari_layer_data()
+            except NotImplementedError:
+                self._logger.warning(
+                    "Element %s does not support interactive plotting", name
+                )
+            else:
+                layers_data[name] = layer_data
+
+            # try to find a suitable grid
+            try:
+                candidate = element.grid  # type: ignore
+            except AttributeError:
+                pass
+            else:
+                if isinstance(candidate, GridBase) and candidate.dim == self.dim:
+                    if grid is None or candidate.volume > grid.volume:
+                        grid = candidate
+
+        # check whether we have enough information to proceed
+        if grid is None:
+            raise RuntimeError("Could not determine suitable grid")
+        if grid.dim != self.dim:
+            raise RuntimeError(
+                "Grid dimension is not compatible (%d != %d)", grid.dim, self.dim
+            )
+
+        # do the actual plotting
+        with napari_viewer(grid, **viewer_args) as viewer:
+            napari_add_layers(viewer, layers_data)

@@ -264,11 +264,12 @@ class SphericalDropletActor(ActorBase):
             "1e-5 / radius",
             object,
             "Expression for the equilibrium concentration. This expression can contain "
-            "the variables `radius` and `position` denoting the droplet radius and its "
-            "position vector, respectively. Alternatively, the value can also be an "
-            "instance defining a __call__ method that returns the equilibrium "
-            "concentration and a `get_compiled` method that returns a numba compiled "
-            "function for calculating it.",
+            "the variables `radius`, `position`, and `id` denoting the droplet radius, "
+            "its position vector, and its identity (the index in the list of droplets)"
+            ", respectively. Alternatively, the value can also be an instance defining "
+            "a __call__ method that returns the equilibrium concentration and a "
+            "`get_compiled` method that returns a numba compiled function for "
+            "calculating it.",
         ),
         Parameter(
             "diffusivity",
@@ -281,14 +282,17 @@ class SphericalDropletActor(ActorBase):
             "0",
             str,
             "Reaction rate outside the droplet (in the shell region), given as an "
-            "expression that can depend on position and the local concentration value",
+            "expression that can depend on the local concentration `c` of the "
+            "background field and the droplets identity `id` (the index in the list of "
+            "droplets).",
         ),
         Parameter(
             "reaction_inside",
             "0",
             str,
             "Reaction rate inside the droplet, given as an expression that can depend "
-            "on the location of the droplet.",
+            "on the location `position` (or `pos`) of the droplet, its radius `R`, and "
+            "its identity `id` (the index in the list of droplets).",
         ),
         Parameter(
             "drift_enabled", True, bool, "Flag determining whether droplets can move"
