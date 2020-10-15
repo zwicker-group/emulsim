@@ -368,7 +368,7 @@ class ScalarFieldElement(FieldElementBase):
     @property
     def total_amount(self) -> float:
         """ float: the total material amount in the field """
-        return self._field.integral
+        return self._field.integral.real
 
     def get_concentration(self, points: np.ndarray):
         """determine concentration at the given points
