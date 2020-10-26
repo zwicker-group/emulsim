@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 from typing import List  # @UnusedImport
 
-import numba as nb
 import pytest
 
 from pde.tools.misc import module_available
@@ -19,8 +18,8 @@ PACKAGEPATH = Path(__file__).parents[2].resolve()
 EXAMPLE_PATH = PACKAGEPATH / "examples"
 
 
+@pytest.mark.no_cover
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
-@pytest.mark.skipif(nb.config.DISABLE_JIT, reason="pytest seems to check code coverage")
 @pytest.mark.parametrize("path", glob.glob(str(EXAMPLE_PATH / "*.py")))
 def test_examples(path):
     """ runs an example script given by path """
