@@ -1,19 +1,15 @@
 #!/bin/bash
 
-CORES=`python3 -c 'from multiprocessing import cpu_count; print(cpu_count() // 2)'`
-
-export PYTHONPATH=../../py-pde:../../py-droplets:../../py-phasesep:$PYTHONPATH
-export NUMBA_BOUNDSCHECK=1
-export NUMBA_WARNINGS=1
-export MPLBACKEND="agg"
+# add the likely paths of custom packages, relative to current base path
+export PYTHONPATH=../py-pde:../py-droplets:../py-phasesep:$PYTHONPATH
 
 if [ ! -z $1 ] 
 then 
-	# test pattern was specified 
-	echo 'Run unittests with pattern '$1' on '$CORES' cores:'
-	python3 -m pytest -rs -n $CORES --durations=10 -k "$1" . ..
+    # test pattern was specified 
+    echo 'Run unittests with pattern '$1':'
+    ./run_tests.py --unit --parallel --pattern "$1"
 else
-	# test pattern was not specified
-	echo 'Run all unittests on '$CORES' cores:'
-	python3 -m pytest -rs -n $CORES --durations=10 . ..
+    # test pattern was not specified
+    echo 'Run all unittests:'
+    ./run_tests.py --unit --parallel
 fi

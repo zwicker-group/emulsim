@@ -1,17 +1,15 @@
 #!/bin/bash
 
-export PYTHONPATH=../../py-pde:../../py-droplets:../../py-phasesep:$PYTHONPATH
-export NUMBA_BOUNDSCHECK=1
-export NUMBA_WARNINGS=1
-export MPLBACKEND="agg"
+# add the likely paths of custom packages, relative to current base path
+export PYTHONPATH=../py-pde:../py-droplets:../py-phasesep:$PYTHONPATH
 
 if [ ! -z $1 ] 
 then 
-	# test pattern was specified 
-	echo 'Run unittests with pattern '$1
-	python3 -m pytest -rs -k "$1" . ..
+    # test pattern was specified 
+    echo 'Run unittests with pattern '$1':'
+    ./run_tests.py --unit --pattern "$1"
 else
-	# test pattern was not specified
-	echo 'Run all unittests'
-    python3 -m pytest -rs . ..
+    # test pattern was not specified
+    echo 'Run all unittests:'
+    ./run_tests.py --unit
 fi
