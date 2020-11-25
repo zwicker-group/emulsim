@@ -35,7 +35,7 @@ jobs:
       run: |
         pip install pytest
         cd tests
-        python -m pytest -c pytest.ini -rs . ..
+        ./run_tests.py
         
     - name: Test types with mypy
       run: |
