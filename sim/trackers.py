@@ -129,33 +129,31 @@ class DropletElementTracker(TrackerBase):
             element_name (str):
                 The name of the element containing the droplets
             interval
-                Determines how often the tracker interrupts the simulation.
-                Simple numbers are interpreted as durations measured in the
-                simulation time variable. Alternatively, instances of
+                Determines how often the tracker interrupts the simulation. Simple
+                numbers are interpreted as durations measured in the simulation time
+                variable. Alternatively, instances of
                 :class:`~droplets.simulation.trackers.LogarithmicIntervals` and
                 :class:`~droplets.simulation.trackers.RealtimeIntervals`
                 might be given for more control.
             store_emulsions (bool or str):
                 Determines whether to store data on emulsions in an instance of
-                :class:`~droplets.analysis.emulsions.EmulsionTimeCourse`. No
-                data is stored when this is `False`. Otherwise, the data is
-                available in the :attr:`emulsions` attributed of the tracker
-                instance. The data is additionally written to a file when a
-                path is supplied as a string.
+                :class:`~droplets.analysis.emulsions.EmulsionTimeCourse`. No data is
+                stored when this is `False`. Otherwise, the data is available in the
+                :attr:`emulsions` attributed of the tracker instance. The data is
+                additionally written to a file when a path is supplied as a string.
             store_droplet_tracks (bool or str):
                 Determines whether to store data on droplets in an instance of
-                :class:`~droplets.analysis.droplets.DropletTrackList`. No
-                data is stored when this is `False`. Otherwise, the data is
-                available in the :attr:`droplet_tracks` attributed of the
-                tracker instance. The data is additionally written to a file
-                when a path is supplied as a string.
+                :class:`~droplets.analysis.droplets.DropletTrackList`. No data is stored
+                when this is `False`. Otherwise, the data is available in the
+                :attr:`droplet_tracks` attributed of the tracker instance. The data is
+                additionally written to a file when a path is supplied as a string.
             keep_vanished (bool):
-                Flag determining whether vanished droplets (with zero radius)
-                are still stored. The default is to filter these droplets.
+                Flag determining whether vanished droplets (with zero radius) are still
+                stored. The default is to filter these droplets. Enable this flag if
+                droplets can disappear and re-appear in the simulation.
             background_grid (:class:`pde.grids.base.GridBase`):
-                The grid on which the droplets are defined. This is stored in
-                the emulsion object to calculate distances and other geometric
-                quantities.
+                The grid on which the droplets are defined. This is stored in the
+                emulsion object to calculate distances and other geometric quantities.
         """
         super().__init__(interval=interval)
         self.element_name = element_name
@@ -185,7 +183,8 @@ class DropletElementTracker(TrackerBase):
             self.emulsions.grid = self.background_grid
 
         if self.store_droplet_tracks is not False:
-            self.droplet_tracks = DropletTrackList()
+            tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
+            self.droplet_tracks = DropletTrackList(tracks)
 
         return super().initialize(state, info)  # type: ignore
 
@@ -210,18 +209,13 @@ class DropletElementTracker(TrackerBase):
             # add emulsion without an additional copy
             self.emulsions.append(emulsion, time=t, copy=False)
 
-        # handle droplet track list
+        # append all droplets to existing tracks
         if self.store_droplet_tracks is not False:
-            if len(self.droplet_tracks) == 0:
-                # initialize droplet tracks
-                for droplet in droplets:
-                    track = DropletTrack(droplets=[droplet.copy()], times=[t])
-                    self.droplet_tracks.append(track)
-            else:
-                # append to existing tracks
-                for i, droplet in enumerate(droplets):
-                    if self.keep_vanished or self.droplet_tracks[i].last.radius > 0:
-                        self.droplet_tracks[i].append(droplet, time=t)
+            for i, droplet in enumerate(droplets):
+                track = self.droplet_tracks[i]
+                is_active = track and track.last.radius > 0
+                if is_active or droplet.radius > 0 or self.keep_vanished:
+                    track.append(droplet, time=t)
 
     def finalize(self, info: InfoDict = None) -> None:
         """finalize the tracker, supplying additional information
