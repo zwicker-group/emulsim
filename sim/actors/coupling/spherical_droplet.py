@@ -281,18 +281,21 @@ class SphericalDropletActor(ActorBase):
             "reaction_outside",
             "0",
             str,
-            "Reaction rate outside the droplet (in the shell region), given as an "
-            "expression that can depend on the local concentration `c` of the "
-            "background field and the droplets identity `id` (the index in the list of "
-            "droplets).",
+            "Reaction rate outside the droplet, which determines the production of "
+            "droplet material per unit volume in the shell region. This can be an "
+            "expression that depends on `position`, the local concentration value `c` "
+            "outside the droplet, or the droplets identity `id` (the index in the list "
+            "of droplets).",
         ),
         Parameter(
             "reaction_inside",
             "0",
             str,
-            "Reaction rate inside the droplet, given as an expression that can depend "
-            "on the location `position` (or `pos`) of the droplet, its radius `R`, and "
-            "its identity `id` (the index in the list of droplets).",
+            "Reaction rate inside the droplet, which determines the production of "
+            "droplet material per unit volume. This can be an expression that depends "
+            "on the droplet radius `R`, its location `position`, or its identity `id` "
+            "(the index in the list of droplets). Use negative values to destroy "
+            "droplet material inside the droplet.",
         ),
         Parameter(
             "drift_enabled", True, bool, "Flag determining whether droplets can move"
