@@ -430,7 +430,7 @@ class SphericalDropletActor(ActorBase):
         self._check_cache(elements)
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
-        return L ** 2 / D
+        return 0.25 * L ** 2 / D
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
