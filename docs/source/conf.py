@@ -46,10 +46,6 @@ from parse_examples import main
 main()
 
 
-rst_prolog = """
-.. include:: ../doc_replacements.txt
-"""
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -256,7 +252,7 @@ intersphinx_mapping = {
     "http://docs.h5py.org/en/latest/": None,
     "https://py-pde.readthedocs.io/en/latest": None,
     "https://py-droplets.readthedocs.io/en/latest": None,
-    "https://napari.org/docs": None,
+    "https://napari.org/docs/dev/": None,
 }
 
 
