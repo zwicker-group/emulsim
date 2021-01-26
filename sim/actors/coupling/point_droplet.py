@@ -24,9 +24,11 @@ class PointDropletActor(ActorBase):
     """actor that couples points-like droplets to a field
 
     For simplicity, these droplets interact with the field only at one point
-    (their position). This approximation only works in three dimension where it
-    accelerates calculations and is usually a good approximation when the
-    background field varies only little on the length scale of the droplet size.
+    (their position). For a physical correct model, where the exchange flux with the
+    dilute phase is governed by diffusion, this approximation only works in three
+    dimension where it accelerates calculations and is usually a good approximation when
+    the background field varies only little on the length scale of the droplet size. To
+    cover also other dimension, a simple linear exchange flux model is also supported.
     """
 
     parameters_default = [
@@ -40,10 +42,30 @@ class PointDropletActor(ActorBase):
             "instance defining a __call__ method.",
         ),
         Parameter(
+            "flux_model",
+            "diffusion",
+            str,
+            "Specifies how the exchange of material between the droplet and the dilute "
+            "phase is modeled. Possible options: 1) 'diffusion', which uses a real "
+            "physical diffusion model. The parameter `diffusivity` determines rate and "
+            "the model is only applicable in 3 dimensional systems. 2) 'linear', which "
+            "assumes that the flux is a linear function of the difference between the "
+            "equilibrium concentration `equilibrium_concentration` and the actually "
+            "measured concentration. The parameter `` defines the exchange rate",
+        ),
+        Parameter(
             "diffusivity",
             1.0,
             float,
-            "Diffusivity in the shell surrounding the droplets",
+            "Diffusivity of the droplet material in the dilute phase, which determines "
+            "the rate if `flux_model` is `diffusion`.",
+        ),
+        Parameter(
+            "exchange_rate",
+            1.0,
+            float,
+            "Rate with which droplet material is exchanged with the dilute phase when "
+            "the `flux_model` is `linear`.",
         ),
     ]
 
@@ -95,10 +117,31 @@ class PointDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
-        droplets, _ = elements
-        D = float(self.parameters["diffusivity"])
-        L = float(droplets.data["radius"].mean())
-        return L ** 2 / D
+        droplets, field = elements
+
+        if self.parameters["flux_model"] == "diffusion":
+            # estimate time scale from diffusion across droplet
+            D = float(self.parameters["diffusivity"])
+            mean_radius = float(droplets.data["radius"].mean())
+            dt = mean_radius ** 2 / D
+
+        elif self.parameters["flux_model"] == "linear":
+            # estimate time scale from dissolution of droplet by flux
+            exchange_rate = float(self.parameters["exchange_rate"])
+            ceq = self.get_equilibrium_concentrations(droplets).mean()
+            c0 = field.average_concentration
+            flux = exchange_rate * abs(ceq - c0)
+            if droplets.droplet_count > 0 and flux > 0:
+                mean_amount = droplets.total_amount / droplets.droplet_count
+                dt = 1e-3 * mean_amount / flux
+            else:
+                dt = np.nan  # cannot determine time step
+
+        else:
+            raise NotImplementedError(
+                "Flux model `%s` undefined" % self.parameters["flux_model"]
+            )
+        return dt
 
     def get_flux_outside(self, radius: float, c_far: float, cEqOut: float) -> float:
         """returns the integrated outwards flux at the droplet surface given
@@ -116,16 +159,26 @@ class PointDropletActor(ActorBase):
         Returns:
             float: the integrated flux in the outward normal direction.
         """
-        D = float(self.parameters["diffusivity"])
+        if self.parameters["flux_model"] == "diffusion":
+            D = float(self.parameters["diffusivity"])
 
-        if self._cache["dim"] == 3:
-            # flux for 3d droplet without reaction
-            return 4 * np.pi * D * radius * (cEqOut - c_far)  # type: ignore
+            if self._cache["dim"] == 3:
+                # flux for 3d droplet without reaction
+                return 4 * np.pi * D * radius * (cEqOut - c_far)  # type: ignore
+
+            else:
+                raise NotImplementedError(
+                    "Flux model `diffusion` only works in three dimensions "
+                    f"(current dimension is {self._cache['dim']})"
+                )
+
+        elif self.parameters["flux_model"] == "linear":
+            exchange_rate = float(self.parameters["exchange_rate"])
+            return exchange_rate * (cEqOut - c_far)
 
         else:
             raise NotImplementedError(
-                f"{self.__class__.__name__} only works in three dimensions (current "
-                f"dimension is {self._cache['dim']})"
+                "Flux model `%s` undefined" % self.parameters["flux_model"]
             )
 
     def _make_flux_outside(self) -> Callable:
@@ -138,18 +191,31 @@ class PointDropletActor(ActorBase):
                 (radius: float, c_far: float, cEqOut: float)
                 corresponding to :meth:`PointDropletActor.get_flux_outside`
         """
-        D = self.parameters["diffusivity"]
+        if self.parameters["flux_model"] == "diffusion":
+            D = self.parameters["diffusivity"]
 
-        if self._cache["dim"] == 3:
+            if self._cache["dim"] == 3:
+
+                def flux_outside(radius: float, c_far: float, cEqOut: float):
+                    """ diffusive exchange flux for 3d droplet """
+                    return 4 * np.pi * D * radius * (cEqOut - c_far)
+
+            else:
+                raise NotImplementedError(
+                    "Flux model `diffusion` only works in three dimensions "
+                    f"(current dimension is {self._cache['dim']})"
+                )
+
+        elif self.parameters["flux_model"] == "linear":
+            exchange_rate = float(self.parameters["exchange_rate"])
 
             def flux_outside(radius: float, c_far: float, cEqOut: float):
-                """ flux for 3d droplet without reaction """
-                return 4 * np.pi * D * radius * (cEqOut - c_far)
+                """ linear exchange flux """
+                return exchange_rate * (cEqOut - c_far)
 
         else:
             raise NotImplementedError(
-                f"{self.__class__.__name__} only works in three dimensions (current "
-                f"dimension is {self._cache['dim']})"
+                "Flux model `%s` undefined" % self.parameters["flux_model"]
             )
 
         return flux_outside
