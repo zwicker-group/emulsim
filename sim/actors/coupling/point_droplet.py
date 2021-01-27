@@ -51,7 +51,8 @@ class PointDropletActor(ActorBase):
             "the model is only applicable in 3 dimensional systems. 2) 'linear', which "
             "assumes that the flux is a linear function of the difference between the "
             "equilibrium concentration `equilibrium_concentration` and the actually "
-            "measured concentration. The parameter `` defines the exchange rate",
+            "measured concentration. The parameter `exchange_rate` defines the "
+            "pre-factor governing the rate of the exchange.",
         ),
         Parameter(
             "diffusivity",
