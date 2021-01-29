@@ -22,12 +22,6 @@ SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """ represents a simulation element """
 
-    data: np.ndarray
-    """ :class:`numpy.ndarray`:
-    Data describing the state of the element. These are the dynamical variables
-    (degree of freedoms) of the simulation
-    """
-
     _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
 
     dim: int  # dimensionality of the space in which the element is embedded
@@ -39,7 +33,19 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             parameters (dict): Parameters affecting the behavior of the element
         """
         super().__init__(parameters)
-        self.data = data
+        self._data = data
+
+    @property
+    def data(self) -> np.ndarray:
+        """:class:`numpy.ndarray`:
+        (Read-only) data describing the state of the element. These are the dynamical
+        variables (degree of freedoms) of the simulation.
+
+        The underlying attribute `_data` should only be set in the initialization of the
+        element to make sure always the same memory region is accessed. To modify this
+        array in-place, the following construct can be helpful: `self.data[...] += 1`.
+        """
+        return self._data
 
     def __init_subclass__(cls, **kwargs):  # @NoSelf
         """ register all subclassess to reconstruct them later """

@@ -150,7 +150,7 @@ class MeanfieldElement(FieldElementBase):
             raise ValueError("`bounds` need to be specified in parameters")
         else:
             self.set_bounds(self.parameters["bounds"])
-        self.data = np.full((1,), data, dtype=np.double)
+        self._data = np.full((1,), data, dtype=np.double)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -326,7 +326,7 @@ class ScalarFieldElement(FieldElementBase):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self.data = self._field.data
+        self._data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
     @classmethod

@@ -13,7 +13,7 @@ class BrownianParticlesActor(sim.ActorBase):
         """ evolve the particles in time """
         (particles,) = elements
         scale = np.sqrt(dt) * self.diffusivity
-        particles.data += scale * np.random.normal(size=particles.data.shape)
+        particles.data[...] += scale * np.random.normal(size=particles.data.shape)
 
 
 # setup state
