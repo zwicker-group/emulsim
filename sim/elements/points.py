@@ -39,7 +39,7 @@ class PointsElement(ElementBase):
         super().__init__(data, parameters)
 
         # ensure the right format of the input data
-        self.data = np.atleast_2d(data)
+        self._data = np.atleast_2d(data)
         if self.data.ndim != 2:
             raise ValueError("`positions` must be a sequence of positions")
         self.dim = self.data.shape[1]

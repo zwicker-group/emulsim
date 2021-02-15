@@ -78,7 +78,7 @@ class BrownianMotionPointActor(ActorBase):
         """
         (points,) = elements  # extract single element
         scale = np.sqrt(dt * self.parameters["diffusivity"])
-        points.data += scale * np.random.randn(*points.data.shape)
+        points.data[...] += scale * np.random.randn(*points.data.shape)
 
 
 class BrownianMotionDropletActor(ActorBase):

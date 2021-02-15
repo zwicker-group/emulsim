@@ -104,7 +104,7 @@ class MeanfieldActor(ActorBase):
                 The time step used to evolve the element
         """
         (element,) = elements  # extract single element
-        element.data += dt * self._reaction(element.data, t)
+        element.data[...] += dt * self._reaction(element.data, t)
 
 
 class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):

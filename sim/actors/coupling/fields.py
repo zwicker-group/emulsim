@@ -140,4 +140,4 @@ class FieldCouplingActor(ActorBase):
         field_data = tuple(field.data for field in fields)
 
         for field_id, rhs in self._cache["rhs_expressions"].items():
-            fields[field_id].data += dt * rhs(*field_data, t)
+            fields[field_id].data[...] += dt * rhs(*field_data, t)
