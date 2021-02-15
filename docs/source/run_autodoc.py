@@ -11,9 +11,9 @@ OUTPUT_PATH = "packages"
 
 
 def replace_in_file(infile, replacements, outfile=None):
-    """ reads in a file, replaces the given data using python formatting and
+    """reads in a file, replaces the given data using python formatting and
     writes back the result to a file.
-    
+
     Args:
         infile (str):
             File to be read
@@ -22,7 +22,7 @@ def replace_in_file(infile, replacements, outfile=None):
         outfile (str):
             Output file to which the data is written. If it is omitted, the
             input file will be overwritten instead
-        
+
     """
     if outfile is None:
         outfile = infile
@@ -55,14 +55,20 @@ def main(package="sim"):
             f"../../{package}",  # path of the package
             f"../../{package}/tests",  # ignored path
             f"../../{package}/**/tests",  # ignored path
+            f"../../{package}/conftest.py",  # ignore conftest
         ]
     )
+
+    REPLACEMENTS = {
+        "Submodules\n----------\n\n": "",
+        "Subpackages\n-----------": "**Subpackages:**",
+        "sim package\n===========": "Reference manual\n================",
+    }
 
     # replace unwanted information
     for path in glob.glob(f"{OUTPUT_PATH}/*.rst"):
         logging.info("Patch file `%s`", path)
-        replace_in_file(path, {"Submodules\n----------\n\n": ""})
-        replace_in_file(path, {"Subpackages\n-----------": "**Subpackages:**"})
+        replace_in_file(path, REPLACEMENTS)
 
 
 if __name__ == "__main__":
