@@ -29,7 +29,7 @@ class PointsElement(ElementBase):
     def __init__(self, data: np.ndarray = None, parameters: Dict[str, Any] = None):
         """
         Args:
-            data (:class:`numpy.ndarray`):
+            data (:class:`~numpy.ndarray`):
                 The positions of all points
             parameters (dict):
                 Additional parameters. Call

@@ -51,7 +51,7 @@ class BrownianMotionPointActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (field_data: :class:`numpy.ndarray`, t: float, dt: float),
+                (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
         diffusivity = self.parameters["diffusivity"]
@@ -128,7 +128,7 @@ class BrownianMotionDropletActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (field_data: :class:`numpy.ndarray`, t: float, dt: float),
+                (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
         self._check_cache(elements)

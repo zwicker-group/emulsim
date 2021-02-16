@@ -51,7 +51,7 @@ class ShellCollection:
                 List of (unit) vectors defining the position of each shell
             weights (list):
                 List of weights for each shell
-            max_radii (:class:`numpy.ndarray`):
+            max_radii (:class:`~numpy.ndarray`):
                 The maximal sphere radius that each shell should be used for
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
@@ -579,7 +579,7 @@ class SphericalDropletActor(ActorBase):
                 The state of all the droplets
 
         Returns:
-            :class:`numpy.ndarray`: The equilibrium concentration for each
+            :class:`~numpy.ndarray`: The equilibrium concentration for each
                 droplet with non-zero radius.
         """
         # obtain the function for calculating the equilibrium concentration
@@ -676,9 +676,9 @@ class SphericalDropletActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (droplet_data: :class:`numpy.ndarray`, droplet_id: int,
-                t: float, dt: float, filed_data: :class:`numpy.ndarray`,
-                field_update: :class:`numpy.ndarray`), evolving `droplet_data`
+                (droplet_data: :class:`~numpy.ndarray`, droplet_id: int,
+                t: float, dt: float, filed_data: :class:`~numpy.ndarray`,
+                field_update: :class:`~numpy.ndarray`), evolving `droplet_data`
                 and updating `field_update`
         """
         droplets, field = elements
@@ -786,7 +786,7 @@ class SphericalDropletActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (droplets_data: :class:`numpy.ndarray`, field_data: :class:`numpy.ndarray`,
+                (droplets_data: :class:`~numpy.ndarray`, field_data: :class:`~numpy.ndarray`,
                 t: float, dt: float), evolving `droplets_data` and `field_data`
         """
         self._check_cache(elements)

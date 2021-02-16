@@ -62,7 +62,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """determine concentration at the given points
 
         Args:
-            points (:class:`numpy.ndarray`):
+            points (:class:`~numpy.ndarray`):
                 The coordinates of the single point or the list of points at
                 which the concentration is returned
         """
@@ -73,7 +73,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """add the given amount to the field
 
         Args:
-            point (:class:`numpy.ndarray`):
+            point (:class:`~numpy.ndarray`):
                 Point where the amount is added to the field
             amount (float):
                 The total amount added to the field
@@ -84,8 +84,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """get a compiled function for obtaining concentrations
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`), which determines the concentration
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
         raise NotImplementedError
@@ -94,8 +94,8 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         """get a compiled function for adding amount to the field
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`, amount: float), which adds `amount`
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
         raise NotImplementedError
@@ -232,7 +232,7 @@ class MeanfieldElement(FieldElementBase):
         """determine concentration at the given points
 
         Args:
-            points (:class:`numpy.ndarray`):
+            points (:class:`~numpy.ndarray`):
                 The coordinates of the single point or the list of points at
                 which the concentration is returned
         """
@@ -261,8 +261,8 @@ class MeanfieldElement(FieldElementBase):
         """get a compiled function for obtaining concentrations
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`), which determines the concentration
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
 
@@ -276,8 +276,8 @@ class MeanfieldElement(FieldElementBase):
         """get a compiled function for adding amount to the field
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`, amount: float), which adds `amount`
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
         volume = self.volume
@@ -309,7 +309,7 @@ class ScalarFieldElement(FieldElementBase):
     def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
         """
         Args:
-            data (:class:`numpy.ndarray` or float, optional):
+            data (:class:`~numpy.ndarray` or float, optional):
                 Field values at the support points of the grid
             parameters (dict):
                 Additional parameters determining how the element behaves. Most
@@ -374,7 +374,7 @@ class ScalarFieldElement(FieldElementBase):
         """determine concentration at the given points
 
         Args:
-            points (:class:`numpy.ndarray`):
+            points (:class:`~numpy.ndarray`):
                 The coordinates of the single point or the list of points at
                 which the concentration is returned
         """
@@ -384,7 +384,7 @@ class ScalarFieldElement(FieldElementBase):
         """add the given amount to the field
 
         Args:
-            point (:class:`numpy.ndarray`):
+            point (:class:`~numpy.ndarray`):
                 Point where the amount is added to the field
             amount (float):
                 The total amount added to the field
@@ -395,8 +395,8 @@ class ScalarFieldElement(FieldElementBase):
         """get a compiled function for obtaining concentrations
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`), which determines the concentration
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
         return self._field.grid.make_interpolator_compiled()
@@ -405,8 +405,8 @@ class ScalarFieldElement(FieldElementBase):
         """get a compiled function for adding amount to the field
 
         Returns:
-            callable: a function with signature (data: :class:`numpy.ndarray`,
-            point: :class:`numpy.ndarray`, amount: float), which adds `amount`
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
         return self._field.grid.make_add_interpolated_compiled()

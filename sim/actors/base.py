@@ -94,7 +94,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
         Returns:
             callable: A function with signature
-                (state_data: :class:`numpy.ndarray`, t: float, dt: float),
+                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `state_data`
         """
         raise NotImplementedError
@@ -113,7 +113,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
         Returns:
             callable: A function with signature
-                (state_data: :class:`numpy.ndarray`, t: float, dt: float),
+                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 which evolves the state
         """
         pass

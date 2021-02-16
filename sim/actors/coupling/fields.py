@@ -83,7 +83,7 @@ class FieldCouplingActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (droplets_data: :class:`numpy.ndarray`, field_data, t: float,
+                (droplets_data: :class:`~numpy.ndarray`, field_data, t: float,
                 dt: float), evolving `droplets_data` and `field_data`
         """
         self._check_cache(fields)

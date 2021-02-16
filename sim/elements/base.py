@@ -37,7 +37,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def data(self) -> np.ndarray:
-        """:class:`numpy.ndarray`:
+        """:class:`~numpy.ndarray`:
         (Read-only) data describing the state of the element. These are the dynamical
         variables (degree of freedoms) of the simulation.
 
@@ -61,7 +61,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                 Attributes of the element. This carries information about
                 parameters and possibly additional parts that do not depend on
                 time.
-            data (:class:`numpy.ndarray`):
+            data (:class:`~numpy.ndarray`):
                 The numerical data associated with the state of the element
         """
         if "class" in attributes and attributes["class"] != cls.__name__:

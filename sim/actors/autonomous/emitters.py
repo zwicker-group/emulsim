@@ -64,7 +64,7 @@ class EmittersActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (field_data: :class:`numpy.ndarray`, t: float, dt: float),
+                (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
         (element,) = elements  # extract single element

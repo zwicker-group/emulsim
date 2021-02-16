@@ -32,7 +32,7 @@ class SphericalDropletsElement(ElementBase):
     def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
         """
         Args:
-            data (:class:`numpy.ndarray`):
+            data (:class:`~numpy.ndarray`):
                 The positions and radii of all points. This should be a
                 structured array as returned by
                 :attr:`droplets.emulsions.Emulsion.data`
