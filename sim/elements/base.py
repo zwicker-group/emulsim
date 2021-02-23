@@ -25,6 +25,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
     _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
 
     dim: int  # dimensionality of the space in which the element is embedded
+    _data: np.ndarray
 
     def __init__(self, data=None, parameters: Dict[str, Any] = None):
         """

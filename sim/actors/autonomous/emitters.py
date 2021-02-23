@@ -55,7 +55,9 @@ class EmittersActor(ActorBase):
         """
         return float("inf")
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:

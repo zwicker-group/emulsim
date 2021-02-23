@@ -19,7 +19,7 @@ from pde.solvers.base import SolverBase
 from pde.solvers.controller import Controller, TrackerCollectionDataType, TRangeType
 from pde.tools.numba import jit
 
-from .actors.base import ActorBase
+from .actors.base import ActorBase, EvolverType
 from .state import State
 
 _logger = logging.getLogger(__name__)
@@ -209,7 +209,7 @@ class Simulation:
 
         return min(dts)
 
-    def make_evolver_numba(self, state: State = None) -> Callable:
+    def make_evolver_numba(self, state: State = None):
         """return a function evolving the state from time `t` to `t + dt`
 
         Args:
@@ -233,11 +233,11 @@ class Simulation:
             actors.append(actor_data)
 
         @jit
-        def innermost(state_data, t, dt):
+        def innermost(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ no-op function serving as innermost nested function """
             pass
 
-        def chain(actor_id, inner) -> Callable:
+        def chain(actor_id: int, inner: EvolverType) -> EvolverType:
             """ recursive helper function for running all actors """
             # run through all evolvers
             evolver = actors[actor_id]["evolver"]
@@ -248,7 +248,7 @@ class Simulation:
                 i = element_indices[0]
 
                 @jit
-                def wrap(state_data, t: float, dt: float):
+                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                     inner(state_data, t, dt)
                     evolver((state_data[i],), t, dt)
 
@@ -256,7 +256,7 @@ class Simulation:
                 i, j = element_indices
 
                 @jit
-                def wrap(state_data, t: float, dt: float):
+                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                     inner(state_data, t, dt)
                     evolver((state_data[i], state_data[j]), t, dt)
 
@@ -264,7 +264,7 @@ class Simulation:
                 i, j, k = element_indices
 
                 @jit
-                def wrap(state_data, t: float, dt: float):
+                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                     inner(state_data, t, dt)
                     evolver((state_data[i], state_data[j], state_data[k]), t, dt)
 
@@ -272,7 +272,7 @@ class Simulation:
                 i, j, k, l = element_indices
 
                 @jit
-                def wrap(state_data, t: float, dt: float):
+                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                     inner(state_data, t, dt)
                     evolver(
                         (state_data[i], state_data[j], state_data[k], state_data[l]),
@@ -290,7 +290,7 @@ class Simulation:
         # compile the recursive chain
         return chain(0, innermost)
 
-    def evolve(self, state: State, t: float, dt: float):
+    def evolve(self, state: State, t: float, dt: float) -> None:
         """evolve the state from time `t` to `t + dt`
 
         Args:
