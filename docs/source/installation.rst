@@ -37,8 +37,8 @@ numpy        >=1.16    Array library used for storing data
 numba        >=0.43    Just-in-time compilation to accelerate numerics
 scipy        >=1.4     Miscellaneous scientific functions
 sympy        >=1.5     Dealing with user-defined mathematical expressions
-py-pde       >=0.8.5   Solving partial differential equations
-py-droplets  >=0.3     Represent droplets
+py-pde       >=0.13.3  Solving partial differential equations
+py-droplets  >=0.7     Represent droplets
 ===========  ========= =========
 
 

@@ -42,7 +42,9 @@ class BrownianMotionPointActor(ActorBase):
         """
         return float("inf")
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -57,11 +59,11 @@ class BrownianMotionPointActor(ActorBase):
         diffusivity = self.parameters["diffusivity"]
 
         @jit
-        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
+        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ evolve all points explicitly """
             scale = np.sqrt(dt * diffusivity)
             for i in nb.prange(state_data[0].size):
-                state_data[0].flat[i] += scale * np.random.randn()
+                state_data[0].flat[i] += scale * np.random.randn()  # type: ignore
 
         return evolver  # type: ignore
 
@@ -119,7 +121,9 @@ class BrownianMotionDropletActor(ActorBase):
             self.parameters["diffusivity"], [["radius", "R"], ["time", "t"]]
         )
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:

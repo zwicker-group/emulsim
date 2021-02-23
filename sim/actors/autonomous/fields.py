@@ -71,7 +71,9 @@ class MeanfieldActor(ActorBase):
         else:
             return 0.1 / s_max  # type: ignore
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
         """return a function evolve the field from time `t` to `t + dt`
 
         Args:
@@ -85,7 +87,7 @@ class MeanfieldActor(ActorBase):
         reation_flux = self._reaction.get_compiled()
 
         @nb.jit
-        def evolver(fields_data, t: float, dt: float):
+        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ evolve the diffusion equation explicitly """
             (field_data,) = fields_data
             field_data += dt * reation_flux(field_data, t)
@@ -124,7 +126,9 @@ class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
         """return a function evolving the field from time `t` to `t + dt`
 
         Args:
@@ -181,7 +185,9 @@ class ScalarPDEActor(ScalarFieldActorBase):
         result["pde"] = {"class": self.pde.__class__.__name__}
         return result
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
         """return a function evolving the field from time `t` to `t + dt`
 
         Args:
@@ -196,7 +202,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
         pde_rhs = self.pde._make_pde_rhs_numba(element._field)  # type: ignore
 
         @jit
-        def evolver(fields_data, t: float, dt: float):
+        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ evolve the PDE explicitly """
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)

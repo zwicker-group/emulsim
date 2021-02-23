@@ -5,7 +5,9 @@ Provides an actor coupling two or more fields
 """
 
 from collections import OrderedDict
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Tuple
+
+import numpy as np
 
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
@@ -74,7 +76,9 @@ class FieldCouplingActor(ActorBase):
             rhs_expressions[field_id] = ScalarExpression(rhs, signature)
         self._cache["rhs_expressions"] = rhs_expressions
 
-    def make_evolver_numba(self, fields: ElementsType) -> Callable:
+    def make_evolver_numba(
+        self, fields: ElementsType
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -101,14 +105,17 @@ class FieldCouplingActor(ActorBase):
             """ no-op function serving as innermost nested function """
             pass
 
-        def chain(expression_id, inner) -> Callable:
+        def chain(
+            expression_id: int,
+            inner: Callable[[Tuple[np.ndarray, ...], float, float], None],
+        ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
             """ recursive helper function for running all actors """
             # run through all expressions
             field_id = expressions[expression_id]["field_id"]
             rhs = expressions[expression_id]["rhs"]
 
             @jit
-            def wrap(state_data, t: float, dt: float):
+            def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                 inner(state_data, t, dt)
                 field_data = state_data[field_id]
                 field_data += dt * rhs(*state_data, t)

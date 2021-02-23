@@ -38,11 +38,15 @@ class ShellCollection:
 
     max_sector_count: int = 512  # maximal number of sectors
 
+    vectors: Sequence[np.ndarray]
+    weights: Sequence[np.ndarray]
+    max_radii: np.ndarray
+
     def __init__(
         self,
         vectors: Sequence[np.ndarray],
         weights: Sequence[np.ndarray],
-        max_radii: np.ndarray,
+        max_radii: Sequence[float],
         info_dict: Dict[str, Any] = None,
     ):
         """
@@ -56,9 +60,9 @@ class ShellCollection:
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
         """
-        max_radii = np.asarray(max_radii, dtype=np.double)
-        idx = np.argsort(max_radii)
-        self.max_radii = max_radii[idx]
+        max_radii_ = np.asarray(max_radii, dtype=np.double)
+        idx = np.argsort(max_radii_)
+        self.max_radii = max_radii_[idx]
 
         self.vectors, self.weights = [], []
         for i in idx:
@@ -145,10 +149,12 @@ class ShellCollection:
             if np.isfinite(radius_max):
                 # calculate maximal number of sectors necessary
                 surface_max = spherical.surface_from_radius(radius_max, dim=dim)
-                max_sector_count = np.clip(
-                    int(surface_max / sector_area_max),
-                    a_min=sector_count_approx,
-                    a_max=cls.max_sector_count,
+                max_sector_count = int(
+                    np.clip(
+                        surface_max / sector_area_max,
+                        a_min=sector_count_approx,
+                        a_max=cls.max_sector_count,
+                    )
                 )
             else:
                 max_sector_count = cls.max_sector_count
@@ -217,7 +223,7 @@ class ShellCollection:
                 the fraction of the droplet surface that is covered by the
                 respective shell, so that the sum of all weights is unity.
         """
-        i = np.searchsorted(self.max_radii, radius)
+        i: int = np.searchsorted(self.max_radii, radius)  # type: ignore
         if i >= len(self.max_radii):
             warnings.warn(
                 "Shell with radius larger than the prepared range was requested"
@@ -227,7 +233,9 @@ class ShellCollection:
         self.usage[i] += 1
         return self[i]
 
-    def make_shell_getter_compiled(self) -> Callable[[float], Tuple[np.ndarray, float]]:
+    def make_shell_getter_compiled(
+        self,
+    ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
         """returns a function for obtaining shells
 
         Returns:
@@ -239,15 +247,15 @@ class ShellCollection:
                 by the respective shell, so that the sum of all weights is unity
         """
         max_radii = self.max_radii
-        vectors = tuple(self.vectors)
-        weights = tuple(self.weights)
+        vectors: Tuple[np.ndarray, ...] = tuple(self.vectors)
+        weights: Tuple[np.ndarray, ...] = tuple(self.weights)
         num = len(max_radii)
 
         @jit
-        def get_shell(radius: float) -> Tuple[np.ndarray, float]:
+        def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
             """ compiled helper function that extracts shell parameters """
-            i = min(np.searchsorted(max_radii, radius), num - 1)
-            return vectors[i], weights[i]
+            i = min(np.searchsorted(max_radii, radius), num - 1)  # type: ignore
+            return vectors[i], weights[i]  # type: ignore
 
         return get_shell  # type: ignore
 
@@ -667,7 +675,9 @@ class SphericalDropletActor(ActorBase):
             points = droplet.position[None, :] + ring_radius * shell_vectors
             plt.plot(points[:, 0], points[:, 1], **point_style)
 
-    def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
+    def _make_droplet_evolver_numba(
+        self, elements: ActorElementType
+    ) -> Callable[[Tuple[np.ndarray], int, float, float, np.ndarray, np.ndarray], None]:
         """create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
@@ -714,13 +724,13 @@ class SphericalDropletActor(ActorBase):
 
         @jit(nogil=True)
         def droplet_update(
-            droplet_data: np.ndarray,
+            droplet_data: np.recarray,
             droplet_id: int,
             t: float,
             dt: float,
-            field_data,
-            field_update,
-        ):
+            field_data: np.ndarray,
+            field_update: np.ndarray,
+        ) -> None:
             """ update a single droplet based on the surrounding field """
             R = droplet_data.radius
             V = volume(R)
@@ -777,7 +787,9 @@ class SphericalDropletActor(ActorBase):
 
         return droplet_update  # type: ignore
 
-    def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
+    def make_evolver_numba(  # type: ignore
+        self, elements: ActorElementType
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -842,7 +854,7 @@ class SphericalDropletActor(ActorBase):
                 dt: float,
                 field_data: np.ndarray,
                 background_update: np.ndarray,
-            ):
+            ) -> None:
                 """ evolve a chunk of droplets explicitly """
                 for droplet_id, droplet_data in enumerate(droplets_data, i_start):
                     # skip droplets that have disappeared
@@ -861,7 +873,9 @@ class SphericalDropletActor(ActorBase):
             tmp_shape = (num_threads,) + data_shape
 
             @jit(parallel=True)
-            def evolver(elements_data, t: float, dt: float):
+            def evolver(
+                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+            ) -> None:
                 """ evolve all droplets in parallel chunks """
                 droplets_data, field_data = elements_data
                 field_update = np.empty(tmp_shape)  # allocate temporary memory
@@ -881,7 +895,9 @@ class SphericalDropletActor(ActorBase):
         else:
             # update all droplets on the same thread
             @jit
-            def evolver(elements_data, t: float, dt: float):
+            def evolver(
+                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+            ) -> None:
                 """ evolve all droplets explicitly """
                 droplets_data, field_data = elements_data
                 for droplet_id, droplet_data in enumerate(droplets_data):

@@ -8,12 +8,15 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
 
+import numpy as np
+
 from pde.tools.cache import objects_equal
 from pde.tools.parameters import Parameterized
 
 from ..elements import ElementBase
 
 ElementsType = Tuple[ElementBase, ...]
+EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
@@ -85,7 +88,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 self._update_cache(elements)  # type: ignore
                 self._cache["state_attributes"] = state_attributes
 
-    def make_evolver_numba(self, elements: ElementsType) -> Callable:
+    def make_evolver_numba(self, elements: ElementsType) -> EvolverType:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:

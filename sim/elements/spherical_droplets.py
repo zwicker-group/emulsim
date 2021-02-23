@@ -17,8 +17,6 @@ from .base import ElementBase
 class SphericalDropletsElement(ElementBase):
     """ an element representing many droplets """
 
-    droplet_class = SphericalDroplet
-
     parameters_default = [
         Parameter(
             "droplet_concentration",
@@ -28,6 +26,10 @@ class SphericalDropletsElement(ElementBase):
             "of material in droplets",
         )
     ]
+
+    droplet_class = SphericalDroplet
+
+    _data: np.recarray
 
     def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
         """

@@ -124,7 +124,7 @@ class PointDropletActor(ActorBase):
             # estimate time scale from diffusion across droplet
             D = float(self.parameters["diffusivity"])
             mean_radius = float(droplets.data["radius"].mean())
-            dt = mean_radius ** 2 / D
+            dt: float = mean_radius ** 2 / D
 
         elif self.parameters["flux_model"] == "linear":
             # estimate time scale from dissolution of droplet by flux
@@ -134,7 +134,7 @@ class PointDropletActor(ActorBase):
             flux = exchange_rate * abs(ceq - c0)
             if droplets.droplet_count > 0 and flux > 0:
                 mean_amount = droplets.total_amount / droplets.droplet_count
-                dt = 1e-3 * mean_amount / flux
+                dt = float(1e-3 * mean_amount / flux)
             else:
                 dt = np.nan  # cannot determine time step
 
@@ -165,7 +165,7 @@ class PointDropletActor(ActorBase):
 
             if self._cache["dim"] == 3:
                 # flux for 3d droplet without reaction
-                return 4 * np.pi * D * radius * (cEqOut - c_far)  # type: ignore
+                return 4 * np.pi * D * radius * (cEqOut - c_far)
 
             else:
                 raise NotImplementedError(
@@ -248,7 +248,9 @@ class PointDropletActor(ActorBase):
 
         return np.array(result)
 
-    def _make_droplet_evolver_numba(self, elements: ActorElementType) -> Callable:
+    def _make_droplet_evolver_numba(
+        self, elements: ActorElementType
+    ) -> Callable[[Tuple[np.ndarray], int, np.ndarray, float, float], None]:
         """create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
@@ -283,8 +285,12 @@ class PointDropletActor(ActorBase):
 
         @jit(nogil=True)
         def droplet_update(
-            droplet_data: np.ndarray, droplet_id: int, field_data, t: float, dt: float
-        ):
+            droplet_data: np.recarray,
+            droplet_id: int,
+            field_data: np.ndarray,
+            t: float,
+            dt: float,
+        ) -> None:
             """ update a single droplet based on the surrounding field """
             R = droplet_data.radius
             V = volume(R)
@@ -319,7 +325,9 @@ class PointDropletActor(ActorBase):
 
         return droplet_update  # type: ignore
 
-    def make_evolver_numba(self, elements: ActorElementType) -> Callable:  # type: ignore
+    def make_evolver_numba(  # type: ignore
+        self, elements: ActorElementType
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -337,7 +345,9 @@ class PointDropletActor(ActorBase):
         droplet_update = self._make_droplet_evolver_numba(elements)
 
         @jit
-        def evolver(elements_data, t: float, dt: float):
+        def evolver(
+            elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+        ) -> None:
             """ evolve all droplets explicitly """
             droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):

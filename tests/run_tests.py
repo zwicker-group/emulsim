@@ -58,7 +58,7 @@ def test_types(*, report: bool = False, verbose: bool = True):
 
     args.extend(["--package", PACKAGE])
 
-    sp.check_call(args, cwd=PACKAGE_PATH)
+    sp.run(args, cwd=PACKAGE_PATH)
 
 
 def run_unit_tests(

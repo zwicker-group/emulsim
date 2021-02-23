@@ -22,6 +22,7 @@ from pde.grids.cartesian import CartesianGridBase, GridBase
 from pde.tools.cuboid import Cuboid
 from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
+from pde.tools.typing import NumberOrArray
 
 from .base import ElementBase
 
@@ -306,7 +307,7 @@ class ScalarFieldElement(FieldElementBase):
         Parameter("label", "", str, "The name of the field"),
     ]
 
-    def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
+    def __init__(self, data: NumberOrArray = 0, parameters: Dict[str, Any] = None):
         """
         Args:
             data (:class:`~numpy.ndarray` or float, optional):
@@ -389,7 +390,7 @@ class ScalarFieldElement(FieldElementBase):
             amount (float):
                 The total amount added to the field
         """
-        self._field.add_interpolated(point, amount)
+        self._field.insert(point, amount)
 
     def make_get_concentration_compiled(self) -> Callable:
         """get a compiled function for obtaining concentrations
@@ -409,4 +410,4 @@ class ScalarFieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
-        return self._field.grid.make_add_interpolated_compiled()
+        return self._field.grid.make_inserter_compiled()
