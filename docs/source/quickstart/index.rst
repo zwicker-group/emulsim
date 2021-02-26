@@ -8,4 +8,3 @@ Getting started
    
    overview
    examples
-   contributing

@@ -18,7 +18,7 @@ from .elements.base import ElementBase, element_from_hdf
 
 
 class State:
-    """ defines the state of the simulation """
+    """ defines the state of the simulation as a collection of elements """
 
     def __init__(self, elements: Dict[str, ElementBase] = None):
         """
