@@ -4,12 +4,13 @@ Data model
 The main idea of the :mod:`sim` package is to separate the description of the *state*
 of the simulation from the description that govern the dynamics.
 The state gives all the necessary information to represent the system at a particular
-time point. The full dynamics then leads to a sequence of states, collectively called a
+time point.
+Since we restrict ourself to memoryless systems (i.e., Markov chains), the state
+contains all information to evolve the system forward in time.
+The full dynamics then leads to a sequence of states, collectively called a
 *trajectory*.
 The aim of the package is to evolve an initial state according to some dynamics to
 obtain the entire trajectory or only the final state.
-Below, we discuss how the state is structure and we briefly touch on how the dynamics
-are described.
 
 
 System state (Elements)
@@ -62,7 +63,6 @@ These aspects are explained in the code example below:
             attrs['name'] = self.name
             return attrs
             
-    
         @classmethod
         def from_state(cls, attributes, data=None):
             obj = super().from_state(attributes, data)
@@ -79,3 +79,45 @@ be converted to a string representation and vice versa.
 
 Simulation dynamics (Actors)
 ############################
+The system state changes according to physical principles.
+Since the state is encoded in *elements*, the physics must change the dynamical degrees
+of freedom of the elements, i.e., their :attr:`data` attributes.
+
+
+In the :mod:`sim` package, the dynamics are defined by a 
+:class:`sim.simulation.Simulation` object.
+Each simulation contains one or more *actors*, which each affect one or multiple
+elements.
+This approach allows combining multiple actors without redefining their code simply by
+combining them in a :class:`sim.simulation.Simulation`. 
+Each actor inherits from :class:`sim.actors.base.ActorBase`, which defines the necessary
+behavior.
+In the simplest case, a custom actor only needs to overwrite the
+:meth:`sim.actors.base.ActorBase.evolve` method, which evolves its elements from time
+:code:`t` to :code:`t + dt`, changing the respective :attr:`data` attributes in place:
+
+.. code-block:: python
+    
+    class BrownianParticlesActor(sim.ActorBase):
+    
+        diffusivity = 1
+    
+        def evolve(self, elements, t, dt):
+            """ evolve the particles in time """
+            (particles,) = elements
+            scale = np.sqrt(dt) * self.diffusivity
+            particles.data[...] += scale * np.random.normal(size=particles.data.shape)
+    
+        
+        def make_evolver_numba(self, elements):
+            """return a function evolve the field state from time `t` to `t + dt` """
+            diffusivity = self.diffusivity
+    
+            @jit
+            def evolver(state_data, t, dt):
+                """ evolve all points explicitly """
+                scale = np.sqrt(dt * diffusivity)
+                for i in range(state_data[0].size):
+                    state_data[0].flat[i] += scale * np.random.randn()
+    
+            return evolver
