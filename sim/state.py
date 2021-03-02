@@ -4,6 +4,7 @@ Provides a class representing the full system state of multiple elements
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import itertools
 import json
 import logging
 from collections import OrderedDict, defaultdict
@@ -89,11 +90,25 @@ class State:
                 return i
         raise KeyError(f"`{name}` not in {self.__class__.__name__}")
 
-    def __getitem__(self, key: Union[str, Sequence[str]]):
-        if isinstance(key, str):
+    def __getitem__(self, key: Union[int, str, Sequence[str]]):
+        """ extract element by numerical index or by name """
+        if isinstance(key, int):
+            # handle numerical index
+            size = len(self)
+            if -size <= key < size:
+                if key < 0:
+                    key += size
+                return next(itertools.islice(self.elements.values(), key, key + 1))
+            else:
+                raise IndexError("element index out of range")
+            
+        elif isinstance(key, str):
+            # handle name index
             return self.elements[key]
+        
         else:
-            return tuple(self.elements[k] for k in key)
+            # handle multiple indices
+            return tuple(self[k] for k in key)
 
     def __len__(self) -> int:
         return len(self.elements)
@@ -103,6 +118,15 @@ class State:
 
     def __contains__(self, name: str):
         return name in self.elements
+
+    def keys(self):
+        return self.elements.keys()
+
+    def values(self):
+        return self.elements.values()
+
+    def items(self):
+        return self.elements.items()
 
     def __str__(self):
         elements_str = ", ".join(f'"{name}": {element!s}' for name, element in self)
