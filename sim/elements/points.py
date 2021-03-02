@@ -47,11 +47,6 @@ class PointsElement(ElementBase):
     def __len__(self) -> int:
         return len(self.data)
 
-    @property
-    def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
-        return int(self.data.size)
-
     @plot_on_axes()
     def plot(self, ax, color="red", **kwargs):
         """plot all points of this element

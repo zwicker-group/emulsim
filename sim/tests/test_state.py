@@ -27,9 +27,23 @@ def test_state(dim):
     assert s == s2
 
     # extract items
-    name = list(s.elements.keys())[0]
-    assert name in s
-    assert s[name] is s.elements[name]
+    names = list(s.elements.keys())
+    for i, name in enumerate(names):
+        assert name in s
+        assert s.get_index(name) == i
+        assert s[name] is s.elements[name]
+        assert s[i] is s.elements[name]
+        assert s[i] is s[-(len(s) - i)]
+
+    size = len(s)
+    with pytest.raises(IndexError):
+        s[-size - 1]
+    with pytest.raises(IndexError):
+        s[size]
+
+    assert list(s.keys()) == names
+    assert list(s.values()) == list(s.elements.values())
+    assert list(s.items()) == list(s)
 
     # test get_quantities
     quantities = s.get_quantity("total_amount", total=False)

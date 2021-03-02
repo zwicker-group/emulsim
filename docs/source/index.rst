@@ -14,7 +14,8 @@ Contents
     :maxdepth: 2
 
     installation
-    quickstart/quickstart
+    quickstart/index
+    dev_guide/index
     packages/sim
  
 

@@ -7,6 +7,7 @@ Module defining the abstract base class of elements
 import copy
 import json
 import logging
+import warnings
 from abc import ABCMeta
 from typing import Any, Callable, Dict, Type, Union  # @UnusedImport
 
@@ -30,8 +31,12 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
     def __init__(self, data=None, parameters: Dict[str, Any] = None):
         """
         Args:
-            data: The data defining the state
-            parameters (dict): Parameters affecting the behavior of the element
+            data:
+                The values of the dynamical degrees of freedom that define the current
+                state of the element.
+            parameters (dict):
+                Parameters that affect the behavior of the element, but do not change
+                over time.
         """
         super().__init__(parameters)
         self._data = data
@@ -87,7 +92,10 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         field_cls = cls._subclasses[class_name]
 
         # unserialize the attributes
-        attributes = cls.unserialize_attributes(attributes)
+        attributes = {
+            key: cls.unserialize_attribute(key, value)
+            for key, value in attributes.items()
+        }
 
         # construct the instance
         return field_cls.from_state(attributes, data=dataset)
@@ -102,38 +110,85 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def attributes(self) -> Dict[str, Any]:
-        """ dict: information about the element state """
+        """ dict: information about the element state, which does not change in time """
         return {"class": self.__class__.__name__, "parameters": self.parameters}
+
+    def serialize_attribute(self, name: str, value) -> str:
+        """serialize an attribute into a string
+
+        Args:
+            name (str): Name of the attribute
+            value: The value of the attribute that needs to be serialized
+
+        Returns:
+            str: A string representation from which the `value` can be reconstructed
+        """
+        if name == "parameters":
+            # serialize the individual parameters
+            default_parameters = self.get_parameters(
+                include_hidden=True, include_deprecated=True, sort=False
+            )
+
+            parameters = {}
+            for key in self.parameters:
+                serializer = json.dumps
+                if key in default_parameters:
+                    def_param_extra = default_parameters[key].extra
+                    if "serializer" in def_param_extra:
+                        serializer = def_param_extra["serializer"]
+                parameters[key] = serializer(value[key])
+            value = parameters
+
+        # serialize the value using JSON
+        try:
+            return json.dumps(value)
+        except TypeError as e:
+            msg = f'Cannot serialize "{key}" of "{self.__class__.__name__}"'
+            raise TypeError(msg) from e
+
+    @classmethod
+    def unserialize_attribute(cls, name: str, value_str: str) -> Any:
+        """unserializes the given attribute
+
+        Args:
+            name (str): Name of the attribute
+            value_str (str): Serialized value of the attribute
+
+        Returns:
+            The unserialized value
+        """
+        # unserialize assuming it is JSON-encoded
+        value = json.loads(value_str)
+
+        if name == "parameters":
+            # unserialize the individual parameters
+            default_parameters = cls.get_parameters(
+                include_hidden=True, include_deprecated=True, sort=False
+            )
+
+            for key in value:
+                unserializer = json.loads
+                if key in default_parameters:
+                    def_param_extra = default_parameters[key].extra
+                    if "unserializer" in def_param_extra:
+                        unserializer = def_param_extra["unserializer"]
+                value[key] = unserializer(value[key])
+
+        return value
 
     @property
     def attributes_serialized(self) -> Dict[str, str]:
         """ dict: serialized version of the attributes """
-        # serialize the individual parameters
-        default_parameters = self.get_parameters(
-            include_hidden=True, include_deprecated=True, sort=False
+        # deprecated since 2021-02-26
+        warnings.warn(
+            "property `attributes_serialized` is deprecated", DeprecationWarning
         )
 
-        parameters = {}
-        for key, value in self.parameters.items():
-            serializer = json.dumps
-            if key in default_parameters:
-                def_param_extra = default_parameters[key].extra
-                if "serializer" in def_param_extra:
-                    serializer = def_param_extra["serializer"]
-            parameters[key] = serializer(value)
-
         # serialize all remaining attributes
-        attributes = self.attributes
-        attributes["parameters"] = parameters
-
-        result = {}
-        for key, value in attributes.items():
-            try:
-                result[key] = json.dumps(value)
-            except TypeError as e:
-                msg = f'Cannot serialize "{key}" of "{self.__class__.__name__}"'
-                raise TypeError(msg) from e
-        return result
+        return {
+            name: self.serialize_attribute(name, value)
+            for name, value in self.attributes.items()
+        }
 
     @classmethod
     def unserialize_attributes(cls, attributes: Dict[str, str]) -> Dict[str, Any]:
@@ -146,6 +201,11 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         Returns:
             dict: The unserialized attributes
         """
+        # deprecated since 2021-02-26
+        warnings.warn(
+            "method `unserialize_attributes` is deprecated", DeprecationWarning
+        )
+
         # unserialize all attributes
         attributes = {key: json.loads(value) for key, value in attributes.items()}
 
@@ -187,9 +247,9 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         """
         dataset = hdf_path.create_dataset(key, data=self.data)
 
-        # write attributes
-        for key, value in self.attributes_serialized.items():
-            dataset.attrs[key] = value
+        # write serialized attributes
+        for name, value in self.attributes.items():
+            dataset.attrs[name] = self.serialize_attribute(name, value)
 
     def copy(self, data=None):
         """create a copy of the element

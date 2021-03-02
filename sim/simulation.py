@@ -11,7 +11,7 @@ Provides a class representing the full simulation
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Tuple, Union  # @UnusedImport
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union  # @UnusedImport
 
 import numpy as np
 
@@ -25,24 +25,30 @@ from .state import State
 _logger = logging.getLogger(__name__)
 
 
+ElementNamesType = Union[str, Tuple[str]]
+
+
 class Simulation:
     """ Class defining the simulation state """
 
-    def __init__(self, state, actors=None):
+    def __init__(
+        self,
+        state: State,
+        actors: Sequence[Tuple[ElementNamesType, ActorBase]] = None,
+    ):
         """
         Args:
             state (:class:`~sim.state.State`):
-                The initial simulation state defining the elements in the
-                simulation.
-            actors (dict, optional):
-                The actors in the simulation. This should be an iterable
-                returning an (element_name, actor) pair for each item. Actors
-                are added to the simulation by calling
-                :meth:`~Simulation.add_actor`.
+                The initial simulation state defining the elements in the simulation.
+            actors (sequence, optional):
+                The actors in the simulation. This should be an iterable returning an
+                `(element_names, actor)` pair for each item, where `element_names` is a
+                sequence of all elements this actor affects. All actors are added to the
+                simulation by calling :meth:`~Simulation.add_actor`.
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.actors = []
+        self.actors: List[Tuple[ElementNamesType, ActorBase]] = []
         if actors is not None:
             for element_names, actor in actors:
                 self.add_actor(element_names, actor)
@@ -223,7 +229,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        actors = []
+        actors: List[Dict[str, Any]] = []
         for elements, actor in self.actors:
             actor_data = {
                 "actor": actor,
@@ -344,7 +350,7 @@ class Simulation:
         """
         solver = SimulationSolver(self, backend=backend)
         controller = Controller(solver, t_range=t_range, tracker=tracker)
-        final_state = controller.run(self.state, dt)
+        final_state: State = controller.run(self.state, dt)  # type: ignore
 
         if ret_info:
             info = controller.info.copy()
@@ -352,7 +358,7 @@ class Simulation:
             info["solver"] = solver.info.copy()
             return final_state, info
         else:
-            return final_state  # type: ignore
+            return final_state
 
 
 class SimulationSolver(SolverBase):
