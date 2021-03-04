@@ -23,15 +23,16 @@ SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """ represents a simulation element """
 
+    dim: int  # dimensionality of the space in which the element is embedded
+
     _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
 
-    dim: int  # dimensionality of the space in which the element is embedded
     _data: np.ndarray
 
-    def __init__(self, data=None, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
         """
         Args:
-            data:
+            data (:class:`~numpy.ndarray`):
                 The values of the dynamical degrees of freedom that define the current
                 state of the element.
             parameters (dict):
@@ -39,7 +40,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                 over time.
         """
         super().__init__(parameters)
-        self._data = data
+        self._data = np.asarray(data)
 
     @property
     def data(self) -> np.ndarray:
@@ -78,12 +79,25 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return cls(data, attributes.get("parameters", None))
 
     @classmethod
-    def from_hdf_dataset(cls, dataset) -> "ElementBase":
+    def _from_hdf_dataset(cls, dataset) -> "ElementBase":
         """construct the element by reading data from an hdf5 dataset
 
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
+        if "class" in dataset.attrs:
+            # assume everything is stored in root directory
+            dataset = dataset
+        else:
+            # assume a single field is stored in the data
+            dataset_names = list(dataset.keys())
+            if len(dataset_names) > 1:
+                logging.getLogger(__name__).warning(
+                    f"Using only the dataset `{dataset_names[0]}`"
+                )
+
+            dataset = dataset[dataset_names[0]]  # retrieve first dataset
+
         # copy attributes from hdf
         attributes = dict(dataset.attrs)
 
@@ -93,12 +107,27 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
         # unserialize the attributes
         attributes = {
-            key: cls.unserialize_attribute(key, value)
+            key: field_cls.unserialize_attribute(key, value)
             for key, value in attributes.items()
         }
 
         # construct the instance
         return field_cls.from_state(attributes, data=dataset)
+
+    @classmethod
+    def from_file(cls, path: str) -> "ElementBase":
+        """create element instance from a stored state
+
+        Args:
+            path (str): Path to the file being read
+
+        Returns:
+            :class:`ElementBase`: The create instance
+        """
+        import h5py
+
+        with h5py.File(path, "r") as fp:
+            return cls._from_hdf_dataset(fp)
 
     def __str__(self):
         return f"{self.__class__.__name__}(...)"
@@ -289,38 +318,45 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-def element_from_hdf(hdf_path) -> ElementBase:
-    """create element instance from a stored state
-
-    Args:
-        hdf_path: HDF path in an already opened file
-    """
-    if "class" in hdf_path.attrs:
-        # assume everything is stored in root directory
-        dataset = hdf_path
-    else:
-        # assume a single field is stored in the data
-        dataset_names = list(hdf_path.keys())
-        if len(dataset_names) > 1:
-            logging.getLogger(__name__).warning("Using only the first of many datasets")
-
-        dataset = hdf_path[dataset_names[0]]  # retrieve first dataset
-
-    # determine class
-    class_name = json.loads(dataset.attrs["class"])
-    field_cls = ElementBase._subclasses[class_name]
-
-    # load the instance from hdf
-    return field_cls.from_hdf_dataset(dataset)
-
-
-def element_from_file(path: str) -> ElementBase:
-    """create element instance from a stored state
-
-    Args:
-        path (str): Path to the file being read
-    """
-    import h5py
-
-    with h5py.File(path, "r") as fp:
-        return element_from_hdf(fp)
+#
+# def element_from_hdf(hdf_path) -> ElementBase:
+#     """create element instance from a stored state
+#
+#     Args:
+#         hdf_path: HDF path in an already opened file
+#
+#     Returns:
+#         :class:`ElementBase`: The create instance
+#     """
+#     if "class" in hdf_path.attrs:
+#         # assume everything is stored in root directory
+#         dataset = hdf_path
+#     else:
+#         # assume a single field is stored in the data
+#         dataset_names = list(hdf_path.keys())
+#         if len(dataset_names) > 1:
+#             logging.getLogger(__name__).warning("Using only the first of many datasets")
+#
+#         dataset = hdf_path[dataset_names[0]]  # retrieve first dataset
+#
+#     # determine class
+#     class_name = json.loads(dataset.attrs["class"])
+#     element_cls = ElementBase._subclasses[class_name]
+#
+#     # load the instance from hdf
+#     return element_cls._from_hdf_dataset(dataset)
+#
+#
+# def element_from_file(path: str) -> ElementBase:
+#     """create element instance from a stored state
+#
+#     Args:
+#         path (str): Path to the file being read
+#
+#     Returns:
+#         :class:`ElementBase`: The create instance
+#     """
+#     import h5py
+#
+#     with h5py.File(path, "r") as fp:
+#         return element_from_hdf(fp)

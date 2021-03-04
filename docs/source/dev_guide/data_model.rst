@@ -71,9 +71,38 @@ These aspects are explained in the code example below:
 
 
 If an attribute value is a custom object, you might also need to overwrite the 
-:meth:`~sim.elements.base.serialize_attribute` and
-:meth:`~sim.elements.base.unserialize_attribute` methods to define how the object can
+:meth:`~sim.elements.base.ElementBase.serialize_attribute` and
+:meth:`~sim.elements.base.ElementBase.unserialize_attribute` methods to define how the object can
 be converted to a string representation and vice versa.
+Moreover, it will usually be helpful to overwrite the
+:meth:`~sim.elements.base.ElementBase.plot` method to allow displaying the element.
+These three methods are quickly showcased in the following snippet:
+
+.. code-block:: python
+    
+    class CustomElement(ElementBase):
+        
+        [...]
+        
+        def serialize_attribute(self, name, value):
+            if name == 'complicated_attribute':
+                # treat the special attribute
+                return value.get_string_representation()
+                
+            # fall back to default behavior for all others
+            return super().serialize_attribute(name, value)
+
+        @classmethod
+        def unserialize_attribute(cls, name, value_str):
+            if name == 'complicated_attribute':
+                # treat the special attribute
+                return complicated_attribute_from_str(value_str)
+
+            # fall back to default behavior for all others
+            return super().unserialize_attribute(name, value_str)
+    
+        def plot(self, ax=None, *args, **kwargs):
+            ax.plot(self.data)
 
 
 

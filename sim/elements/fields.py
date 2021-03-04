@@ -144,14 +144,13 @@ class MeanfieldElement(FieldElementBase):
                 lower and upper bound for each axis. The number of entries sets
                 the space dimension.
         """
-        super().__init__(data, parameters)
+        super().__init__(np.full((1,), data, dtype=np.double), parameters)
 
         # store data in a mutable 1d-array
         if self.parameters["bounds"] is None:
             raise ValueError("`bounds` need to be specified in parameters")
         else:
             self.set_bounds(self.parameters["bounds"])
-        self._data = np.full((1,), data, dtype=np.double)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -317,7 +316,8 @@ class ScalarFieldElement(FieldElementBase):
                 importantly, the entry 'grid' determines the discretization grid
                 on which this field is defined.
         """
-        super().__init__(data, parameters)
+        # set temporary data first and overwrite it later
+        super().__init__(np.empty(()), parameters)
 
         if not isinstance(self.grid, CartesianGridBase):
             raise NotImplementedError(

@@ -49,7 +49,8 @@ class SphericalDropletsElement(ElementBase):
                 "the `from_droplets` classmethod."
             )
 
-        super().__init__(None, parameters)
+        # set temporary data first and overwrite it later
+        super().__init__(np.empty(()), parameters)
         droplets = [self.droplet_class.from_data(data_row) for data_row in data]
         self.droplets = Emulsion(droplets)  # type: ignore
         if len(self.droplets) == 0:
@@ -78,8 +79,8 @@ class SphericalDropletsElement(ElementBase):
         """
         # create class without calling its __init__
         obj = cls.__new__(cls)
-        # call the parent __init__
-        ElementBase.__init__(obj, None, parameters=parameters)
+        # call the parent __init__ with a temporary array
+        ElementBase.__init__(obj, np.empty(()), parameters=parameters)
 
         # initialize droplets
         obj.droplets = Emulsion(droplets, copy=copy)
