@@ -15,7 +15,7 @@ from pde.grids.base import DimensionError, GridBase
 from pde.tools.misc import hdf_write_attributes
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
-from .elements.base import ElementBase, element_from_hdf
+from .elements.base import ElementBase
 
 
 class State:
@@ -37,14 +37,16 @@ class State:
                 self.add_element(name, element)
 
     @classmethod
-    def from_hdf_dataset(cls, dataset) -> "State":
+    def _from_hdf_dataset(cls, dataset) -> "State":
         """construct the instance by reading data from an hdf5 dataset
 
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
         element_names = json.loads(dataset.attrs["elements"])
-        elements = {name: element_from_hdf(dataset[name]) for name in element_names}
+        elements = {
+            name: ElementBase._from_hdf_dataset(dataset[name]) for name in element_names
+        }
         return cls(elements)
 
     @classmethod
@@ -57,7 +59,7 @@ class State:
         import h5py
 
         with h5py.File(path, "r") as fp:
-            return cls.from_hdf_dataset(fp)
+            return cls._from_hdf_dataset(fp)
 
     def add_element(self, name: str, element: ElementBase):
         """adds an element to the simulation
@@ -101,11 +103,11 @@ class State:
                 return next(itertools.islice(self.elements.values(), key, key + 1))
             else:
                 raise IndexError("element index out of range")
-            
+
         elif isinstance(key, str):
             # handle name index
             return self.elements[key]
-        
+
         else:
             # handle multiple indices
             return tuple(self[k] for k in key)

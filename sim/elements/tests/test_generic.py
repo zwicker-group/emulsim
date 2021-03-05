@@ -12,16 +12,28 @@ from pde import ScalarField, UnitGrid
 from pde.tools.misc import skipUnlessModule
 
 from .. import (
+    ElementBase,
     MeanfieldElement,
     PointsElement,
     ScalarFieldElement,
     SphericalDropletsElement,
-    element_from_file,
 )
+
+
+class EmptyElement(ElementBase):
+    """ dummy class to test the simplest element """
+
+    parameters_default = {"dim": 2}  # type: ignore
+
+    @property
+    def dim(self):
+        return self.parameters["dim"]
 
 
 def generate_elements(dim=None):
     """ helper function generating all tested backgrounds """
+    yield EmptyElement(np.zeros(()), {"dim": 2 if dim is None else dim})
+
     if dim is None or dim == 1:
         yield PointsElement(np.random.randn(3, 1))
     if dim is None or dim == 2:
@@ -68,6 +80,6 @@ def test_element_io(element, tmp_path):
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
 
     element.to_file(path)
-    element2 = element_from_file(path)
+    element2 = ElementBase.from_file(path)
     assert element == element2
     assert element is not element2

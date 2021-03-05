@@ -11,6 +11,7 @@ Provides a class representing the full simulation
 """
 
 import logging
+import warnings
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Union  # @UnusedImport
 
 import numpy as np
@@ -35,6 +36,8 @@ class Simulation:
         self,
         state: State,
         actors: Sequence[Tuple[ElementNamesType, ActorBase]] = None,
+        *,
+        check: str = "log",
     ):
         """
         Args:
@@ -45,13 +48,18 @@ class Simulation:
                 `(element_names, actor)` pair for each item, where `element_names` is a
                 sequence of all elements this actor affects. All actors are added to the
                 simulation by calling :meth:`~Simulation.add_actor`.
+            check (str):
+                A flag determining what to do when the chosen elements are not the ones
+                expected by the actor class. Possible options are: `ignore` (skip
+                checks), `warn` (using :mod:`warnings` module), `log` (warn using
+                :mod:`logging` module), or `raise` (raise a :class:`RuntimeError`).
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
         self.actors: List[Tuple[ElementNamesType, ActorBase]] = []
         if actors is not None:
             for element_names, actor in actors:
-                self.add_actor(element_names, actor)
+                self.add_actor(element_names, actor, check=check)
 
     def __repr__(self):
         """ return instance as string """
@@ -73,30 +81,70 @@ class Simulation:
             actor_infos.append(info)
         return {"state": self.state.attributes, "actors": actor_infos}
 
-    def add_actor(self, elements: Union[str, Tuple[str]], actor: ActorBase):
+    def add_actor(
+        self, elements: Union[str, Tuple[str]], actor: ActorBase, *, check: str = "log"
+    ):
         """adds a new actor to the simulation
 
         Args:
             elements (str or tuple of str):
-                The elements this actor acts upon. This needs to have the exact
-                number of elements the actor expects. In the special case of
-                autonomous actors, a single string can be given instead of a
-                tuple with a single entry.
+                The elements this actor acts upon. This needs to have the exact number
+                of elements the actor expects. In the special case of autonomous actors,
+                a single string can be given instead of a tuple with a single entry.
             actor (:class:`~sim.actors.base.ActorBase`):
                 The instance describing the actor.
+            check (str):
+                A flag determining what to do when the chosen elements are not the ones
+                expected by the actor class. Possible options are: `ignore` (skip
+                checks), `warn` (using :mod:`warnings` module), `log` (warn using
+                :mod:`logging` module), or `raise` (raise a :class:`RuntimeError`).
         """
         if isinstance(elements, str):
             elements = (elements,)
 
+        # check whether the chosen elements are actually in the state
+        for element_name in elements:
+            if element_name not in self.state.elements:
+                raise ValueError(f'No element "{element_name}" in state')
+
+        # check whether the number of elements agrees with what the actor expects
         if len(elements) != actor.num_elements:
             raise ValueError(
-                f"Actor {actor.__class__.__name__} expects "
-                f"{actor.num_elements} elements, but {len(elements)} were given."
+                f"Actor {actor.__class__.__name__} expects {actor.num_elements} "
+                f"elements, but {len(elements)} were given."
             )
 
-        for element in elements:
-            if element not in self.state.elements:
-                raise ValueError(f'No element "{element}" in state')
+        if check != "ignore":
+            # run some checks before adding the actor
+
+            def show_msg(msg: str):
+                """ helper function showing the message according to chosen method """
+                if check == "warn":
+                    warnings.warn(msg)
+                elif check == "log":
+                    self._logger.warning(msg)
+                elif check == "raise":
+                    raise RuntimeError(msg)
+                else:
+                    raise ValueError(f"Unknown argument check='{check}'")
+
+            # check whether all elements have the expected type
+            for element_name, element_class in zip(elements, actor.element_classes):
+                element = self.state.elements[element_name]
+                if not isinstance(element, element_class):
+                    show_msg(
+                        f"Element '{element_name}' is a `{element.__class__.__name__}`"
+                        f", but actor type `{actor.__class__.__name__}` expects "
+                        f"`{element_class.__name__}`"
+                    )
+
+            # check whether the same actor has already been added earlier
+            for elements2, actor2 in self.actors:
+                if elements2 == elements and actor2.__class__ is actor.__class__:
+                    show_msg(
+                        f"An actor of type `{actor.__class__.__name__}` has already "
+                        f"been added for elements {elements}"
+                    )
 
         self.actors.append((elements, actor))
 
