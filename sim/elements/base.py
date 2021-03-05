@@ -29,7 +29,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     _data: np.ndarray
 
-    def __init__(self, data: np.ndarray=None, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray = None, parameters: Dict[str, Any] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
