@@ -29,6 +29,12 @@ def test_simulation():
         simulation.add_actor("nonsense", DiffusionActor())
     with pytest.raises(ValueError):
         simulation.add_actor(("background", "background"), DiffusionActor())
+    with pytest.raises(RuntimeError):
+        simulation.add_actor(("droplets",), DiffusionActor(), check="raise")
+    with pytest.raises(RuntimeError):
+        simulation.add_actor(
+            ("droplets", "background"), SphericalDropletActor(), check="raise"
+        )
 
     assert isinstance(str(simulation), str)
     assert isinstance(repr(simulation), str)

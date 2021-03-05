@@ -56,6 +56,12 @@ class BrownianMotionPointActor(ActorBase):
                 (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
+        if isinstance(elements[0], SphericalDropletsElement):
+            self._logger.warning(
+                f"Using {self.__class__.__name__} to act on SphericalDropletsElement "
+                "instead of BrownianMotionDropletActor!"
+            )
+
         diffusivity = self.parameters["diffusivity"]
 
         @jit
@@ -135,6 +141,12 @@ class BrownianMotionDropletActor(ActorBase):
                 (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
+        if isinstance(elements[0], PointsElement):
+            self._logger.warning(
+                f"Using {self.__class__.__name__} to act on PointsElement instead of "
+                "BrownianMotionPointActor!"
+            )
+
         self._check_cache(elements)
         diffusivity = self._cache["diffusivity"].get_compiled()
         dim = elements[0].dim
