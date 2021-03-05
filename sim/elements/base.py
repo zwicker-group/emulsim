@@ -29,18 +29,21 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     _data: np.ndarray
 
-    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray=None, parameters: Dict[str, Any] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
                 The values of the dynamical degrees of freedom that define the current
-                state of the element.
+                state of the element. If `None` is supplied here, the data attribute is
+                not defined. In this case, the __init__ method of the inheriting class
+                needs to assign a :class:`~numpy.ndarray` to `self._data`.
             parameters (dict):
                 Parameters that affect the behavior of the element, but do not change
                 over time.
         """
         super().__init__(parameters)
-        self._data = np.asarray(data)
+        if data is not None:
+            self._data = np.asarray(data)
 
     @property
     def data(self) -> np.ndarray:

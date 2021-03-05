@@ -317,7 +317,7 @@ class ScalarFieldElement(FieldElementBase):
                 on which this field is defined.
         """
         # set temporary data first and overwrite it later
-        super().__init__(np.empty(()), parameters)
+        super().__init__(None, parameters)
 
         if not isinstance(self.grid, CartesianGridBase):
             raise NotImplementedError(
