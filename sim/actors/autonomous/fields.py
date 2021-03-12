@@ -360,7 +360,15 @@ class ReactionDiffusionActor(ScalarPDEActor):
         if s_max == 0:
             dt_reaction = float("inf")
         else:
-            dt_reaction = 0.1 / s_max
+            dt_reaction = 0.2 / s_max  # maximal 2% error during time step
+            # This estimate is based on an analysis of the differential equation
+            # dc(t)/dt = k * c(t), which has the solution c(t) = c(0) * exp(k * t), so
+            # k is a growth or reaction rate. Using an explicit Euler stepping, we find
+            # that the relative error ε during a single time step of length Δt is given
+            # by ε ≈ 0.5 * (k * Δt)**2 to lowest order in Δt. If we want to limit
+            # ε ≤ 0.02, we thus have to choose Δt ≤ sqrt(2 * ε) / k = 0.2 / k. The
+            # expression is thus a conservative estimate using the maximal reaction
+            # rate k = max(s).
 
         # estimate the time step required for diffusion
         dx = element.grid.discretization.min()  # type: ignore
