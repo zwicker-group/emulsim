@@ -11,7 +11,7 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ...elements import PointsElement, SphericalDropletsElement
+from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType
 
 
@@ -28,7 +28,7 @@ class BrownianMotionPointActor(ActorBase):
         ),
     ]
 
-    element_classes = (PointsElement,)
+    element_classes = ((PointsElement, ArrowsElement),)
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """estimate the maximal time step for simulating this actor
@@ -53,8 +53,8 @@ class BrownianMotionPointActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
-                evolving `field_data`
+                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
+                evolving `state_data`
         """
         if isinstance(elements[0], SphericalDropletsElement):
             self._logger.warning(
@@ -78,7 +78,7 @@ class BrownianMotionPointActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
-                The points element that is affected by the Brownian motion
+                The element that is affected by the Brownian motion
             t (float):
                 The current time point
             dt (float):
@@ -109,7 +109,7 @@ class BrownianMotionDropletActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The field element that is effected by the Brownian motion
+                The element that is effected by the Brownian motion
 
         Returns:
             float: the maximal time step
@@ -138,8 +138,8 @@ class BrownianMotionDropletActor(ActorBase):
 
         Returns:
             callable: A function with signature
-                (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
-                evolving `field_data`
+                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
+                evolving `state_data`
         """
         if isinstance(elements[0], PointsElement):
             self._logger.warning(
@@ -164,11 +164,11 @@ class BrownianMotionDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """evolve the field state from time `t` to `t + dt`
+        """evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The field element that is effected by the Brownian motion
+                The element that is effected by the Brownian motion
             t (float):
                 The current time point
             dt (float):

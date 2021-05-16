@@ -4,6 +4,7 @@ Provides a class representing the full system state of multiple elements
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import copy
 import itertools
 import json
 import logging
@@ -13,22 +14,37 @@ from typing import Any, Dict, Iterable, Sequence, Tuple, Union
 
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.misc import hdf_write_attributes
+from pde.tools.parameters import Parameter, Parameterized
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import ElementBase
 
 
-class State:
+class State(Parameterized):
     """ defines the state of the simulation as a collection of elements """
 
-    def __init__(self, elements: Dict[str, ElementBase] = None):
+    parameters_default = [
+        Parameter(
+            "bounds",
+            None,
+            object,
+            "Bounds of the simulation box, which affects plotting",
+        )
+    ]
+
+    def __init__(
+        self, elements: Dict[str, ElementBase] = None, parameters: Dict[str, Any] = None
+    ):
         """
         Args:
             elements (dict):
                 Lists the elements in the simulation. The key in this dictionary
                 gives the name of the element, while the associated value should
                 be an instance of :class:`~sim.elements.base.ElementBase`.
+            parameters (dict):
+                Parameters that affect the entire state
         """
+        super().__init__(parameters)
         self._logger = logging.getLogger(__name__)
         self.elements: Dict[str, ElementBase] = OrderedDict()
         self.dim: Optional[int] = None
@@ -146,12 +162,18 @@ class State:
 
     def copy(self) -> "State":
         """ copy the state """
-        return self.__class__({name: element.copy() for name, element in self})
+        return self.__class__(
+            {name: element.copy() for name, element in self},
+            parameters=copy.deepcopy(self.parameters),
+        )
 
     @property
     def attributes(self) -> Dict[str, Any]:
         """ dict: information about the state """
-        return {"elements": {name: element.attributes for name, element in self}}
+        return {
+            "elements": {name: element.attributes for name, element in self},
+            "parameters": self.parameters,
+        }
 
     def _write_hdf_dataset(self, hdf_path):
         """write data to a given hdf5 file
@@ -266,9 +288,13 @@ class State:
                 # keep track of the maximal bounding box
                 limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
 
-        # set the bounding box to the maximal value
-        ax.set_xlim(*limits.intervalx)
-        ax.set_ylim(*limits.intervaly)
+        if self.parameters["bounds"] is None:
+            # set the bounding box to the maximal value
+            ax.set_xlim(*limits.intervalx)
+            ax.set_ylim(*limits.intervaly)
+        else:
+            ax.set_xlim(*self.parameters["bounds"][0])
+            ax.set_ylim(*self.parameters["bounds"][1])
 
     def plot_interactive(
         self, grid: GridBase = None, viewer_args: Dict[str, Any] = None, **kwargs

@@ -115,7 +115,7 @@ class ShellCollection:
         Args:
             dim (int):
                 The dimension of space
-            max_sector_size (float):
+            sector_size_max (float):
                 Maximal linear size of sectors associated with shell points
             radius_max (float, optional):
                 The maximal radius of the sphere that needs to be considered
