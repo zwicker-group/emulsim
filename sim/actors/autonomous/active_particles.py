@@ -60,27 +60,27 @@ class ActiveParticleActor(ActorBase):
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ evolve all points explicitly """
-            data = state_data[0]
+            points = state_data[0]
 
             for i in nb.prange(len(state_data[0])):
                 # update the position
                 for j in range(dim):
-                    data[i, j] += dt * data[i, dim + j]
+                    points[i].position[j] += dt * points[i].direction[j]
 
                 # apply rotational diffusion if requested
                 if rot_diff > 0:
                     if dim == 1:
                         # interpret rot_diff as rate of flipping
                         if np.random.rand() < dt * rot_diff:
-                            data[i, 1] *= -1
+                            points[i].direction[:] *= -1.0
 
                     elif dim == 2:
                         # rotate by angle chosen from normal distribution
                         φ = np.random.normal(0, dt * rot_diff)
                         cosφ, sinφ = np.cos(φ), np.sin(φ)
-                        dx, dy = data[i, 2], data[i, 3]
-                        data[i, 2] = cosφ * dx - sinφ * dy
-                        data[i, 3] = sinφ * dx + cosφ * dy
+                        dx, dy = points[i].direction
+                        points[i].direction[0] = cosφ * dx - sinφ * dy
+                        points[i].direction[1] = sinφ * dx + cosφ * dy
 
                     else:
                         # higher dimensions are not currently supported
@@ -102,7 +102,7 @@ class ActiveParticleActor(ActorBase):
         (points,) = elements  # extract single element
 
         # update the position
-        points.data[:, : points.dim] += dt * points.data[:, points.dim :]
+        points.positions += dt * points.directions  # type: ignore
 
         # apply rotational diffusion if requested
         rot_diff = self.parameters["rotational_diffusion"]
@@ -110,13 +110,14 @@ class ActiveParticleActor(ActorBase):
             if points.dim == 1:
                 # interpret rot_diff as rate of flipping
                 flip = np.random.rand(len(points.data)) < dt * rot_diff
-                points.data[flip, 1] *= -1
+                points.directions[flip] *= -1  # type: ignore
 
             elif points.dim == 2:
                 # rotate by angle chosen from normal distribution
                 φ = np.random.normal(0, dt * rot_diff, size=len(points.data))
                 rot_mat = np.array([[np.cos(φ), -np.sin(φ)], [np.sin(φ), np.cos(φ)]])
-                points.directions = np.einsum("pi,ijp->pj", points.directions, rot_mat)  # type: ignore
+                new_direction = np.einsum("pi,ijp->pj", points.directions, rot_mat)  # type: ignore
+                points.directions[:] = new_direction  # type: ignore
 
             else:
                 raise NotImplementedError(

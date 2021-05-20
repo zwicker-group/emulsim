@@ -98,12 +98,6 @@ class SphericalDropletsElement(ElementBase):
         return len(self.droplets)
 
     @property
-    def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
-        entries_per_droplet = np.r_[self.data[0].tolist()]
-        return len(self.data) * len(entries_per_droplet)
-
-    @property
     def droplet_count(self) -> int:
         """int: the number of droplets in the emulsion
 

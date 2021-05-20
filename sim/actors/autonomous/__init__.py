@@ -4,8 +4,7 @@ Provides actors that affect single elements in a simulation
 .. autosummary::
    :nosignatures:
 
-   ~brownian_motion.BrownianMotionPointActor
-   ~brownian_motion.BrownianMotionDropletActor
+   ~brownian_motion.BrownianMotionActor
    ~coalescence.CoalescenceDropletActor
    ~fields.MeanfieldActor
    ~fields.ScalarPDEActor
@@ -18,7 +17,7 @@ Provides actors that affect single elements in a simulation
 
 from .active_particles import ActiveParticleActor
 from .box import BoxActor
-from .brownian_motion import BrownianMotionDropletActor, BrownianMotionPointActor
+from .brownian_motion import BrownianMotionActor
 from .coalescence import CoalescenceDropletActor
 from .emitters import EmittersActor
 from .fields import (

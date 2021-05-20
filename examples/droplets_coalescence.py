@@ -13,9 +13,7 @@ state = sim.State({"droplets": sim.SphericalDropletsElement.from_droplets(drople
 
 # setup simulation
 simulation = sim.Simulation(state)
-simulation.add_actor(
-    "droplets", sim.BrownianMotionDropletActor({"diffusivity": "1/radius"})
-)
+simulation.add_actor("droplets", sim.BrownianMotionActor({"diffusivity": "1/radius"}))
 simulation.add_actor("droplets", sim.CoalescenceDropletActor())
 
 # run simulation

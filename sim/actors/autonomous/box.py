@@ -10,7 +10,7 @@ from pde.grids.cartesian import CartesianGrid, CartesianGridBase
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ...elements import ArrowsElement, PointsElement
+from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType
 
 
@@ -22,7 +22,7 @@ class BoxActor(ActorBase):
         Parameter("periodic", False, np.array, "The bounds of the box"),
     ]
 
-    element_classes = ((PointsElement, ArrowsElement),)
+    element_classes = ((PointsElement, ArrowsElement, SphericalDropletsElement),)
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """
@@ -80,12 +80,11 @@ class BoxActor(ActorBase):
 
         normalize_point = self._grid.make_normalize_point_compiled(reflect=True)
         num_points = len(points_element.data)
-        dim = self._grid.dim
         midpoint = self._grid.cuboid.centroid
         size = self._grid.cuboid.size
 
         # figure out which axes need to be considered for flipping direction
-        if isinstance(points_element, ArrowsElement):
+        if "direction" in points_element.data.dtype.fields:  # type: ignore
             flip_ax = np.flatnonzero(np.logical_not(self._grid.periodic))
         else:
             flip_ax = np.empty((0,))
@@ -94,7 +93,7 @@ class BoxActor(ActorBase):
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """ evolve all points explicitly """
-            points = state_data[0]  # coordinates of the points
+            points = state_data[0]  # data of the points
             for i in range(num_points):
                 # TODO: this function's performance could be improved by calculating
                 # the distance only once
@@ -102,12 +101,12 @@ class BoxActor(ActorBase):
                 # flip direction if out of bound
                 if test_for_flipping:
                     for ax in flip_ax:
-                        dist_norm = (points[i, ax] - midpoint[ax]) / size[ax]
+                        dist_norm = (points[i].position[ax] - midpoint[ax]) / size[ax]
                         if (dist_norm - 0.5) % 2 - 1 < 0:
-                            points[i, dim + ax] *= -1
+                            points[i].direction[ax] *= -1
 
                 # move the points to inside the box
-                normalize_point(points[i, :dim])
+                normalize_point(points[i].position)
 
         return evolver  # type: ignore
 
@@ -123,19 +122,20 @@ class BoxActor(ActorBase):
                 The time step
         """
         (points,) = elements  # extract single element
-        pos = points.data[..., : points.dim]
 
-        if isinstance(points, ArrowsElement):
+        if "direction" in points.data.dtype.fields:  # type: ignore
             # flip direction if out of bound
             midpoint = self._grid.cuboid.centroid
             size = self._grid.cuboid.size
             for ax in range(points.dim):
-                if self.parameters["periodic"][ax]:
+                if self._grid.periodic[ax]:
                     continue  # do nothing for periodic axes
-                dist_norm = (pos[..., ax] - midpoint[ax]) / size[ax]
+                dist_norm = (points.positions[..., ax] - midpoint[ax]) / size[ax]  # type: ignore
                 factor = np.sign((dist_norm - 0.5) % 2 - 1)
                 factor[factor == 0] = 1  # don't flip corner cases
-                points.data[..., points.dim + ax] *= factor
+                points.directions[..., ax] *= factor  # type: ignore
 
         # move the points to inside the box
-        pos[...] = self._grid.normalize_point(pos, reflect=True)
+        points.positions[...] = self._grid.normalize_point(  # type: ignore
+            points.positions, reflect=True  # type: ignore
+        )

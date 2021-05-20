@@ -43,7 +43,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         """
         super().__init__(parameters)
         if data is not None:
-            self._data = np.asarray(data)
+            self._data = np.asanyarray(data)
 
     @property
     def data(self) -> np.ndarray:
@@ -306,7 +306,16 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
     @property
     def degrees_of_freedom(self) -> int:
         """ int: the number of degrees of freedom for this element """
-        return int(np.asanyarray(self.data).size)
+        arr = np.asanyarray(self.data)
+        if arr.dtype.fields:
+            # array is a structured array or record array with fields
+            itemsize = sum(
+                np.product(fields[0].shape) for fields in arr.dtype.fields.values()
+            )
+        else:
+            # array is a simple array
+            itemsize = 1
+        return int(arr.size * itemsize)
 
     def plot(self, ax=None, *args, **kwargs):
         """ plot the element """
