@@ -37,10 +37,11 @@ class SphericalDropletsElement(ElementBase):
             data (:class:`~numpy.ndarray`):
                 The positions and radii of all points. This should be a
                 structured array as returned by
-                :attr:`droplets.emulsions.Emulsion.data`
+                :attr:`~droplets.emulsions.Emulsion.data`
             parameters (dict):
                 Additional parameters. Call
-                :meth:`~SphericalDropletsElement.show_parameters` for details.
+                :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
+                for details.
         """
         if isinstance(data, Emulsion) or isinstance(data[0], SphericalDroplet):
             raise TypeError(

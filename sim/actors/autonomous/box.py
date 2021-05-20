@@ -78,10 +78,14 @@ class BoxActor(ActorBase):
         """
         (points_element,) = elements  # extract single element
 
-        normalize_point = self._grid.make_normalize_point_compiled(reflect=True)
         num_points = len(points_element.data)
+        num_axes = self._grid.num_axes
+        periodic = np.array(self._grid.periodic)  # using a tuple led to a numba error
+        bounds = np.array(self._grid.axes_bounds)
         midpoint = self._grid.cuboid.centroid
-        size = self._grid.cuboid.size
+        xmin = bounds[:, 0]
+        xmax = bounds[:, 1]
+        size = bounds[:, 1] - bounds[:, 0]
 
         # figure out which axes need to be considered for flipping direction
         if "direction" in points_element.data.dtype.fields:  # type: ignore
@@ -95,18 +99,24 @@ class BoxActor(ActorBase):
             """ evolve all points explicitly """
             points = state_data[0]  # data of the points
             for i in range(num_points):
-                # TODO: this function's performance could be improved by calculating
-                # the distance only once
+                pos = points[i].position
 
                 # flip direction if out of bound
                 if test_for_flipping:
                     for ax in flip_ax:
-                        dist_norm = (points[i].position[ax] - midpoint[ax]) / size[ax]
+                        dist_norm = (pos[ax] - midpoint[ax]) / size[ax]
                         if (dist_norm - 0.5) % 2 - 1 < 0:
                             points[i].direction[ax] *= -1
+                # TODO: this function's performance could be improved by calculating
+                # the distance only once
 
                 # move the points to inside the box
-                normalize_point(points[i].position)
+                for ax in range(num_axes):
+                    if periodic[ax]:
+                        pos[ax] = (pos[ax] - xmin[ax]) % size[ax] + xmin[ax]
+                    else:
+                        arg = (pos[ax] - xmax[ax]) % (2 * size[ax]) - size[ax]
+                        pos[ax] = xmin[ax] + abs(arg)
 
         return evolver  # type: ignore
 

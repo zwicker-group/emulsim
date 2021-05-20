@@ -12,6 +12,7 @@ from pde import ScalarField, UnitGrid
 from pde.tools.misc import skipUnlessModule
 
 from .. import (
+    ArrowsElement,
     ElementBase,
     MeanfieldElement,
     PointsElement,
@@ -39,10 +40,10 @@ def generate_elements(dim=None):
     if dim is None or dim == 2:
         yield PointsElement(np.random.randn(3, 2))
 
-    # if dim is None or dim == 1:
-    #     yield ArrowsElement.from_position_direction(np.random.randn(3, 1))
-    # if dim is None or dim == 2:
-    #     yield ArrowsElement(np.random.randn(3, 2))
+    if dim is None or dim == 1:
+        yield ArrowsElement.from_position_random_direction(np.random.randn(3, 1))
+    if dim is None or dim == 2:
+        yield ArrowsElement.from_position_random_direction(np.random.randn(3, 2))
 
     if dim is None or dim == 1:
         emulsion = [SphericalDroplet([0], 1), SphericalDroplet([1], 2)]
