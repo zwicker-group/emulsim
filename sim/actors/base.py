@@ -6,7 +6,7 @@ Supplies the base class for actors
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
+from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
 
@@ -16,16 +16,17 @@ from pde.tools.parameters import Parameterized
 from ..elements import ElementBase
 
 ElementsType = Tuple[ElementBase, ...]
+ElementsSpec = Union[Type[ElementBase], Tuple[Type[ElementBase], ...]]
 EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """ represents a single actor, which affects one or more elements """
 
-    element_classes: Tuple[Type[ElementBase], ...] = (ElementBase,)
+    element_classes: Tuple[ElementsSpec, ...] = (ElementBase,)
     """ tuple: defines the elements this actor handles and in what order they
     need to be supplied. The default assumes a single generic element. If an
-    actor affects multiple elements, this values needs to be sepcified."""
+    actor affects multiple elements, this values needs to be specified."""
 
     def __init__(self, parameters: Dict[str, Any] = None):
         """

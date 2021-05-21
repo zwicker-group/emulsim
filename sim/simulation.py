@@ -25,7 +25,6 @@ from .state import State
 
 _logger = logging.getLogger(__name__)
 
-
 ElementNamesType = Union[str, Tuple[str]]
 
 
@@ -131,12 +130,25 @@ class Simulation:
             # check whether all elements have the expected type
             for element_name, element_class in zip(elements, actor.element_classes):
                 element = self.state.elements[element_name]
-                if not isinstance(element, element_class):
-                    show_msg(
-                        f"Element '{element_name}' is a `{element.__class__.__name__}`"
-                        f", but actor type `{actor.__class__.__name__}` expects "
-                        f"`{element_class.__name__}`"
-                    )
+                if hasattr(element_class, "__iter__"):
+                    # actor supports multiple classes for this element
+                    if not any(isinstance(element, cls) for cls in element_class):  # type: ignore
+                        show_msg(
+                            f"Element '{element_name}' is a "  # type: ignore
+                            f"`{element.__class__.__name__}`, but actor type "
+                            f"`{actor.__class__.__name__}` expects any of "
+                            f"`{', '.join(cls.__name__ for cls in element_class)}`"
+                        )
+
+                else:
+                    # actor supports a single class for this element
+                    if not isinstance(element, element_class):
+                        show_msg(
+                            f"Element '{element_name}' is a "  # type: ignore
+                            f"`{element.__class__.__name__}`, but actor type "
+                            f"`{actor.__class__.__name__}` expects "
+                            f"`{element_class.__name__}`"
+                        )
 
             # check whether the same actor has already been added earlier
             for elements2, actor2 in self.actors:
@@ -328,11 +340,8 @@ class Simulation:
                 @jit
                 def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
                     inner(state_data, t, dt)
-                    evolver(
-                        (state_data[i], state_data[j], state_data[k], state_data[l]),
-                        t,
-                        dt,
-                    )
+                    sd = state_data
+                    evolver((sd[i], sd[j], sd[k], sd[l]), t, dt)
 
             if actor_id < len(actors) - 1:
                 # there are more items in the chain

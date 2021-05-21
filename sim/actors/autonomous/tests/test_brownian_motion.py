@@ -8,14 +8,14 @@ import numpy as np
 from pde.tools.misc import skipUnlessModule
 
 from ....elements import PointsElement
-from .. import BrownianMotionDropletActor, BrownianMotionPointActor
+from .. import BrownianMotionActor
 
 
 def test_brownian_motion_points():
     """ simple test of Brownian motion of points """
 
     element = PointsElement(np.random.randn(10, 2))
-    actor = BrownianMotionPointActor()
+    actor = BrownianMotionActor()
 
     assert actor.estimate_dt((element,)) > 0
     ref = element.copy()
@@ -38,7 +38,7 @@ def test_brownian_motion_droplets():
 
     droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)
-    actor = BrownianMotionDropletActor()
+    actor = BrownianMotionActor()
 
     assert actor.estimate_dt((element,)) > 0
     ref = element.copy()

@@ -6,8 +6,7 @@ state of elements in time.
    :nosignatures:
 
    ~base.ActorBase
-   ~autonomous.brownian_motion.BrownianMotionPointActor
-   ~autonomous.brownian_motion.BrownianMotionDropletActor
+   ~autonomous.brownian_motion.BrownianMotionActor
    ~autonomous.coalescence.CoalescenceDropletActor
    ~autonomous.fields.MeanfieldActor
    ~autonomous.fields.ScalarPDEActor

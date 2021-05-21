@@ -13,14 +13,14 @@ class BrownianParticlesActor(sim.ActorBase):
         """ evolve the particles in time """
         (particles,) = elements
         scale = np.sqrt(dt) * self.diffusivity
-        particles.data[...] += scale * np.random.normal(size=particles.data.shape)
+        size = particles.positions.shape
+        particles.positions[...] += scale * np.random.normal(size=size)
 
 
 # setup state
 particle_data = np.random.uniform(0, 100, size=(10, 2))
 particles = sim.PointsElement(particle_data)
 state = sim.State({"particles": particles})
-
 
 # setup simulation
 simulation = sim.Simulation(state)

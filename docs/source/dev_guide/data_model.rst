@@ -34,6 +34,13 @@ element, e.g., from a file.
 To summarize, the key assumption of :mod:`sim` is that elements have fixed properties,
 described by attributes, and dynamical degrees of freedom, described by data.
 
+Some elements represent collections of identical items, e.g., the
+:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`. In this case, the
+:attr:`data` attribute is an array specifying the degree of freedoms for each item.
+Since each individual item could have multiple degrees of freedom (e.g., position and
+radius for the a droplet), we use structured datatypes of numpy, which can be created
+with the :class:`numpy.dtype` class. 
+
 To define a custom element, you need to define a class that inherits from
 :class:`~sim.elements.base.ElementBase`. This default element can already take a 
 :class:`~numpy.ndarray` as the data attribute and is fully functional.
@@ -114,15 +121,15 @@ of freedom of the elements, i.e., their :attr:`data` attributes.
 
 
 In the :mod:`sim` package, the dynamics are defined by a 
-:class:`sim.simulation.Simulation` object.
+:class:`~sim.simulation.Simulation` object.
 Each simulation contains one or more *actors*, which each affect one or multiple
 elements.
 This approach allows combining multiple actors without redefining their code simply by
-combining them in a :class:`sim.simulation.Simulation`. 
-Each actor inherits from :class:`sim.actors.base.ActorBase`, which defines the necessary
+combining them in a :class:`~sim.simulation.Simulation`. 
+Each actor inherits from :class:`~sim.actors.base.ActorBase`, which defines the necessary
 behavior.
 In the simplest case, a custom actor only needs to overwrite the
-:meth:`sim.actors.base.ActorBase.evolve` method, which evolves its elements from time
+:meth:`~sim.actors.base.ActorBase.evolve` method, which evolves its elements from time
 :code:`t` to :code:`t + dt`, changing the respective :attr:`data` attributes in place:
 
 .. code-block:: python

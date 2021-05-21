@@ -37,10 +37,11 @@ class SphericalDropletsElement(ElementBase):
             data (:class:`~numpy.ndarray`):
                 The positions and radii of all points. This should be a
                 structured array as returned by
-                :attr:`droplets.emulsions.Emulsion.data`
+                :attr:`~droplets.emulsions.Emulsion.data`
             parameters (dict):
                 Additional parameters. Call
-                :meth:`~SphericalDropletsElement.show_parameters` for details.
+                :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
+                for details.
         """
         if isinstance(data, Emulsion) or isinstance(data[0], SphericalDroplet):
             raise TypeError(
@@ -96,12 +97,6 @@ class SphericalDropletsElement(ElementBase):
 
     def __len__(self) -> int:
         return len(self.droplets)
-
-    @property
-    def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
-        entries_per_droplet = np.r_[self.data[0].tolist()]
-        return len(self.data) * len(entries_per_droplet)
 
     @property
     def droplet_count(self) -> int:
