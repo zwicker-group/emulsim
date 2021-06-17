@@ -51,7 +51,7 @@ class ActiveParticleActor(ActorBase):
                 (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `state_data`
         """
-        dim = elements[0].dim
+        dim = int(elements[0].dim)  # type: ignore
 
         rot_diff = float(self.parameters["rotational_diffusion"])
         if rot_diff > 0 and dim > 2:

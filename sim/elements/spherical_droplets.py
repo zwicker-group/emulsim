@@ -61,7 +61,7 @@ class SphericalDropletsElement(ElementBase):
             )
 
         self._data = self.droplets.get_linked_data()
-        self.dim = self.droplets.dim  # type: ignore
+        self.dim = self.droplets.dim
 
     @classmethod
     def from_droplets(

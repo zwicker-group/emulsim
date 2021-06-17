@@ -9,7 +9,7 @@ import json
 import logging
 import warnings
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Type, Union  # @UnusedImport
+from typing import Any, Callable, Dict, Optional, Type, Union  # @UnusedImport
 
 import numpy as np
 
@@ -23,7 +23,7 @@ SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """represents a simulation element"""
 
-    dim: int  # dimensionality of the space in which the element is embedded
+    dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
     _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
 

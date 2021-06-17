@@ -46,8 +46,15 @@ class State(Parameterized):
         """
         super().__init__(parameters)
         self._logger = logging.getLogger(__name__)
+
+        # determine dimensionality of space
+        if self.parameters["bounds"] is not None:
+            self.dim: Optional[int] = len(self.parameters["bounds"])
+        else:
+            self.dim = None
+
+        # add elements to the simulation
         self.elements: Dict[str, ElementBase] = OrderedDict()
-        self.dim: Optional[int] = None
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
@@ -88,12 +95,15 @@ class State(Parameterized):
         """
         if name in self.elements:
             self._logger.warning("Overwriting element `%s` in state", name)
-        if len(self.elements) == 0:
+
+        # check dimensionality
+        if element.dim is None:
+            pass
+        elif self.dim is None:
             self.dim = element.dim
         elif self.dim != element.dim:
             raise DimensionError(
-                f"Dimension of element ({element.dim}) differs "
-                f"from state ({self.dim})"
+                f"Element dimension ({element.dim}) differs from state ({self.dim})"
             )
         self.elements[name] = element
 
@@ -295,6 +305,7 @@ class State(Parameterized):
         else:
             ax.set_xlim(*self.parameters["bounds"][0])
             ax.set_ylim(*self.parameters["bounds"][1])
+            ax.set_aspect(1)
 
     def plot_interactive(
         self, grid: GridBase = None, viewer_args: Dict[str, Any] = None, **kwargs

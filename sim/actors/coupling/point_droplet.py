@@ -98,13 +98,13 @@ class PointDropletActor(ActorBase):
         """
         droplets, field = elements
 
-        if droplets.droplets.dim != field.dim:
+        if field.dim is not None and droplets.dim != field.dim:
             raise DimensionError(
                 "Droplets have a different dimension than the background "
-                f"({droplets.droplets.dim} != {field.dim})"
+                f"({droplets.dim} != {field.dim})"
             )
 
-        self._cache["dim"] = field.dim
+        self._cache["dim"] = droplets.dim
         self._cache["cEqOut"] = self._parse_equilibrium_concentration()
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore

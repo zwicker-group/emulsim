@@ -31,6 +31,8 @@ from .base import ElementBase
 class ReservoirElement(ElementBase):
     """an element representing a homogeneous, constant field"""
 
+    dim = None  # works for any dimension
+
     def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
         """
         Args:

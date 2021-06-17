@@ -137,7 +137,7 @@ class BoxActor(ActorBase):
             # flip direction if out of bound
             midpoint = self._grid.cuboid.centroid
             size = self._grid.cuboid.size
-            for ax in range(points.dim):
+            for ax in range(points.dim):  # type: ignore
                 if self._grid.periodic[ax]:
                     continue  # do nothing for periodic axes
                 dist_norm = (points.positions[..., ax] - midpoint[ax]) / size[ax]  # type: ignore

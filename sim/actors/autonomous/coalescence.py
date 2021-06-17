@@ -33,7 +33,7 @@ class CoalescenceDropletActor(ActorBase):
                 evolving `field_data`
         """
 
-        dim = elements[0].dim
+        dim = int(elements[0].dim)  # type: ignore
         radius = spherical.make_radius_from_volume_compiled(dim)
         volume = spherical.make_volume_from_radius_compiled(dim)
 

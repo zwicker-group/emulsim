@@ -77,7 +77,7 @@ class BrownianMotionActor(ActorBase):
         """
         self._check_cache(elements)
         diffusivity = self._cache["diffusivity"].get_compiled()
-        dim = elements[0].dim
+        dim = int(elements[0].dim)  # type: ignore
 
         if self._cache["has_radius"]:
 

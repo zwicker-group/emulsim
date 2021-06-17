@@ -395,14 +395,13 @@ class SphericalDropletActor(ActorBase):
         """
         droplets, field = elements
 
-        if droplets.droplets.dim != field.dim:
+        if field.dim is not None and droplets.dim != field.dim:
             raise DimensionError(
-                "Droplets have a different dimension than the "
-                f"background ({droplets.droplets.dim} != "
-                f"{field.dim})"
+                "Droplets have a different dimension than the background "
+                f"({droplets.dim} != {field.dim})"
             )
 
-        self._cache["dim"] = field.dim
+        self._cache["dim"] = droplets.dim
 
         # parse the equilibrium concentration and the reaction rates
         self._parse_expressions(self._cache)
@@ -419,7 +418,7 @@ class SphericalDropletActor(ActorBase):
         # generate the shell collection
         sector_size = self._cache["shell_sector_size"]
         shells = ShellCollection.generate(
-            field.dim, sector_size_max=sector_size, radius_max=radius_max
+            self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
         )
         self._cache["shells"] = shells
 
@@ -632,7 +631,7 @@ class SphericalDropletActor(ActorBase):
 
         droplets, field = elements
 
-        if field.dim != 2:
+        if droplets.dim != 2:
             raise NotImplementedError("Can only plot shell points in 2d")
 
         # parse input and set default styles
@@ -967,5 +966,5 @@ class SphericalDropletActor(ActorBase):
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
                 area = droplet.surface_area
-                dx = field.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
-                droplet.position = field.grid.normalize_point(droplet.position + dx)
+                d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
+                droplet.position = field.grid.normalize_point(droplet.position + d)
