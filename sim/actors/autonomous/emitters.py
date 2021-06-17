@@ -16,7 +16,7 @@ from ..base import ActorBase, ElementsType
 
 
 class EmittersActor(ActorBase):
-    """ represents actor that emit mass into a field at defined positions """
+    """represents actor that emit mass into a field at defined positions"""
 
     parameters_default = [
         Parameter(
@@ -40,7 +40,7 @@ class EmittersActor(ActorBase):
     element_classes = (FieldElementBase,)
 
     def __len__(self):
-        """ int: return the number of dimensions """
+        """int: return the number of dimensions"""
         return len(self.parameters["positions"])
 
     def estimate_dt(self, elements: ElementsType) -> float:
@@ -77,7 +77,7 @@ class EmittersActor(ActorBase):
 
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
-            """ evolve all emitters explicitly """
+            """evolve all emitters explicitly"""
             for position, strength in zip(positions, strengths):
                 add_amount(state_data[0], position, dt * strength)
 

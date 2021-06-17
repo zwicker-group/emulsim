@@ -12,7 +12,7 @@ from .. import BrownianMotionActor
 
 
 def test_brownian_motion_points():
-    """ simple test of Brownian motion of points """
+    """simple test of Brownian motion of points"""
 
     element = PointsElement(np.random.randn(10, 2))
     actor = BrownianMotionActor()
@@ -30,7 +30,7 @@ def test_brownian_motion_points():
 
 @skipUnlessModule("droplets")
 def test_brownian_motion_droplets():
-    """ simple test of Brownian motion of droplets """
+    """simple test of Brownian motion of droplets"""
 
     from droplets import SphericalDroplet
 

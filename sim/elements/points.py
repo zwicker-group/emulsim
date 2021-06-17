@@ -16,7 +16,7 @@ from .base import ElementBase
 
 
 class PointsElement(ElementBase):
-    """ an element that represents a collection of points """
+    """an element that represents a collection of points"""
 
     parameters_default = [
         Parameter(
@@ -133,7 +133,7 @@ class PointsElement(ElementBase):
 
 
 class ArrowsElement(PointsElement):
-    """ an element that represents a collection of points with direction """
+    """an element that represents a collection of points with direction"""
 
     #
     # parameters_default = [

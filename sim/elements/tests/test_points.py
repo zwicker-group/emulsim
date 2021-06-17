@@ -12,7 +12,7 @@ from .. import ArrowsElement
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_arrows_element(dim):
-    """ test basic arrows elements functions """
+    """test basic arrows elements functions"""
     n = 5  # number of droplets
     pos = np.random.randn(n, dim)
 

@@ -15,7 +15,7 @@ from ..base import ActorBase, ElementsType
 
 
 class BrownianMotionActor(ActorBase):
-    """ represents actor that moves objects according to Brownian motion """
+    """represents actor that moves objects according to Brownian motion"""
 
     parameters_default = [
         Parameter(
@@ -83,7 +83,7 @@ class BrownianMotionActor(ActorBase):
 
             @jit
             def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
-                """ evolve all points explicitly """
+                """evolve all points explicitly"""
                 (droplets_data,) = state_data
                 for droplet_data in droplets_data:
                     if droplet_data.radius > 0:
@@ -95,7 +95,7 @@ class BrownianMotionActor(ActorBase):
 
             @jit
             def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
-                """ evolve all points explicitly """
+                """evolve all points explicitly"""
                 (droplets_data,) = state_data
                 scale = np.sqrt(dt * diffusivity(t))
                 for droplet_data in droplets_data:

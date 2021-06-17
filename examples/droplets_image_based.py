@@ -17,17 +17,17 @@ state = sim.State({"background": background, "droplets": droplets})
 
 # define how the equilibrium concentration is calculated
 class cEqOutField:
-    """ class calculating equilibrium concentrations based on a field """
+    """class calculating equilibrium concentrations based on a field"""
 
     def __init__(self, image: ScalarField):
         self.image = image
 
     def __call__(self, position, radius, droplet_id):
-        """ return equilibrium concentration for a position """
+        """return equilibrium concentration for a position"""
         return 1e-2 * self.image.interpolate(position)
 
     def get_compiled(self):
-        """ return compiled function for calculating c_eq for a position """
+        """return compiled function for calculating c_eq for a position"""
         interpolate = self.image.grid.make_interpolator_compiled()
         image_data = self.image.data
 

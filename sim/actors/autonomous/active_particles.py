@@ -15,7 +15,7 @@ from ..base import ActorBase, ElementsType
 
 
 class ActiveParticleActor(ActorBase):
-    """ represents actor that moves arrows according to their direction """
+    """represents actor that moves arrows according to their direction"""
 
     parameters_default = [
         Parameter(
@@ -59,7 +59,7 @@ class ActiveParticleActor(ActorBase):
 
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """ evolve all points explicitly """
+            """evolve all points explicitly"""
             points = state_data[0]
 
             for i in nb.prange(len(state_data[0])):

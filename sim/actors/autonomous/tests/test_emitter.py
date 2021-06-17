@@ -12,7 +12,7 @@ from .. import EmittersActor
 
 
 def test_emitters():
-    """ simple test of emitters """
+    """simple test of emitters"""
     grid = UnitGrid([3, 3])
     background = MeanfieldElement(parameters={"bounds": [[0, 3], [0, 3]]})
     assert background.concentration == pytest.approx(0)

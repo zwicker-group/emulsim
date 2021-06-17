@@ -14,7 +14,7 @@ from .. import BoxActor
 
 @pytest.mark.parametrize("periodic", [True, False])
 def test_box_actor_reflect(periodic):
-    """ simple test of box actor """
+    """simple test of box actor"""
     grid = CartesianGrid([[1, 3]], 1, periodic=periodic)
     box = BoxActor.from_grid(grid)
 
@@ -36,7 +36,7 @@ def test_box_actor_reflect(periodic):
 
 @pytest.mark.parametrize("periodic", [True, False])
 def test_box_actor_reflect_arrows(periodic):
-    """ simple test of box actor """
+    """simple test of box actor"""
     grid = CartesianGrid([[1, 3]], 1, periodic=periodic)
     box = BoxActor.from_grid(grid)
 

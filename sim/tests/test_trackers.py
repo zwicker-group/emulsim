@@ -11,7 +11,7 @@ from .. import *
 
 
 def test_field_tracker():
-    """ test the field tracker """
+    """test the field tracker"""
     # setup state
     field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))
     background = ScalarFieldElement.from_field(field)
@@ -36,7 +36,7 @@ def test_field_tracker():
 
 
 def test_droplet_element_trackers():
-    """ test DropletElementTracker """
+    """test DropletElementTracker"""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
     background = ScalarFieldElement.from_field(ScalarField(grid, 0.1))

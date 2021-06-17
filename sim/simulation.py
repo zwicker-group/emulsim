@@ -29,7 +29,7 @@ ElementNamesType = Union[str, Tuple[str]]
 
 
 class Simulation:
-    """ Class defining the simulation state """
+    """Class defining the simulation state"""
 
     def __init__(
         self,
@@ -61,18 +61,18 @@ class Simulation:
                 self.add_actor(element_names, actor, check=check)
 
     def __repr__(self):
-        """ return instance as string """
+        """return instance as string"""
         actors_str = ", ".join(repr(actor) for actor in self.actors)
         return f"{self.__class__.__name__}({self.state!r}, actors=[{actors_str}])"
 
     def __str__(self):
-        """ return instance as string """
+        """return instance as string"""
         actors_str = ", ".join(str(actor) for actor in self.actors)
         return f"{self.__class__.__name__}({self.state!s}, actors=[{actors_str}])"
 
     @property
     def info(self) -> Dict[str, Any]:
-        """ dict: information about the state """
+        """dict: information about the state"""
         actor_infos = []
         for element_names, actor in self.actors:
             info = actor.info
@@ -117,7 +117,7 @@ class Simulation:
             # run some checks before adding the actor
 
             def show_msg(msg: str):
-                """ helper function showing the message according to chosen method """
+                """helper function showing the message according to chosen method"""
                 if check == "warn":
                     warnings.warn(msg)
                 elif check == "log":
@@ -235,7 +235,7 @@ class Simulation:
         return graph
 
     def plot_interacting_elements(self, **kwargs) -> None:
-        """ plot all interacting elements as a graph """
+        """plot all interacting elements as a graph"""
         import networkx as nx
 
         graph = self.get_interacting_elements()
@@ -300,11 +300,11 @@ class Simulation:
 
         @jit
         def innermost(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """ no-op function serving as innermost nested function """
+            """no-op function serving as innermost nested function"""
             pass
 
         def chain(actor_id: int, inner: EvolverType) -> EvolverType:
-            """ recursive helper function for running all actors """
+            """recursive helper function for running all actors"""
             # run through all evolvers
             evolver = actors[actor_id]["evolver"]
             element_indices = actors[actor_id]["element_indices"]
@@ -419,7 +419,7 @@ class Simulation:
 
 
 class SimulationSolver(SolverBase):
-    """ Solver for actor-based simulation """
+    """Solver for actor-based simulation"""
 
     def __init__(self, simulation: Simulation, backend: str = "auto"):
         """initialize the explicit solver for the actor-based simulation
@@ -449,7 +449,7 @@ class SimulationSolver(SolverBase):
         """
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
-            """ function that advances the state from t_start to t_end """
+            """function that advances the state from t_start to t_end"""
             steps = max(1, int(np.ceil((t_end - t_start) / dt)))
 
             for step in range(steps):
@@ -481,7 +481,7 @@ class SimulationSolver(SolverBase):
         simulation_evolver = self.simulation.make_evolver_numba(state)
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
-            """ function that advances the state from t_start to t_end """
+            """function that advances the state from t_start to t_end"""
             steps = max(1, int(np.ceil((t_end - t_start) / dt)))
 
             for step in range(steps):

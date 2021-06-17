@@ -22,7 +22,7 @@ from .. import (
 
 
 class EmptyElement(ElementBase):
-    """ dummy class to test the simplest element """
+    """dummy class to test the simplest element"""
 
     parameters_default = {"dim": 2}  # type: ignore
 
@@ -32,7 +32,7 @@ class EmptyElement(ElementBase):
 
 
 def generate_elements(dim=None):
-    """ helper function generating all tested backgrounds """
+    """helper function generating all tested backgrounds"""
     yield EmptyElement(np.zeros(()), {"dim": 2 if dim is None else dim})
 
     if dim is None or dim == 1:
@@ -64,7 +64,7 @@ def generate_elements(dim=None):
 
 @pytest.mark.parametrize("element", generate_elements())
 def test_basic(element):
-    """ test basic functions of elements """
+    """test basic functions of elements"""
     assert isinstance(str(element), str)
     assert isinstance(repr(element), str)
     assert isinstance(element.attributes, dict)
@@ -82,7 +82,7 @@ def test_basic(element):
 @skipUnlessModule("h5py")
 @pytest.mark.parametrize("element", generate_elements())
 def test_element_io(element, tmp_path):
-    """ test writing and reading element states """
+    """test writing and reading element states"""
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
 
     element.to_file(path)

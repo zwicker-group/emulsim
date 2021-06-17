@@ -21,7 +21,7 @@ from .elements.base import ElementBase
 
 
 class State(Parameterized):
-    """ defines the state of the simulation as a collection of elements """
+    """defines the state of the simulation as a collection of elements"""
 
     parameters_default = [
         Parameter(
@@ -109,7 +109,7 @@ class State(Parameterized):
         raise KeyError(f"`{name}` not in {self.__class__.__name__}")
 
     def __getitem__(self, key: Union[int, str, Sequence[str]]):
-        """ extract element by numerical index or by name """
+        """extract element by numerical index or by name"""
         if isinstance(key, int):
             # handle numerical index
             size = len(self)
@@ -161,7 +161,7 @@ class State(Parameterized):
         return all(self.elements[key] == other.elements[key] for key in self.elements)
 
     def copy(self) -> "State":
-        """ copy the state """
+        """copy the state"""
         return self.__class__(
             {name: element.copy() for name, element in self},
             parameters=copy.deepcopy(self.parameters),
@@ -169,7 +169,7 @@ class State(Parameterized):
 
     @property
     def attributes(self) -> Dict[str, Any]:
-        """ dict: information about the state """
+        """dict: information about the state"""
         return {
             "elements": {name: element.attributes for name, element in self},
             "parameters": self.parameters,
@@ -208,12 +208,12 @@ class State(Parameterized):
 
     @property
     def data(self) -> Tuple[Any, ...]:
-        """ tuple: the full data of the state  s"""
+        """tuple: the full data of the state  s"""
         return tuple(element.data for element in self.elements.values())
 
     @property
     def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom of the simulation """
+        """int: the number of degrees of freedom of the simulation"""
         return sum(element.degrees_of_freedom for element in self.elements.values())
 
     def get_quantity(self, property_name: str, total: bool = True):

@@ -10,7 +10,7 @@ class BrownianParticlesActor(sim.ActorBase):
     diffusivity = 1
 
     def evolve(self, elements, t, dt):
-        """ evolve the particles in time """
+        """evolve the particles in time"""
         (particles,) = elements
         scale = np.sqrt(dt) * self.diffusivity
         size = particles.positions.shape

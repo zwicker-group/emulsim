@@ -12,7 +12,7 @@ from .. import *
 
 
 def test_simulation():
-    """ test some methods of the Simulation class """
+    """test some methods of the Simulation class"""
 
     # setup state
     grid = UnitGrid([32, 32], periodic=True)

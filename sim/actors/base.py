@@ -21,7 +21,7 @@ EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
-    """ represents a single actor, which affects one or more elements """
+    """represents a single actor, which affects one or more elements"""
 
     element_classes: Tuple[ElementsSpec, ...] = (ElementBase,)
     """ tuple: defines the elements this actor handles and in what order they
@@ -52,11 +52,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def info(self) -> Dict[str, Any]:
-        """ dict: information about the actor """
+        """dict: information about the actor"""
         return {"class": self.__class__.__name__, "parameters": self.parameters}
 
     def copy(self) -> "ActorBase":
-        """ returns a copy the actor """
+        """returns a copy the actor"""
         return self.__class__(self.parameters.copy())
 
     def estimate_dt(self, elements: ElementsType) -> float:

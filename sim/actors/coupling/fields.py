@@ -18,7 +18,7 @@ from ..base import ActorBase, ElementsType
 
 
 class FieldCouplingActor(ActorBase):
-    """ actor that couples multiple fields by local interactions """
+    """actor that couples multiple fields by local interactions"""
 
     parameters_default = [
         Parameter(
@@ -102,14 +102,14 @@ class FieldCouplingActor(ActorBase):
 
         @jit
         def innermost(state_data, t, dt):
-            """ no-op function serving as innermost nested function """
+            """no-op function serving as innermost nested function"""
             pass
 
         def chain(
             expression_id: int,
             inner: Callable[[Tuple[np.ndarray, ...], float, float], None],
         ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
-            """ recursive helper function for running all actors """
+            """recursive helper function for running all actors"""
             # run through all expressions
             field_id = expressions[expression_id]["field_id"]
             rhs = expressions[expression_id]["rhs"]

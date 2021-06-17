@@ -13,7 +13,7 @@ from .. import CoalescenceDropletActor
 
 @skipUnlessModule("droplets")
 def test_coalescence():
-    """ simple test of droplet coalescence """
+    """simple test of droplet coalescence"""
     from droplets import SphericalDroplet
 
     from ....elements import SphericalDropletsElement

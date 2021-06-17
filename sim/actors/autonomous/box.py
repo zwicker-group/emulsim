@@ -15,7 +15,7 @@ from ..base import ActorBase, ElementsType
 
 
 class BoxActor(ActorBase):
-    """ represents actor that contains particles in a box """
+    """represents actor that contains particles in a box"""
 
     parameters_default = [
         Parameter("bounds", [], np.array, "The bounds of the box"),
@@ -96,7 +96,7 @@ class BoxActor(ActorBase):
 
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """ evolve all points explicitly """
+            """evolve all points explicitly"""
             points = state_data[0]  # data of the points
             for i in range(num_points):
                 pos = points[i].position

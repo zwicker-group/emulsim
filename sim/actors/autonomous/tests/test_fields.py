@@ -18,7 +18,7 @@ from ..fields import (
 
 
 def test_diffusion_actor():
-    """ test basic methods of the simple diffusion actor """
+    """test basic methods of the simple diffusion actor"""
     grid = CartesianGrid([[0, 10]], 5, periodic=True)
     element = ScalarFieldElement.from_field(ScalarField(grid, 3))
     assert element.grid == grid
@@ -28,7 +28,7 @@ def test_diffusion_actor():
 
 
 def test_diffusion_vs_pde():
-    """ compare the diffusion background with the PDF actor """
+    """compare the diffusion background with the PDF actor"""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy()
@@ -49,7 +49,7 @@ def test_diffusion_vs_pde():
 
 @skipUnlessModule("phasesep")
 def test_meanfield_reactions():
-    """ test basic methods of the simple mean field background """
+    """test basic methods of the simple mean field background"""
     element = MeanfieldElement(1, {"bounds": [[0, 3]]})
     assert element.concentration == 1
     assert element.total_amount == 3
@@ -83,7 +83,7 @@ def test_meanfield_reactions():
 
 @skipUnlessModule("phasesep")
 def test_diffusion_vs_reaction_diffusion():
-    """ compare the diffusion background with the RD-background """
+    """compare the diffusion background with the RD-background"""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy()
@@ -102,7 +102,7 @@ def test_diffusion_vs_reaction_diffusion():
 
 @skipUnlessModule("phasesep")
 def test_reaction_diffusion_background():
-    """ test a diffusion background with a reaction """
+    """test a diffusion background with a reaction"""
     field = ScalarField.random_uniform(UnitGrid([10]))
     element = ScalarFieldElement.from_field(field)
     actor = ReactionDiffusionActor(parameters={"reaction_flux": "-c"})

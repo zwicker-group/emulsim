@@ -14,7 +14,7 @@ from ..fields import FieldCouplingActor
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_fields_1(dim):
-    """ simple test of single fields """
+    """simple test of single fields"""
     if dim == 0:
         grid = UnitGrid([3])
         element = MeanfieldElement(2, {"bounds": grid.axes_bounds})
@@ -37,7 +37,7 @@ def test_fields_1(dim):
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_fields_2(dim):
-    """ simple test of two fields """
+    """simple test of two fields"""
     if dim == 0:
         grid = UnitGrid([3])
         element1 = MeanfieldElement(2, {"bounds": grid.axes_bounds})

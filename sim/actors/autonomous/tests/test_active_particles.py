@@ -11,7 +11,7 @@ from .. import ActiveParticleActor
 
 
 def test_active_particles():
-    """ simple test of active particles """
+    """simple test of active particles"""
     # setup state
     particle_data = np.random.uniform(0, 100, size=(10, 2))
     element = ArrowsElement.from_position_random_direction(particle_data)
@@ -32,7 +32,7 @@ def test_active_particles():
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_active_particles_rotation_diffusion(dim):
-    """ simple test of Brownian motion of droplets """
+    """simple test of Brownian motion of droplets"""
     # setup state
     particle_data = np.random.uniform(0, 100, size=(10, dim))
     element = ArrowsElement.from_position_random_direction(

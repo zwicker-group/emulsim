@@ -14,7 +14,7 @@ from ..base import ActorBase, ElementsType
 
 
 class CoalescenceDropletActor(ActorBase):
-    """ represents actor that moves droplets according to Brownian motion """
+    """represents actor that moves droplets according to Brownian motion"""
 
     element_classes = (SphericalDropletsElement,)
 
@@ -39,7 +39,7 @@ class CoalescenceDropletActor(ActorBase):
 
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
-            """ evolve all points explicitly """
+            """evolve all points explicitly"""
             (data,) = state_data
 
             # sort all droplets by radius

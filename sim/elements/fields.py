@@ -4,8 +4,9 @@ Provides elements that represent extended, discretized fields
 .. autosummary::
    :nosignatures:
 
-   ~ScalarFieldElement
    ~MeanfieldElement
+   ~ReservoirElement
+   ~ScalarFieldElement
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -27,8 +28,107 @@ from pde.tools.typing import NumberOrArray
 from .base import ElementBase
 
 
+class ReservoirElement(ElementBase):
+    """an element representing a homogeneous, constant field"""
+
+    def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
+        """
+        Args:
+            data (float):
+                The concentration in the field
+        """
+        super().__init__(np.full((1,), data, dtype=np.double), parameters)
+
+    @property
+    def degrees_of_freedom(self) -> int:
+        """int: the number of degrees of freedom for this element"""
+        return 0
+
+    @property
+    def concentration(self) -> float:
+        """float: the concentration in the field"""
+        return float(self.data[0])
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(data={self.concentration})"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}(data={self.concentration})"
+
+    @plot_on_axes()
+    def plot(self, ax, color="tab:blue", **kwargs):
+        """plot the field
+
+        Args:
+            color:
+                The color in which the field is shown. All matplotlib
+                color specifications are allowed.
+            {PLOT_ARGS}
+        """
+        pass
+
+    def get_concentration(self, points: np.ndarray):
+        """determine concentration at the given points
+
+        Args:
+            points (:class:`~numpy.ndarray`):
+                The coordinates of the single point or the list of points at
+                which the concentration is returned
+        """
+        points = np.asanyarray(points)
+        if points.ndim == 1:
+            # a single point
+            return self.concentration
+        elif points.ndim == 2:
+            # many points
+            return np.full(len(points), self.concentration)
+        else:
+            raise ValueError("Expected single point of list of points")
+
+    def add_amount(self, point: np.ndarray, amount: float):
+        """add the given amount to the field
+
+        Args:
+            point:
+                Not used and only retained to match the interface
+            amount:
+                The total amount added to the field
+        """
+        pass
+
+    def make_get_concentration_compiled(self) -> Callable:
+        """get a compiled function for obtaining concentrations
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentration
+            at point `point` given the field state `data`.
+        """
+
+        @nb.jit
+        def get_concentration(data: np.ndarray, point: np.ndarray):
+            return data[0]
+
+        return get_concentration  # type: ignore
+
+    def make_add_amount_compiled(self) -> Callable:
+        """get a compiled function for adding amount to the field
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
+            to the field state given by `data` at point `point`.
+        """
+
+        @nb.jit
+        def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
+            pass
+
+        return add_amount  # type: ignore
+
+
 class FieldElementBase(ElementBase, metaclass=ABCMeta):
-    """ base class for field elements """
+    """base class for field elements"""
 
     def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
         """set the boundaries of the field
@@ -45,17 +145,17 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
     @property
     def grid(self) -> CartesianGrid:
-        """ :class:`pde.grids.cartesian.CartesianGrid`: discretization grid """
+        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
         return CartesianGrid(self.bounds, 1)
 
     @abstractproperty
     def total_amount(self) -> float:
-        """ float: the total material amount in the field """
+        """float: the total material amount in the field"""
         pass
 
     @property
     def average_concentration(self) -> float:
-        """ float: the average material concentration in the field """
+        """float: the average material concentration in the field"""
         return self.total_amount / self.volume
 
     @abstractmethod
@@ -118,7 +218,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
 
 class MeanfieldElement(FieldElementBase):
-    """ an element representing a homogeneous field """
+    """an element representing a homogeneous, changing field"""
 
     parameters_default = [
         Parameter(
@@ -154,12 +254,12 @@ class MeanfieldElement(FieldElementBase):
 
     @property
     def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
+        """int: the number of degrees of freedom for this element"""
         return 1
 
     @property
     def concentration(self) -> float:
-        """ float: the concentration in the field """
+        """float: the concentration in the field"""
         return float(self.data[0])
 
     @concentration.setter
@@ -174,12 +274,12 @@ class MeanfieldElement(FieldElementBase):
 
     @property
     def field(self) -> ScalarField:
-        """:class:`~pde.fields.scalar.ScalarField`: representation as a scalar field """
+        """:class:`~pde.fields.scalar.ScalarField`: representation as a scalar field"""
         return ScalarField(self.grid, data=self.concentration)
 
     @property
     def total_amount(self) -> float:
-        """ float: the total material amount in the field """
+        """float: the total material amount in the field"""
         return self.concentration * self.volume
 
     @total_amount.setter
@@ -290,7 +390,7 @@ class MeanfieldElement(FieldElementBase):
 
 
 class ScalarFieldElement(FieldElementBase):
-    """ the state associated with a spatially resolved field """
+    """the state associated with a spatially resolved field"""
 
     parameters_default = [
         Parameter(
@@ -345,17 +445,17 @@ class ScalarFieldElement(FieldElementBase):
 
     @property
     def grid(self) -> CartesianGrid:
-        """ :class:`~pde.grids.cartesian.CartesianGrid`: discretization grid """
+        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid"""
         return self.parameters["grid"]  # type: ignore
 
     @property
     def field(self) -> ScalarField:
-        """ :class:`~pde.fields.scalar.ScalarField`: the scalar field """
+        """:class:`~pde.fields.scalar.ScalarField`: the scalar field"""
         return self._field
 
     @property
     def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
+        """int: the number of degrees of freedom for this element"""
         return int(np.product(self.grid.shape))
 
     def plot(self, ax=None, **kwargs):
@@ -368,7 +468,7 @@ class ScalarFieldElement(FieldElementBase):
 
     @property
     def total_amount(self) -> float:
-        """ float: the total material amount in the field """
+        """float: the total material amount in the field"""
         return self._field.integral.real
 
     def get_concentration(self, points: np.ndarray):

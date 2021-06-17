@@ -22,7 +22,7 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
 @pytest.mark.parametrize("path", glob.glob(str(EXAMPLE_PATH / "*.py")))
 def test_examples(path):
-    """ runs an example script given by path """
+    """runs an example script given by path"""
     if path.endswith("droplets_active.py") and not module_available("phasesep"):
         pytest.skip("The example droplets_active.py requires the `phasesep` package")
 

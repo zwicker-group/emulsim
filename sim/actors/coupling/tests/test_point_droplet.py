@@ -16,7 +16,7 @@ from ..point_droplet import PointDropletActor
 
 @pytest.mark.parametrize("dim", [3])
 def test_point_droplets_diffusion(dim):
-    """ simple test of point droplets with diffusive exchange """
+    """simple test of point droplets with diffusive exchange"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -58,7 +58,7 @@ def test_point_droplets_diffusion(dim):
 
 @pytest.mark.parametrize("dim", [3])
 def test_point_droplets_diffusion_coarsening(dim):
-    """ simple test of coarsening with diffusive exchange """
+    """simple test of coarsening with diffusive exchange"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -88,7 +88,7 @@ def test_point_droplets_diffusion_coarsening(dim):
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_point_droplets_linear(dim):
-    """ simple test of point droplets with linear exchange """
+    """simple test of point droplets with linear exchange"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -124,7 +124,7 @@ def test_point_droplets_linear(dim):
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_point_droplets_linear_coarsening(dim):
-    """ simple test of coarsening with linear exchange """
+    """simple test of coarsening with linear exchange"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)

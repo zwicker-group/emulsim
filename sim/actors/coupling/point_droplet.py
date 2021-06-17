@@ -198,7 +198,7 @@ class PointDropletActor(ActorBase):
             if self._cache["dim"] == 3:
 
                 def flux_outside(radius: float, c_far: float, cEqOut: float):
-                    """ diffusive exchange flux for 3d droplet """
+                    """diffusive exchange flux for 3d droplet"""
                     return 4 * np.pi * D * radius * (cEqOut - c_far)
 
             else:
@@ -211,7 +211,7 @@ class PointDropletActor(ActorBase):
             exchange_rate = float(self.parameters["exchange_rate"])
 
             def flux_outside(radius: float, c_far: float, cEqOut: float):
-                """ linear exchange flux """
+                """linear exchange flux"""
                 return exchange_rate * (cEqOut - c_far)
 
         else:
@@ -291,7 +291,7 @@ class PointDropletActor(ActorBase):
             t: float,
             dt: float,
         ) -> None:
-            """ update a single droplet based on the surrounding field """
+            """update a single droplet based on the surrounding field"""
             R = droplet_data.radius
             V = volume(R)
 
@@ -348,7 +348,7 @@ class PointDropletActor(ActorBase):
         def evolver(
             elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
-            """ evolve all droplets explicitly """
+            """evolve all droplets explicitly"""
             droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):
                 # skip droplets that have disappeared

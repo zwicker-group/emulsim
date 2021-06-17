@@ -34,7 +34,7 @@ from ..base import ActorBase
 
 
 class ShellCollection:
-    """ class representing a collection of shells """
+    """class representing a collection of shells"""
 
     max_sector_count: int = 512  # maximal number of sectors
 
@@ -201,11 +201,11 @@ class ShellCollection:
         return self.vectors[index], self.weights[index]
 
     def __len__(self) -> int:
-        """ int: number of shells in this collection """
+        """int: number of shells in this collection"""
         return len(self.max_radii)
 
     def __iter__(self):
-        """ iterate over all shells """
+        """iterate over all shells"""
         for i in range(len(self)):
             yield self[i]
 
@@ -253,7 +253,7 @@ class ShellCollection:
 
         @jit
         def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
-            """ compiled helper function that extracts shell parameters """
+            """compiled helper function that extracts shell parameters"""
             i = min(np.searchsorted(max_radii, radius), num - 1)  # type: ignore
             return vectors[i], weights[i]  # type: ignore
 
@@ -264,7 +264,7 @@ ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class SphericalDropletActor(ActorBase):
-    """ an actor coupling spherical droplets to a field """
+    """an actor coupling spherical droplets to a field"""
 
     parameters_default = [
         Parameter(
@@ -338,9 +338,7 @@ class SphericalDropletActor(ActorBase):
 
     element_classes = (SphericalDropletsElement, FieldElementBase)
 
-    def _parse_equilibrium_concentration(
-        self, out: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
+    def _parse_expressions(self, out: Dict[str, Any] = None) -> Dict[str, Any]:
         """parse expressions that depend on droplet variables
 
         Args:
@@ -407,7 +405,7 @@ class SphericalDropletActor(ActorBase):
         self._cache["dim"] = field.dim
 
         # parse the equilibrium concentration and the reaction rates
-        self._parse_equilibrium_concentration(self._cache)
+        self._parse_expressions(self._cache)
 
         # parse the parameters using initialization values from the background
         discretization = field.grid.typical_discretization
@@ -519,7 +517,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 1d droplet without reaction """
+                    """flux for 1d droplet without reaction"""
                     return 2 * D * (cEqOut - c_far) / L
 
             else:
@@ -527,7 +525,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 1d droplet with reaction """
+                    """flux for 1d droplet with reaction"""
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
                     return 2 * D * (cEqOut - c_far) / L - L * rate
 
@@ -537,7 +535,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 2d droplet without reaction """
+                    """flux for 2d droplet without reaction"""
                     return 2 * π * D * (cEqOut - c_far) / float(np.log1p(L / R))
 
             else:
@@ -545,7 +543,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 2d droplet with reaction """
+                    """flux for 2d droplet with reaction"""
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
                     log1pLR = float(np.log1p(L / R))
                     term_diff = 4 * D * (cEqOut - c_far)
@@ -558,7 +556,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 3d droplet without reaction """
+                    """flux for 3d droplet without reaction"""
                     return 4 * π * D * R * (1 + R / L) * (cEqOut - c_far)
 
             else:
@@ -566,7 +564,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """ flux for 3d droplet with reaction """
+                    """flux for 3d droplet with reaction"""
                     rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
                     term_diff = 2 * D * (1 + R / L) * (cEqOut - c_far)
                     term_react = -rate * L * (L / 3 + R)
@@ -594,7 +592,7 @@ class SphericalDropletActor(ActorBase):
         try:
             calc_eqout = self._cache["cEqOut"]  # use cached version
         except KeyError:
-            calc_eqout = self._parse_equilibrium_concentration()["cEqOut"]
+            calc_eqout = self._parse_expressions()["cEqOut"]
 
         # calculate the equilibrium concentration for each droplet
         result = []
@@ -731,7 +729,7 @@ class SphericalDropletActor(ActorBase):
             field_data: np.ndarray,
             field_update: np.ndarray,
         ) -> None:
-            """ update a single droplet based on the surrounding field """
+            """update a single droplet based on the surrounding field"""
             R = droplet_data.radius
             V = volume(R)
             shell_vectors, shell_weights = get_shell(R)
@@ -855,7 +853,7 @@ class SphericalDropletActor(ActorBase):
                 field_data: np.ndarray,
                 background_update: np.ndarray,
             ) -> None:
-                """ evolve a chunk of droplets explicitly """
+                """evolve a chunk of droplets explicitly"""
                 for droplet_id, droplet_data in enumerate(droplets_data, i_start):
                     # skip droplets that have disappeared
                     if droplet_data.radius > 0:
@@ -876,7 +874,7 @@ class SphericalDropletActor(ActorBase):
             def evolver(
                 elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """ evolve all droplets in parallel chunks """
+                """evolve all droplets in parallel chunks"""
                 droplets_data, field_data = elements_data
                 field_update = np.empty(tmp_shape)  # allocate temporary memory
                 # calculate size of each chunk
@@ -898,7 +896,7 @@ class SphericalDropletActor(ActorBase):
             def evolver(
                 elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """ evolve all droplets explicitly """
+                """evolve all droplets explicitly"""
                 droplets_data, field_data = elements_data
                 for droplet_id, droplet_data in enumerate(droplets_data):
                     # skip droplets that have disappeared

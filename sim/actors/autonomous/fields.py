@@ -31,7 +31,7 @@ from ..base import ActorBase, ElementsType
 
 
 class MeanfieldActor(ActorBase):
-    """ actor simulating mean field chemical reactions """
+    """actor simulating mean field chemical reactions"""
 
     parameters_default = [
         Parameter(
@@ -88,7 +88,7 @@ class MeanfieldActor(ActorBase):
 
         @nb.jit
         def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """ evolve the diffusion equation explicitly """
+            """evolve the diffusion equation explicitly"""
             (field_data,) = fields_data
             field_data += dt * reation_flux(field_data, t)
 
@@ -110,7 +110,7 @@ class MeanfieldActor(ActorBase):
 
 
 class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
-    """ base class for actors affecting discretized scalar fields """
+    """base class for actors affecting discretized scalar fields"""
 
     element_classes = (ScalarFieldElement,)
 
@@ -157,7 +157,7 @@ class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
 
 
 class ScalarPDEActor(ScalarFieldActorBase):
-    """ actor evolving a field according to a PDE """
+    """actor evolving a field according to a PDE"""
 
     def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
         """initialize the actor and its PDE
@@ -180,7 +180,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
     @property
     def info(self) -> Dict[str, Any]:
-        """ dict: information about the actor """
+        """dict: information about the actor"""
         result = super().info
         result["pde"] = {"class": self.pde.__class__.__name__}
         return result
@@ -203,7 +203,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
         @jit
         def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """ evolve the PDE explicitly """
+            """evolve the PDE explicitly"""
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
@@ -226,7 +226,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
 
 class DiffusionActor(ScalarPDEActor):
-    """ actor evolving a field according to a simple diffusion equation """
+    """actor evolving a field according to a simple diffusion equation"""
 
     parameters_default = [
         Parameter(

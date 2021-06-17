@@ -4,8 +4,9 @@ Provides classes representing elements of a simulation
 .. autosummary::
    :nosignatures:
 
-   ~fields.ScalarFieldElement
    ~fields.MeanfieldElement
+   ~fields.ReservoirElement
+   ~fields.ScalarFieldElement
    ~points.PointsElement
    ~points.ArrowsElement
    ~spherical_droplets.SphericalDropletsElement
@@ -14,7 +15,12 @@ Provides classes representing elements of a simulation
 """
 
 from .base import ElementBase
-from .fields import FieldElementBase, MeanfieldElement, ScalarFieldElement
+from .fields import (
+    FieldElementBase,
+    MeanfieldElement,
+    ReservoirElement,
+    ScalarFieldElement,
+)
 from .points import ArrowsElement, PointsElement
 
 try:

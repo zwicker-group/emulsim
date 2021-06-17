@@ -21,7 +21,7 @@ SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 
 
 class ElementBase(Parameterized, metaclass=ABCMeta):
-    """ represents a simulation element """
+    """represents a simulation element"""
 
     dim: int  # dimensionality of the space in which the element is embedded
 
@@ -58,7 +58,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return self._data
 
     def __init_subclass__(cls, **kwargs):  # @NoSelf
-        """ register all subclassess to reconstruct them later """
+        """register all subclassess to reconstruct them later"""
         super().__init_subclass__(**kwargs)
         cls._subclasses[cls.__name__] = cls
 
@@ -142,7 +142,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def attributes(self) -> Dict[str, Any]:
-        """ dict: information about the element state, which does not change in time """
+        """dict: information about the element state, which does not change in time"""
         return {"class": self.__class__.__name__, "parameters": self.parameters}
 
     def serialize_attribute(self, name: str, value) -> str:
@@ -210,7 +210,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def attributes_serialized(self) -> Dict[str, str]:
-        """ dict: serialized version of the attributes """
+        """dict: serialized version of the attributes"""
         # deprecated since 2021-02-26
         warnings.warn(
             "property `attributes_serialized` is deprecated", DeprecationWarning
@@ -305,7 +305,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     @property
     def degrees_of_freedom(self) -> int:
-        """ int: the number of degrees of freedom for this element """
+        """int: the number of degrees of freedom for this element"""
         arr = np.asanyarray(self.data)
         if arr.dtype.fields:
             # array is a structured array or record array with fields
@@ -318,7 +318,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return int(arr.size * itemsize)
 
     def plot(self, ax=None, *args, **kwargs):
-        """ plot the element """
+        """plot the element"""
         pass
 
     def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:

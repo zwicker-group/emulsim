@@ -16,14 +16,14 @@ from ..spherical_droplet import ShellCollection, SphericalDropletActor
 
 
 def recarrays_allclose(a, b):
-    """ tests whether the entries of two structured arrays are all close """
+    """tests whether the entries of two structured arrays are all close"""
     if a.dtype != b.dtype:
         return False
     return all(np.allclose(a[name], b[name]) for name in a.dtype.names)
 
 
 def test_shells_1d():
-    """ test shell collection in 1 dimensions """
+    """test shell collection in 1 dimensions"""
     sc = ShellCollection.generate(dim=1)
     assert len(sc) == 1
     vs, ws = sc.get_shell(1e3)
@@ -34,7 +34,7 @@ def test_shells_1d():
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_shells_general(dim):
-    """ test shell collections in 2 and 3 dimensions """
+    """test shell collections in 2 and 3 dimensions"""
     sc = ShellCollection.generate(dim=dim)
 
     for vs, ws in sc:
@@ -46,7 +46,7 @@ def test_shells_general(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets(dim):
-    """ simple test of SphericalDropletAgents """
+    """simple test of SphericalDropletAgents"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -96,7 +96,7 @@ def test_spherical_droplets(dim):
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_inside(dim, compiled):
-    """ simple test of SphericalDropletAgents with reactions """
+    """simple test of SphericalDropletAgents with reactions"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -124,7 +124,7 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_outside(dim, compiled):
-    """ simple test of SphericalDropletAgents with reactions """
+    """simple test of SphericalDropletAgents with reactions"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -151,7 +151,7 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_coarsening(dim):
-    """ simple test of coarsening """
+    """simple test of coarsening"""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -180,7 +180,7 @@ def test_coarsening(dim):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_drift(dim, backend):
-    """ test drift direction of droplets """
+    """test drift direction of droplets"""
     grid = UnitGrid([4] * dim)
     # initialize gradient along x-direction
     field_data = ScalarField.from_expression(grid, "x / 40")
@@ -214,7 +214,7 @@ def test_spherical_droplets_drift(dim, backend):
 
 
 def test_multithreading():
-    """ simple consistency test for multiprocessing """
+    """simple consistency test for multiprocessing"""
     grid = UnitGrid([1])
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     field2 = field1.copy()

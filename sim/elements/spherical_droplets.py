@@ -15,7 +15,7 @@ from .base import ElementBase
 
 
 class SphericalDropletsElement(ElementBase):
-    """ an element representing many droplets """
+    """an element representing many droplets"""
 
     parameters_default = [
         Parameter(
@@ -108,7 +108,7 @@ class SphericalDropletsElement(ElementBase):
 
     @property
     def total_amount(self) -> float:
-        """ float: total amount in the droplets """
+        """float: total amount in the droplets"""
         total_volume = sum(droplet.volume for droplet in self.droplets)
         return float(self.parameters["droplet_concentration"]) * total_volume
 
