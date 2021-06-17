@@ -27,7 +27,7 @@ from pde.tools import expressions, spherical
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ...elements import FieldElementBase, SphericalDropletsElement
+from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
 
 π = float(np.pi)
@@ -336,7 +336,7 @@ class SphericalDropletActor(ActorBase):
         ),
     ]
 
-    element_classes = (SphericalDropletsElement, FieldElementBase)
+    element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
     def _parse_expressions(self, out: Dict[str, Any] = None) -> Dict[str, Any]:
         """parse expressions that depend on droplet variables
