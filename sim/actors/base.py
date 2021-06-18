@@ -71,8 +71,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def _check_cache(self, elements: ElementsType) -> None:
-        """checks whether the simulation needs to run :meth:`_update_cache`.
+    def _check_cache(self, elements: ElementsType, **kwargs) -> None:
+        r"""checks whether the simulation needs to run :meth:`_update_cache`.
 
         Subclasses can defined `_update_cache` to populate `self._cache` with
         pre-computed data, which is then available in later.
@@ -80,14 +80,17 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         Args:
             elements (tuple of :class:`~sim.elements.base.ElementBase`):
                 The elements that this actor affects
+            \**kwargs:
+                Additional arguments will be forwarded to the update cache function
         """
         if hasattr(self, "_update_cache"):
             # the class uses a cache internally
             state_attributes = tuple(el.attributes for el in elements)
-            if not objects_equal(self._cache.get("state_attributes"), state_attributes):
+            cache_key = state_attributes + tuple(sorted(kwargs.items()))
+            if not objects_equal(self._cache.get("cache_key"), cache_key):
                 # the cache is out-of-date
-                self._update_cache(elements)  # type: ignore
-                self._cache["state_attributes"] = state_attributes
+                self._update_cache(elements, **kwargs)  # type: ignore
+                self._cache["cache_key"] = cache_key
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:
         """return a function evolve the state from time `t` to `t + dt`
