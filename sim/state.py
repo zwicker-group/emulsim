@@ -10,7 +10,7 @@ import json
 import logging
 from collections import OrderedDict, defaultdict
 from typing import Optional  # @UnusedImport
-from typing import Any, Dict, Iterable, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, Sequence, Set, Tuple, Union
 
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.misc import hdf_write_attributes
@@ -29,7 +29,13 @@ class State(Parameterized):
             None,
             object,
             "Bounds of the simulation box, which affects plotting",
-        )
+        ),
+        Parameter(
+            "invisible_elements",
+            set(),
+            set,
+            "Collection of elements that will not be plotted",
+        ),
     ]
 
     def __init__(
@@ -263,7 +269,7 @@ class State(Parameterized):
         self,
         ax,
         element_args: Dict[str, Any] = None,
-        ignore_elements: Iterable[str] = None,
+        invisible_elements: Iterable[str] = None,
         **kwargs,
     ):
         r"""visualize the state
@@ -272,7 +278,7 @@ class State(Parameterized):
             element_args (dict):
                 A dictionary with arguments passed to the plotting functions of
                 individual elements
-            ignore_elements (list):
+            invisible_elements (list):
                 A list of elements that will not be plotted.
             {PLOT_ARGS}
             **kwargs:
@@ -284,7 +290,10 @@ class State(Parameterized):
         else:
             element_args = defaultdict(dict)
 
-        ignore_elements = set([] if ignore_elements is None else ignore_elements)
+        if invisible_elements is None:
+            ignore_el: Set[str] = self.parameters["invisible_elements"]
+        else:
+            ignore_el = set(invisible_elements) | self.parameters["invisible_elements"]
 
         # initialize the bounding box
         from matplotlib.transforms import Bbox
@@ -293,7 +302,7 @@ class State(Parameterized):
 
         # plot all elements individually
         for name, element in self:
-            if name not in ignore_elements:
+            if name not in ignore_el:
                 element.plot(ax=ax, **element_args[name], **kwargs)
                 # keep track of the maximal bounding box
                 limits.update_from_data_xy(ax.viewLim.get_points(), ignore=False)
