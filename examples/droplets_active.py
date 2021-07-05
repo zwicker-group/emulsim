@@ -5,14 +5,14 @@ from pde import ScalarField, UnitGrid
 
 import sim
 
-# setup state
+# set up state
 grid = UnitGrid([32, 32], periodic=True)
 background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.005))
 droplet_data = [SphericalDroplet(grid.get_random_point(), 0.1) for _ in range(10)]
 droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
 state = sim.State({"background": background, "droplets": droplets})
 
-# setup simulation
+# set up simulation
 reaction_flux = "0.001 - 0.01 * c"
 simulation = sim.Simulation(state)
 simulation.add_actor(

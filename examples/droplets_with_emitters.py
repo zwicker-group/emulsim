@@ -5,14 +5,14 @@ from pde import UnitGrid
 
 import sim
 
-# setup state
+# set up state
 grid = UnitGrid([32, 32], periodic=True)
 background = sim.ScalarFieldElement(parameters={"grid": grid})
 droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
 droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
 state = sim.State({"background": background, "droplets": droplets})
 
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 simulation.add_actor("background", sim.DiffusionActor(parameters={"diffusivity": 0.1}))
 positions = [grid.get_random_point() for _ in range(5)]

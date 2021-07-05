@@ -7,7 +7,7 @@ from pde import CartesianGrid, ScalarField, UnitGrid
 
 import sim
 
-# setup state
+# set up state
 grid = UnitGrid([32, 32], periodic=True)
 background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
 droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
@@ -38,12 +38,11 @@ class cEqOutField:
         return c_eq
 
 
-# setup random field used as the defining image
+# set up random field used as the defining image
 image_grid = CartesianGrid(grid.axes_bounds, 16, periodic=grid.periodic)
 image = ScalarField.random_uniform(image_grid)
 
-
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 simulation.add_actor("background", sim.DiffusionActor())
 parameters = {"equilibrium_concentration": cEqOutField(image)}

@@ -7,11 +7,11 @@ from droplets import SphericalDroplet
 
 import sim
 
-# setup state
+# set up state
 droplets = [SphericalDroplet(50 * np.random.randn(2), 5) for i in range(100)]
 state = sim.State({"droplets": sim.SphericalDropletsElement.from_droplets(droplets)})
 
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 simulation.add_actor("droplets", sim.BrownianMotionActor({"diffusivity": "1/radius"}))
 simulation.add_actor("droplets", sim.CoalescenceDropletActor())

@@ -9,6 +9,7 @@ local size compared to all other shell sectors.
 .. autosummary::
    :nosignatures:
 
+   ~ShellSectors
    ~ShellCollection
    ~SphericalDropletActor
 
@@ -16,7 +17,7 @@ local size compared to all other shell sectors.
 """
 
 import warnings
-from typing import Any, Callable, Dict, Sequence, Tuple
+from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
 import numba as nb
 import numpy as np
@@ -513,12 +514,12 @@ class SphericalDropletActor(ActorBase):
         # generate the shell collection
         if self.parameters["shell_sector_method"] == "size":
             sector_size = self._cache["shell_sector_size"]
-            shells = ShellCollection.generate(
+            shells: Union[ShellCollection, ShellSectors] = ShellCollection.generate(
                 self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
             )
         elif self.parameters["shell_sector_method"] == "count":
             sector_count = self.parameters["shell_sector_count"]
-            shells = ShellSectors.generate(droplets.dim, sector_count=sector_count)  # type: ignore
+            shells = ShellSectors.generate(droplets.dim, sector_count=sector_count)
         else:
             raise ValueError(
                 f"Unknown shell_sector_method: {self.parameters['shell_sector_method']}"

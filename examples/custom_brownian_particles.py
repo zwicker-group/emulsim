@@ -17,12 +17,12 @@ class BrownianParticlesActor(sim.ActorBase):
         particles.positions[...] += scale * np.random.normal(size=size)
 
 
-# setup state
+# set up state
 particle_data = np.random.uniform(0, 100, size=(10, 2))
 particles = sim.PointsElement(particle_data)
 state = sim.State({"particles": particles})
 
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 simulation.add_actor("particles", BrownianParticlesActor())
 

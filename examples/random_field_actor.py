@@ -29,11 +29,11 @@ class RandomFieldActor(sim.ActorBase):
         return evolver  # type: ignore
 
 
-# setup state
+# set up state
 element = sim.ScalarFieldElement(parameters={"grid": UnitGrid([32, 32])})
 state = sim.State({"field": element})
 
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 simulation.add_actor("field", RandomFieldActor())
 

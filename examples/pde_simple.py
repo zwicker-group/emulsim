@@ -4,12 +4,12 @@ from pde import DiffusionPDE, ScalarField, UnitGrid
 
 import sim
 
-# setup state
+# set up state
 field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))
 element = sim.ScalarFieldElement.from_field(field)
 state = sim.State({"field": element})
 
-# setup simulation
+# set up simulation
 simulation = sim.Simulation(state)
 eq = DiffusionPDE(diffusivity=0.1)
 simulation.add_actor("field", sim.ScalarPDEActor(eq))

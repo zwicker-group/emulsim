@@ -45,7 +45,7 @@ cd docs
 make html
 ```
 
-The main entry point to the documentation is then the webpage
+The main entry point to the documentation is then the web page
 `docs/build/html/index.html`.
 
 
@@ -54,8 +54,8 @@ Running tests
 
 The package comes with automated tests that reside in `tests` directories in the
 respective python packages. The purpose of these tests is to ensure some basic
-functionality of the package. Consequently, it is good practise to run the tests
-and fix problems before commiting to the repository. There are a number of
+functionality of the package. Consequently, it is good practice to run the tests
+and fix problems before committing to the repository. There are a number of
 convenient scripts collected in the root `tests` directory that can be used for
 this. In particular, there is a `requirements.txt` for installing the necessary
 python components:
@@ -64,13 +64,13 @@ python components:
 pip install -r tests/requirements.txt
 ```
 
-The actual scripts in the `tests` directory servere different purposes:
+The actual scripts in the `tests` directory serve different purposes:
 
 * `tests_run.sh` runs all tests in sequential order. The script takes an
   optional argument that selects which tests are run: Only test files or methods
   that match the argument will be run.
 * `tests_parallel.sh` runs all tests in parallel. Also takes a pattern argument.
-* `codestyle.sh` tests whether the code style is obeyed by all files. Problems
+* `tests_codestyle.sh` tests whether the code style is obeyed by all files. Problems
   in the code style should be resolved to achieve a uniform experience for
   everyone.
 * `tests_types.sh` tests the type annotations in the python files. Type
