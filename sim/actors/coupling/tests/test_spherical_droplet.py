@@ -93,6 +93,57 @@ def test_spherical_droplets(dim):
         coupling.make_evolver_numba((droplets, field))
 
 
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_spherical_droplets_const_shell_count(dim):
+    """simple test of SphericalDropletAgents"""
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
+    assert field.concentration == pytest.approx(0)
+
+    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplets = SphericalDropletsElement.from_droplets([droplet])
+    assert droplets.droplet_count == 1
+
+    coupling = SphericalDropletActor(
+        {"shell_sector_method": "count", "shell_sector_count": 2 * dim}
+    )
+    assert isinstance(coupling.info, dict)
+    assert coupling.num_elements == 2
+
+    assert 0 < coupling.estimate_dt((droplets, field)) < 1000
+    total_amount = pytest.approx(droplets.total_amount)
+
+    coupling.evolve((droplets, field), 0, 0.5)
+    assert field.total_amount + droplets.total_amount == total_amount
+    assert droplets.total_amount != total_amount
+    radius = pytest.approx(droplets.data[0].radius)
+
+    evolver = coupling.make_evolver_numba((droplets, field))
+    droplets.data[0].radius = 1  # reset radius to check whether it agrees
+    field.concentration = 0
+    evolver((droplets.data, field.data), 0, 0.5)
+    assert field.total_amount + droplets.total_amount == total_amount
+    assert droplets.total_amount != total_amount
+    assert droplets.data[0].radius == radius
+
+    droplets2 = droplets.copy()
+    assert droplets2 is not droplets
+    assert np.array_equal(droplets2.data, droplets.data)
+
+    # test whether plotting works in principle
+    if dim == 2:
+        coupling.plot_shell_points((droplets, field))
+
+    # test incompatible dimensions
+    droplet_dim = (None, 2, 1, 1)[dim]
+    droplets = SphericalDropletsElement.from_droplets(
+        [SphericalDroplet([1] * droplet_dim, 1)]
+    )
+    coupling = SphericalDropletActor()
+    with pytest.raises(DimensionError):
+        coupling.make_evolver_numba((droplets, field))
+
+
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_inside(dim, compiled):

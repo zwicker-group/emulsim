@@ -1,5 +1,6 @@
 TODO
 ====
+* Support random number generators
 * Add interactive plotting using napari
     - add interactive tracker (need to update droplet radius, too!)
 * Trackers should probably be defined with elements, since they track elements

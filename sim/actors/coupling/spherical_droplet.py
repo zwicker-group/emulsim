@@ -33,6 +33,90 @@ from ..base import ActorBase
 π = float(np.pi)
 
 
+class Shell:
+    """class representing a single shell"""
+
+    def __init__(self, vectors: np.ndarray, weights: np.ndarray):
+        """
+        Args:
+            vectors (list):
+                (Unit) vectors defining the position of the shell sectors
+            weights (list):
+                List of weights for each shell sector
+        """
+        self.vectors = vectors
+        self.weights = weights
+
+    @classmethod
+    def generate(cls, dim: int, sector_count: int = 1) -> "Shell":
+        """generate a :class:`Shell` for a simulation
+
+        Args:
+            dim (int):
+                The dimension of space
+            sector_count (int):
+                Number of sectors to generate
+
+        Note:
+            One-dimensional shells are special in that there can only be exactly two
+            sectors. Consequently, `sector_count` is not used in this case.
+
+        Returns:
+            :class:`Shell`
+        """
+        if dim == 1:
+            # special case since only one shell exists
+            shell = spherical.PointsOnSphere.make_uniform(dim=1)
+
+        else:  # higher dimensions
+            shell = spherical.PointsOnSphere.make_uniform(
+                dim=dim, num_points=sector_count
+            )
+            assert sector_count == len(shell.points)
+
+        weights = shell.get_area_weights(balance_axes=True)
+        return cls(shell.points, weights)
+
+    def get_shell(self, radius: float) -> Tuple[np.ndarray, np.ndarray]:
+        """return shell corresponding to droplet of given radius
+
+        Args:
+            radius (float):
+                The radius of the droplet
+
+        Returns:
+            (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
+                associated weights. The shell vectors are unit vectors pointing
+                from the droplet center to the shell center. The weights give
+                the fraction of the droplet surface that is covered by the
+                respective shell, so that the sum of all weights is unity.
+        """
+        return self.vectors, self.weights
+
+    def make_shell_getter_compiled(
+        self,
+    ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
+        """returns a function for obtaining a shell
+
+        Returns:
+            callable: A function that is called with a radius and returns a
+                tuple (numpy.ndarray, numpy.ndarray) of the shell vectors and
+                the associated weights. The shell vectors are unit vectors
+                pointing from the droplet center to the shell center. The
+                weights give the fraction of the droplet surface that is covered
+                by the respective shell, so that the sum of all weights is unity
+        """
+        vectors = self.vectors
+        weights = self.weights
+
+        @jit
+        def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
+            """compiled helper function that extracts shell parameters"""
+            return vectors, weights
+
+        return get_shell  # type: ignore
+
+
 class ShellCollection:
     """class representing a collection of shells"""
 
@@ -86,9 +170,8 @@ class ShellCollection:
 
         Args:
             dictlist (list of dicts):
-                a list of shells, where each shell is characterized by a
-                dictionary with entries 'vectors', 'weights', and
-                'radius_threshold'.
+                a list of shells, where each shell is characterized by a dictionary with
+                entries 'vectors', 'weights', and 'radius_threshold'.
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
 
@@ -236,7 +319,7 @@ class ShellCollection:
     def make_shell_getter_compiled(
         self,
     ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
-        """returns a function for obtaining shells
+        """returns a function for obtaining a shell
 
         Returns:
             callable: A function that is called with a radius and returns a
@@ -318,13 +401,26 @@ class SphericalDropletActor(ActorBase):
             "`dx`",
         ),
         Parameter(
+            "shell_sector_method",
+            "size",
+            str,
+            "Determines the method that is used to determine the shell sector size. "
+            "Possible values are `size` and `count`.",
+        ),
+        Parameter(
             "shell_sector_size",
             "1",
             str,
             "The typical azimuthal size of a shell sector. This can be either a length "
             "in non-dimensional units or an expression that can be parsed with sympy. "
             "In the latter case, the grid discretization is available as the variable "
-            "`dx`",
+            '`dx`. This value is only used when `shell_sector_method == "size"`',
+        ),
+        Parameter(
+            "shell_sector_count",
+            6,
+            int,
+            'The number of shell sectors when `shell_sector_method == "count"`',
         ),
         Parameter(
             "num_threads",
@@ -416,10 +512,18 @@ class SphericalDropletActor(ActorBase):
         radius_max = min(field._cuboid.size) / 2
 
         # generate the shell collection
-        sector_size = self._cache["shell_sector_size"]
-        shells = ShellCollection.generate(
-            self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
-        )
+        if self.parameters["shell_sector_method"] == "size":
+            sector_size = self._cache["shell_sector_size"]
+            shells = ShellCollection.generate(
+                self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
+            )
+        elif self.parameters["shell_sector_method"] == "count":
+            sector_count = self.parameters["shell_sector_count"]
+            shells = Shell.generate(self._cache["dim"], sector_count=sector_count)  # type: ignore
+        else:
+            raise ValueError(
+                f"Unknown shell_sector_method: {self.parameters['shell_sector_method']}"
+            )
         self._cache["shells"] = shells
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
