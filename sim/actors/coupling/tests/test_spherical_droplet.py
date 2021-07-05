@@ -26,10 +26,10 @@ def test_shells_1d():
     """test shell collection in 1 dimensions"""
     sc = ShellCollection.generate(dim=1)
     assert len(sc) == 1
-    vs, ws = sc.get_shell(1e3)
-    assert vs.shape == (2, 1)
-    assert ws.shape == (2,)
-    np.testing.assert_allclose(ws, np.full(2, 0.5))
+    shell = sc.get_shell(1e3)
+    assert shell.vectors.shape == (2, 1)
+    assert shell.weights.shape == (2,)
+    np.testing.assert_allclose(shell.weights, np.full(2, 0.5))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -37,7 +37,8 @@ def test_shells_general(dim):
     """test shell collections in 2 and 3 dimensions"""
     sc = ShellCollection.generate(dim=dim)
 
-    for vs, ws in sc:
+    for shell in sc:
+        vs, ws = shell.vectors, shell.weights
         assert vs.shape[1] == dim
         assert vs.shape[0] == len(ws)
         assert ws.sum() == pytest.approx(1)

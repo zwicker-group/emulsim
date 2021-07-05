@@ -33,23 +33,31 @@ from ..base import ActorBase
 π = float(np.pi)
 
 
-class Shell:
-    """class representing a single shell"""
+class ShellSectors:
+    """class representing the sectors of a single shell"""
 
-    def __init__(self, vectors: np.ndarray, weights: np.ndarray):
+    def __init__(self, vectors: np.ndarray, weights: np.ndarray = None):
         """
         Args:
             vectors (list):
-                (Unit) vectors defining the position of the shell sectors
+                (Unit) vectors defining the position of the centers of the shell sectors
             weights (list):
-                List of weights for each shell sector
+                List of weights for each shell sector determining the fraction of the
+                droplet surface that is covered by the respective sector. The sum of all
+                weights must be one.
         """
-        self.vectors = vectors
-        self.weights = weights
+        self.vectors = np.asanyarray(vectors)
+        if weights is None:
+            self.weights = np.full(self.dim, 1 / self.dim)
+        else:
+            self.weights = np.asanyarray(weights)
+
+        assert len(self.weights) == len(self.vectors)
+        assert np.isclose(self.weights.sum(), 1.0)
 
     @classmethod
-    def generate(cls, dim: int, sector_count: int = 1) -> "Shell":
-        """generate a :class:`Shell` for a simulation
+    def generate(cls, dim: int, sector_count: int = 1) -> "ShellSectors":
+        """generate a :class:`ShellSectors` for a simulation
 
         Args:
             dim (int):
@@ -62,7 +70,7 @@ class Shell:
             sectors. Consequently, `sector_count` is not used in this case.
 
         Returns:
-            :class:`Shell`
+            :class:`ShellSectors`
         """
         if dim == 1:
             # special case since only one shell exists
@@ -77,7 +85,17 @@ class Shell:
         weights = shell.get_area_weights(balance_axes=True)
         return cls(shell.points, weights)
 
-    def get_shell(self, radius: float) -> Tuple[np.ndarray, np.ndarray]:
+    @property
+    def dim(self) -> int:
+        """int: dimension of the space this shell is defined for"""
+        return self.vectors.shape[1]
+
+    @property
+    def sector_count(self) -> int:
+        """int: number of sectors"""
+        return self.vectors.shape[0]
+
+    def get_shell(self, radius: float) -> "ShellSectors":
         """return shell corresponding to droplet of given radius
 
         Args:
@@ -85,15 +103,11 @@ class Shell:
                 The radius of the droplet
 
         Returns:
-            (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
-                associated weights. The shell vectors are unit vectors pointing
-                from the droplet center to the shell center. The weights give
-                the fraction of the droplet surface that is covered by the
-                respective shell, so that the sum of all weights is unity.
+            :class:`ShellSectors`: The shell associated with this radius
         """
-        return self.vectors, self.weights
+        return self
 
-    def make_shell_getter_compiled(
+    def make_shell_data_getter(
         self,
     ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
         """returns a function for obtaining a shell
@@ -122,43 +136,37 @@ class ShellCollection:
 
     max_sector_count: int = 512  # maximal number of sectors
 
-    vectors: Sequence[np.ndarray]
-    weights: Sequence[np.ndarray]
-    max_radii: np.ndarray
-
     def __init__(
         self,
-        vectors: Sequence[np.ndarray],
-        weights: Sequence[np.ndarray],
+        shells: Sequence[ShellSectors],
         max_radii: Sequence[float],
         info_dict: Dict[str, Any] = None,
     ):
         """
         Args:
-            vectors (list):
-                List of (unit) vectors defining the position of each shell
-            weights (list):
-                List of weights for each shell
+            shells (list):
+                List of shells
             max_radii (:class:`~numpy.ndarray`):
                 The maximal sphere radius that each shell should be used for
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
         """
         max_radii_ = np.asarray(max_radii, dtype=np.double)
-        idx = np.argsort(max_radii_)
-        self.max_radii = max_radii_[idx]
 
-        self.vectors, self.weights = [], []
-        for i in idx:
-            self.vectors.append(vectors[i])
-            self.weights.append(weights[i])
+        # order data by max_radii
+        idx = np.argsort(max_radii_)
+        self.max_radii: np.ndarray = max_radii_[idx]
+        self.shells: Sequence[ShellSectors] = [shells[i] for i in idx]
+
+        if len(self.shells) == 0:
+            raise RuntimeError("Require at least one shell")
 
         # self-consistency checks
-        assert len(self.vectors) == len(self.weights) == len(self.max_radii)
-        assert all(np.isclose(w.sum(), 1) for w in self.weights)
+        assert len(self.shells) == len(self.max_radii)
+        assert len(set(s.dim for s in self.shells)) == 1
 
-        self.dim = self.vectors[0].shape[-1]
-        self.usage = [0] * len(self.max_radii)
+        self.dim = self.shells[0].dim
+        self.usage = [0] * len(self)
         if info_dict is not None:
             info_dict["shell_collection_usage"] = self.usage
 
@@ -178,12 +186,11 @@ class ShellCollection:
         Returns:
             :class:`ShellCollection`
         """
-        vectors, weights, max_radii = [], [], []
+        shells, max_radii = [], []
         for d in dictlist:
-            vectors.append(d["vectors"])
-            weights.append(d["weights"])
+            shells.append(ShellSectors(d["vectors"], d["weights"]))
             max_radii.append(d["radius_threshold"])
-        return cls(vectors, weights, max_radii, info_dict=info_dict)
+        return cls(shells, max_radii, info_dict=info_dict)
 
     @classmethod
     def generate(
@@ -267,32 +274,28 @@ class ShellCollection:
 
         return cls.from_dictlist(data, info_dict=info_dict)
 
-    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        """obtain the i-th shell
+    def __getitem__(self, index: int) -> ShellSectors:
+        """obtain a shell of the collection
 
         Args:
             index (int):
                 The index of the shell
 
         Returns:
-            (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
-                associated weights. The shell vectors are unit vectors pointing
-                from the droplet center to the shell center. The weights give
-                the fraction of the droplet surface that is covered by the
-                respective shell, so that the sum of all weights is unity.
+            :class:`ShellSectors`: An object representing the shell
         """
-        return self.vectors[index], self.weights[index]
+        return self.shells[index]
 
     def __len__(self) -> int:
         """int: number of shells in this collection"""
-        return len(self.max_radii)
+        return len(self.shells)
 
     def __iter__(self):
         """iterate over all shells"""
         for i in range(len(self)):
             yield self[i]
 
-    def get_shell(self, radius: float) -> Tuple[np.ndarray, np.ndarray]:
+    def get_shell(self, radius: float) -> ShellSectors:
         """return shell corresponding to droplet of given radius
 
         Args:
@@ -300,11 +303,7 @@ class ShellCollection:
                 The radius of the droplet
 
         Returns:
-            (numpy.ndarray, numpy.ndarray): A tuple of the shell vectors and the
-                associated weights. The shell vectors are unit vectors pointing
-                from the droplet center to the shell center. The weights give
-                the fraction of the droplet surface that is covered by the
-                respective shell, so that the sum of all weights is unity.
+            :class:`ShellSectors`: The shell associated with this radius
         """
         i: int = np.searchsorted(self.max_radii, radius)  # type: ignore
         if i >= len(self.max_radii):
@@ -316,7 +315,7 @@ class ShellCollection:
         self.usage[i] += 1
         return self[i]
 
-    def make_shell_getter_compiled(
+    def make_shell_data_getter(
         self,
     ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
         """returns a function for obtaining a shell
@@ -330,8 +329,8 @@ class ShellCollection:
                 by the respective shell, so that the sum of all weights is unity
         """
         max_radii = self.max_radii
-        vectors: Tuple[np.ndarray, ...] = tuple(self.vectors)
-        weights: Tuple[np.ndarray, ...] = tuple(self.weights)
+        vectors: Tuple[np.ndarray, ...] = tuple(shell.vectors for shell in self.shells)
+        weights: Tuple[np.ndarray, ...] = tuple(shell.weights for shell in self.shells)
         num = len(max_radii)
 
         @jit
@@ -519,7 +518,7 @@ class SphericalDropletActor(ActorBase):
             )
         elif self.parameters["shell_sector_method"] == "count":
             sector_count = self.parameters["shell_sector_count"]
-            shells = Shell.generate(self._cache["dim"], sector_count=sector_count)  # type: ignore
+            shells = ShellSectors.generate(droplets.dim, sector_count=sector_count)  # type: ignore
         else:
             raise ValueError(
                 f"Unknown shell_sector_method: {self.parameters['shell_sector_method']}"
@@ -765,7 +764,7 @@ class SphericalDropletActor(ActorBase):
         # plot all shell points for all droplets
         ax = plt.gca()
         for droplet in droplets.droplets:
-            shell_vectors, _ = self._cache["shells"].get_shell(droplet.radius)
+            shell = self._cache["shells"].get_shell(droplet.radius)
             ring_radius = droplet.radius + thickness
             # plot the shell as an annulus
             annulus = Wedge(
@@ -773,7 +772,7 @@ class SphericalDropletActor(ActorBase):
             )
             ax.add_artist(annulus)
             # plot the shell points on top
-            points = droplet.position[None, :] + ring_radius * shell_vectors
+            points = droplet.position[None, :] + ring_radius * shell.vectors
             plt.plot(points[:, 0], points[:, 1], **point_style)
 
     def _make_droplet_evolver_numba(
@@ -821,7 +820,7 @@ class SphericalDropletActor(ActorBase):
         add_amount = field.make_add_amount_compiled()
 
         calc_flux = jit(self._make_flux_outside())
-        get_shell = self._cache["shells"].make_shell_getter_compiled()
+        get_shell_data = self._cache["shells"].make_shell_data_getter()
 
         @jit(nogil=True)
         def droplet_update(
@@ -835,7 +834,7 @@ class SphericalDropletActor(ActorBase):
             """update a single droplet based on the surrounding field"""
             R = droplet_data.radius
             V = volume(R)
-            shell_vectors, shell_weights = get_shell(R)
+            shell_vectors, shell_weights = get_shell_data(R)
 
             # get concentration distribution outside the droplet
             ring_radius = R + shell_thickness
@@ -1031,11 +1030,12 @@ class SphericalDropletActor(ActorBase):
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
-            shell_vectors, shell_weights = shells.get_shell(droplet.radius)
+            # get the correct shell for this droplet
+            shell = shells.get_shell(droplet.radius)
 
             # get concentration distribution outside the droplet
             shell_radius = droplet.radius + self._cache["shell_thickness"]
-            points = droplet.position[None, :] + shell_radius * shell_vectors
+            points = droplet.position[None, :] + shell_radius * shell.vectors
             cShell = field.get_concentration(points)
 
             # obtain the material flux across the droplet surface
@@ -1046,7 +1046,7 @@ class SphericalDropletActor(ActorBase):
             # of the fluxes is such that positive values indicate outward fluxes
             flux_out = self.get_flux_outside(droplet.radius, cShell, cEqOut, droplet_id)
             # amount taken up from the outside per shell
-            amount_per_shell_out = -dt * flux_out * shell_weights
+            amount_per_shell_out = -dt * flux_out * shell.weights
             amount_total_out = amount_per_shell_out.sum()
             # amount produced inside the droplet
             sBaseIn = calc_sBaseIn(droplet.position, droplet.radius, droplet_id)
@@ -1063,12 +1063,12 @@ class SphericalDropletActor(ActorBase):
                 droplet.volume = droplet.volume + dV
 
             # update the scalar field at the droplet boundary
-            for i in range(len(shell_vectors)):
-                pos = droplet.position + droplet.radius * shell_vectors[i]
+            for i in range(len(shell.vectors)):
+                pos = droplet.position + droplet.radius * shell.vectors[i]
                 field.add_amount(pos, -amount_per_shell_out[i])
 
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
                 area = droplet.surface_area
-                d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell_vectors
+                d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
                 droplet.position = field.grid.normalize_point(droplet.position + d)
