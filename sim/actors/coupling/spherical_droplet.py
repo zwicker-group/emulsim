@@ -64,7 +64,7 @@ class ShellSectors:
             dim (int):
                 The dimension of space
             sector_count (int):
-                Number of sectors to generate
+                Number of sectors to generate (ignored when dim==1)
 
         Note:
             One-dimensional shells are special in that there can only be exactly two
@@ -74,7 +74,7 @@ class ShellSectors:
             :class:`ShellSectors`
         """
         if dim == 1:
-            # special case since only one shell exists
+            # special case where two sectors is the only useful choice
             shell = spherical.PointsOnSphere.make_uniform(dim=1)
 
         else:  # higher dimensions
