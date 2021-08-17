@@ -67,6 +67,7 @@ class Simulation:
             for element_names, actor in actors:
                 self.add_actor(element_names, actor, check=check)
         self.profile = profile
+        self._cache = {}
 
     def __repr__(self):
         """return instance as string"""
@@ -427,6 +428,7 @@ class Simulation:
         tracker: TrackerCollectionDataType = ["progress"],
         backend: str = "auto",
         ret_info: bool = False,
+        use_cache: bool = False,
     ) -> Union[State, Tuple[State, Dict[str, Any]]]:
         """run the simulation to advance the state in time
 
@@ -451,6 +453,11 @@ class Simulation:
             ret_info (bool):
                 Flag determining whether diagnostic information about the solver
                 process should be returned.
+            use_cache (bool):
+                Indicates whether a stepper from the cache can also be used. This is
+                disabled by default since there is no check whether the simulation
+                parameters changed. However, using the cache can accelerate a second run
+                of the simulation when the stepper are identical.
 
         Returns:
             :class:`SimulationState`:
@@ -458,8 +465,23 @@ class Simulation:
                 `ret_info == True`, a tuple with the final state and a
                 dictionary with additional information is returned.
         """
-        solver = SimulationSolver(self, backend=backend)
+        if (
+            use_cache
+            and "solver" in self._cache
+            and self._cache["solver"].backend == backend
+        ):
+            # use the solver from the cache
+            self._logger.info("Use cached solver")
+            solver = self._cache["solver"]
+        else:
+            # create a new solver if it was not loaded from cache
+            solver = SimulationSolver(self, backend=backend, use_cache=use_cache)
+            self._cache["solver"] = solver
+
+        # create a controller that handles trackers
         controller = Controller(solver, t_range=t_range, tracker=tracker)
+
+        # run the actual simulation
         final_state: State = controller.run(self.state, dt)  # type: ignore
 
         if ret_info:
@@ -474,7 +496,9 @@ class Simulation:
 class SimulationSolver(SolverBase):
     """Solver for actor-based simulation"""
 
-    def __init__(self, simulation: Simulation, backend: str = "auto"):
+    def __init__(
+        self, simulation: Simulation, backend: str = "auto", use_cache: bool = False
+    ):
         """initialize the explicit solver for the actor-based simulation
 
         Args:
@@ -484,11 +508,18 @@ class SimulationSolver(SolverBase):
                 Determines how the function is created. Accepted  values are
                 'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
                 for the most optimal backend.
+            use_cache (bool):
+                Indicates whether a stepper from the cache can also be used. This is
+                disabled by default since there is no check whether the simulation
+                parameters changed. However, using the cache can accelerate a second run
+                of the simulation when the stepper are identical.
         """
         self.info: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
         self.simulation = simulation
         self.backend = backend
+        self.use_cache = use_cache
+        self._cache_stepper: Dict[str, Callable] = {}
 
     def _make_stepper_numpy(self, dt: float) -> Callable:
         """return function evolving state from time `t_start` to `t_end`
@@ -500,6 +531,9 @@ class SimulationSolver(SolverBase):
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
         """
+        if self.use_cache and "numpy" in self._cache_stepper:
+            self._logger.info("Use cached numpy stepper")
+            return self._cache_stepper["numpy"]
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
             """function that advances the state from t_start to t_end"""
@@ -513,6 +547,7 @@ class SimulationSolver(SolverBase):
 
             return t + dt
 
+        self._cache_stepper["numpy"] = stepper
         return stepper
 
     def _make_stepper_numba(self, state: State, dt: float) -> Callable:
@@ -531,6 +566,10 @@ class SimulationSolver(SolverBase):
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
         """
+        if self.use_cache and "numba" in self._cache_stepper:
+            self._logger.info("Use cached numba stepper")
+            return self._cache_stepper["numba"]
+
         simulation_evolver = self.simulation.make_evolver_numba(state)
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
@@ -545,6 +584,7 @@ class SimulationSolver(SolverBase):
 
             return t + dt
 
+        self._cache_stepper["numba"] = stepper
         return stepper
 
     def make_stepper(self, state: State, dt: float = None) -> Callable:
