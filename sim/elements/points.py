@@ -191,7 +191,7 @@ class ArrowsElement(PointsElement):
         num_el, dim = positions.shape
 
         dtype = [("position", float, (dim,)), ("direction", float, (dim,))]
-        data = np.recarray((num_el,), dtype=dtype)
+        data: np.recarray = np.recarray((num_el,), dtype=dtype)
         data.position = positions
         data.direction = directions
 

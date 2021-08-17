@@ -60,7 +60,7 @@ class SphericalDropletsElement(ElementBase):
                 "determine the dimensionality of the element."
             )
 
-        self._data = self.droplets.get_linked_data()
+        self._data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
 
     @classmethod

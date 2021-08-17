@@ -67,7 +67,7 @@ class Simulation:
             for element_names, actor in actors:
                 self.add_actor(element_names, actor, check=check)
         self.profile = profile
-        self._cache = {}
+        self._cache: Dict[str, SimulationSolver] = {}
 
     def __repr__(self):
         """return instance as string"""

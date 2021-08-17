@@ -338,7 +338,7 @@ class ShellCollection:
         def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
             """compiled helper function that extracts shell parameters"""
             i = min(np.searchsorted(max_radii, radius), num - 1)  # type: ignore
-            return vectors[i], weights[i]  # type: ignore
+            return vectors[i], weights[i]
 
         return get_shell  # type: ignore
 
