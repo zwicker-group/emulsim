@@ -1,6 +1,7 @@
 TODO
 ====
 * Support random number generators
+* Add test for re-running a simulation with use_cache
 * Add interactive plotting using napari
     - add interactive tracker (need to update droplet radius, too!)
 * Trackers should probably be defined with elements, since they track elements

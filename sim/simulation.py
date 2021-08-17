@@ -11,14 +11,16 @@ Provides a class representing the full simulation
 """
 
 import logging
+import time
 import warnings
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Union  # @UnusedImport
 
+import numba as nb
 import numpy as np
 
 from pde.solvers.base import SolverBase
 from pde.solvers.controller import Controller, TrackerCollectionDataType, TRangeType
-from pde.tools.numba import jit
+from pde.tools.numba import jit, make_array_constructor
 
 from .actors.base import ActorBase, EvolverType
 from .state import State
@@ -37,6 +39,7 @@ class Simulation:
         actors: Sequence[Tuple[ElementNamesType, ActorBase]] = None,
         *,
         check: str = "log",
+        profile: bool = False,
     ):
         """
         Args:
@@ -52,6 +55,10 @@ class Simulation:
                 expected by the actor class. Possible options are: `ignore` (skip
                 checks), `warn` (using :mod:`warnings` module), `log` (warn using
                 :mod:`logging` module), or `raise` (raise a :class:`RuntimeError`).
+            profile (bool):
+                Flag indicating whether the simulation should be profiled. If True, the
+                accumulated duration of each actor is recorded during a simulation. The
+                result is available via the `timing` property of :class:`Simulation`.
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -59,6 +66,8 @@ class Simulation:
         if actors is not None:
             for element_names, actor in actors:
                 self.add_actor(element_names, actor, check=check)
+        self.profile = profile
+        self._cache = {}
 
     def __repr__(self):
         """return instance as string"""
@@ -275,7 +284,7 @@ class Simulation:
 
         return min(dts)
 
-    def make_evolver_numba(self, state: State = None):
+    def make_evolver_numba(self, state: State = None) -> EvolverType:
         """return a function evolving the state from time `t` to `t + dt`
 
         Args:
@@ -289,61 +298,72 @@ class Simulation:
         if state is None:
             state = self.state
 
-        actors: List[Dict[str, Any]] = []
+        state_data_type = nb.typeof(state.data)
+
+        evolvers: List[Callable] = []
         for elements, actor in self.actors:
-            actor_data = {
-                "actor": actor,
-                "evolver": actor.make_evolver_numba(state[elements]),
-                "element_indices": tuple(state.get_index(name) for name in elements),
-            }
-            actors.append(actor_data)
 
-        @jit
-        def innermost(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-            """no-op function serving as innermost nested function"""
-            pass
+            # create the evolver for this actor
+            evolver = actor.make_evolver_numba(state[elements])
+            element_indices = tuple(state.get_index(name) for name in elements)
+            get_element_states = make_get_element_states(element_indices)
 
-        def chain(actor_id: int, inner: EvolverType) -> EvolverType:
+            if self.profile:
+                # add profiler information to the actor evolve function
+
+                @jit(nb.float64(state_data_type, nb.float64, nb.float64))
+                def evolve_state(
+                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                ) -> float:
+                    """evolve the states affected by this actor and record runtime"""
+                    with nb.objmode(time_start="f8"):
+                        time_start = time.perf_counter()
+                    evolver(get_element_states(state_data), t, dt)
+                    with nb.objmode(runtime="f8"):
+                        runtime = time.perf_counter() - time_start
+                    return runtime
+
+            else:
+
+                @jit(nb.none(state_data_type, nb.float64, nb.float64))
+                def evolve_state(
+                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                ):
+                    """evolve the states affected by this actor"""
+                    states = get_element_states(state_data)
+                    evolver(states, t, dt)
+
+            # store data for this actor
+            evolvers.append(evolve_state)
+
+        def chain(actor_id: int, inner: Callable = None) -> Callable:
             """recursive helper function for running all actors"""
-            # run through all evolvers
-            evolver = actors[actor_id]["evolver"]
-            element_indices = actors[actor_id]["element_indices"]
-            num_elements = len(element_indices)
+            evolver = evolvers[actor_id]  # consider this particular evolver
 
-            if num_elements == 1:
-                i = element_indices[0]
+            if self.profile:
 
                 @jit
-                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-                    inner(state_data, t, dt)
-                    evolver((state_data[i],), t, dt)
+                def wrap(
+                    state_data: Tuple[np.ndarray, ...],
+                    t: float,
+                    dt: float,
+                    timings: np.ndarray,
+                ) -> None:
+                    if inner is not None:
+                        inner(state_data, t, dt, timings)
+                    timings[actor_id] += evolver(state_data, t, dt)
 
-            elif num_elements == 2:
-                i, j = element_indices
-
-                @jit
-                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-                    inner(state_data, t, dt)
-                    evolver((state_data[i], state_data[j]), t, dt)
-
-            elif num_elements == 3:
-                i, j, k = element_indices
+            else:
 
                 @jit
-                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-                    inner(state_data, t, dt)
-                    evolver((state_data[i], state_data[j], state_data[k]), t, dt)
+                def wrap(
+                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                ) -> None:
+                    if inner is not None:
+                        inner(state_data, t, dt)
+                    evolver(state_data, t, dt)
 
-            elif num_elements == 4:
-                i, j, k, l = element_indices
-
-                @jit
-                def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
-                    inner(state_data, t, dt)
-                    sd = state_data
-                    evolver((sd[i], sd[j], sd[k], sd[l]), t, dt)
-
-            if actor_id < len(actors) - 1:
+            if actor_id < len(evolvers) - 1:
                 # there are more items in the chain
                 return chain(actor_id + 1, inner=wrap)
             else:
@@ -351,7 +371,29 @@ class Simulation:
                 return wrap  # type: ignore
 
         # compile the recursive chain
-        return chain(0, innermost)
+        evolver_chain = chain(0)
+
+        # add code recording the profiling timings
+        if self.profile:
+
+            self._logger.info("Construct the main evolver with timing information")
+            self.timings = np.zeros(len(self.actors))  # initialize timing information
+            get_timings_arr = make_array_constructor(self.timings)
+
+            @jit
+            def evolver(state_data: Tuple[np.ndarray, ...], t: float, dt: float):
+                """wrapper to providing access to the timings array"""
+                timings = get_timings_arr()
+                evolver_chain(state_data, t, dt, timings)
+
+            # prevent garbage collection of array
+            evolver._timings = self.timings  # type: ignore
+
+        else:
+            self._logger.info("Construct the main evolver")
+            evolver = jit(evolver_chain)
+
+        return evolver
 
     def evolve(self, state: State, t: float, dt: float) -> None:
         """evolve the state from time `t` to `t + dt`
@@ -364,8 +406,20 @@ class Simulation:
             dt (float):
                 The time step
         """
-        for elements, actor in self.actors:
-            actor.evolve(state[elements], t, dt)
+        if self.profile:
+            # record timing information
+            if not hasattr(self, "timings"):
+                self.timings = np.zeros(len(self.actors))
+
+            for actor_id, (elements, actor) in enumerate(self.actors):
+                time_start = time.perf_counter()
+                actor.evolve(state[elements], t, dt)
+                self.timings[actor_id] += time.perf_counter() - time_start
+
+        else:
+            # just evolve all actors
+            for elements, actor in self.actors:
+                actor.evolve(state[elements], t, dt)
 
     def run(
         self,
@@ -374,6 +428,7 @@ class Simulation:
         tracker: TrackerCollectionDataType = ["progress"],
         backend: str = "auto",
         ret_info: bool = False,
+        use_cache: bool = False,
     ) -> Union[State, Tuple[State, Dict[str, Any]]]:
         """run the simulation to advance the state in time
 
@@ -398,6 +453,11 @@ class Simulation:
             ret_info (bool):
                 Flag determining whether diagnostic information about the solver
                 process should be returned.
+            use_cache (bool):
+                Indicates whether a stepper from the cache can also be used. This is
+                disabled by default since there is no check whether the simulation
+                parameters changed. However, using the cache can accelerate a second run
+                of the simulation when the stepper are identical.
 
         Returns:
             :class:`SimulationState`:
@@ -405,8 +465,23 @@ class Simulation:
                 `ret_info == True`, a tuple with the final state and a
                 dictionary with additional information is returned.
         """
-        solver = SimulationSolver(self, backend=backend)
+        if (
+            use_cache
+            and "solver" in self._cache
+            and self._cache["solver"].backend == backend
+        ):
+            # use the solver from the cache
+            self._logger.info("Use cached solver")
+            solver = self._cache["solver"]
+        else:
+            # create a new solver if it was not loaded from cache
+            solver = SimulationSolver(self, backend=backend, use_cache=use_cache)
+            self._cache["solver"] = solver
+
+        # create a controller that handles trackers
         controller = Controller(solver, t_range=t_range, tracker=tracker)
+
+        # run the actual simulation
         final_state: State = controller.run(self.state, dt)  # type: ignore
 
         if ret_info:
@@ -421,7 +496,9 @@ class Simulation:
 class SimulationSolver(SolverBase):
     """Solver for actor-based simulation"""
 
-    def __init__(self, simulation: Simulation, backend: str = "auto"):
+    def __init__(
+        self, simulation: Simulation, backend: str = "auto", use_cache: bool = False
+    ):
         """initialize the explicit solver for the actor-based simulation
 
         Args:
@@ -431,11 +508,18 @@ class SimulationSolver(SolverBase):
                 Determines how the function is created. Accepted  values are
                 'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
                 for the most optimal backend.
+            use_cache (bool):
+                Indicates whether a stepper from the cache can also be used. This is
+                disabled by default since there is no check whether the simulation
+                parameters changed. However, using the cache can accelerate a second run
+                of the simulation when the stepper are identical.
         """
         self.info: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
         self.simulation = simulation
         self.backend = backend
+        self.use_cache = use_cache
+        self._cache_stepper: Dict[str, Callable] = {}
 
     def _make_stepper_numpy(self, dt: float) -> Callable:
         """return function evolving state from time `t_start` to `t_end`
@@ -447,6 +531,9 @@ class SimulationSolver(SolverBase):
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
         """
+        if self.use_cache and "numpy" in self._cache_stepper:
+            self._logger.info("Use cached numpy stepper")
+            return self._cache_stepper["numpy"]
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
             """function that advances the state from t_start to t_end"""
@@ -460,6 +547,7 @@ class SimulationSolver(SolverBase):
 
             return t + dt
 
+        self._cache_stepper["numpy"] = stepper
         return stepper
 
     def _make_stepper_numba(self, state: State, dt: float) -> Callable:
@@ -478,6 +566,10 @@ class SimulationSolver(SolverBase):
             callable: Function with signature (state: SimulationState,
             t_start: float, t_end: float), which advances `state` in time.
         """
+        if self.use_cache and "numba" in self._cache_stepper:
+            self._logger.info("Use cached numba stepper")
+            return self._cache_stepper["numba"]
+
         simulation_evolver = self.simulation.make_evolver_numba(state)
 
         def stepper(state: State, t_start: float, t_end: float) -> float:
@@ -492,6 +584,7 @@ class SimulationSolver(SolverBase):
 
             return t + dt
 
+        self._cache_stepper["numba"] = stepper
         return stepper
 
     def make_stepper(self, state: State, dt: float = None) -> Callable:
@@ -541,3 +634,56 @@ class SimulationSolver(SolverBase):
             return self._make_stepper_numpy(dt)
         else:
             raise ValueError(f"Unknown backend `{self.backend}`")
+
+
+def make_get_element_states(
+    element_indices: Tuple[int, ...]
+) -> Callable[[Tuple[np.ndarray, ...]], Tuple[np.ndarray, ...]]:
+    """creates helper function that extracts the states of the given elements
+
+    Args:
+        element_indices (tuple): Indices of the elements to be extracted
+    """
+    num_elements = len(element_indices)
+    if num_elements == 1:
+        i = element_indices[0]
+
+        @jit
+        def get_element_states(state_data: Tuple[np.ndarray, ...]) -> Tuple[np.ndarray]:
+            return (state_data[i],)
+
+    elif num_elements == 2:
+        i, j = element_indices
+
+        @jit
+        def get_element_states(
+            state_data: Tuple[np.ndarray, ...]
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            return (state_data[i], state_data[j])
+
+    elif num_elements == 3:
+        i, j, k = element_indices
+
+        @jit
+        def get_element_states(
+            state_data: Tuple[np.ndarray, ...]
+        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            return (state_data[i], state_data[j], state_data[k])
+
+    elif num_elements == 4:
+        i, j, k, l = element_indices
+
+        @jit
+        def get_element_states(
+            state_data: Tuple[np.ndarray, ...]
+        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+            sd = state_data
+            return (sd[i], sd[j], sd[k], sd[l])
+
+    else:
+        raise NotImplementedError(f"{num_elements} elements in actor")
+
+    return get_element_states  # type: ignore
+
+
+__all__ = ["Simulation", "SimulationSolver"]
