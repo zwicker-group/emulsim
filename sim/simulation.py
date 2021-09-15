@@ -143,10 +143,10 @@ class Simulation:
                     # actor supports multiple classes for this element
                     if not any(isinstance(element, cls) for cls in element_class):  # type: ignore
                         show_msg(
-                            f"Element '{element_name}' is a "  # type: ignore
+                            f"Element '{element_name}' is a "
                             f"`{element.__class__.__name__}`, but actor type "
                             f"`{actor.__class__.__name__}` expects any of "
-                            f"`{', '.join(cls.__name__ for cls in element_class)}`"
+                            f"`{', '.join(cls.__name__ for cls in element_class)}`"  # type: ignore
                         )
 
                 else:
