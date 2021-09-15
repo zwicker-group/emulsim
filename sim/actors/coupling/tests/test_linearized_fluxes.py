@@ -7,15 +7,9 @@ import numpy as np
 from pde.tools.misc import skipUnlessModule
 from pde import CartesianGrid, ScalarField
 from droplets import SphericalDroplet
-
-import sys
-
-sys.path.append('../../../../../py-sim')
-sys.path.append('../../../../../py-phasesep')
-
 from .... import ScalarFieldElement, SphericalDropletsElement, State, Simulation, ReactionDiffusionActor, SphericalDropletActor
 
-# @skipUnlessModule("phasesep")
+@skipUnlessModule("phasesep")
 @pytest.mark.parametrize("backend", ['numpy', 'numba'])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim, backend):
