@@ -666,7 +666,6 @@ class SphericalDropletActor(ActorBase):
 
         if self._cache["dim"] == 1:
             if no_reaction:
-
                 def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 1d droplet without reaction"""
                     return 2 * D * (cEqOut - c_far) / L
@@ -700,7 +699,7 @@ class SphericalDropletActor(ActorBase):
             else:
 
                 def flux_outside(R: float, c_far: float, cEqOut: float,droplet_id: int) -> float:
-                    """ flux for 2d droplet with reaction """
+					""" flux for 2d droplet with reaction """
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
@@ -728,9 +727,6 @@ class SphericalDropletActor(ActorBase):
 
                 def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 3d droplet with reaction"""
-                    def flux_outside(R: float, c_far: float, cEqOut: float,
-                                 droplet_id: int) -> float:
-                    """ flux for 3d droplet with reaction """
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
