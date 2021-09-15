@@ -551,7 +551,10 @@ class SphericalDropletActor(ActorBase):
         Note:
             We assume that the flux is integrated over the entire spherical
             surface, so that it needs to be multiplied by the surface fraction
-            when only a sector is considered.
+            when only a sector is considered. The fluxes are calcuated by solving
+            the ReactionDiffusion or the Diffusion equation inside each shell sector.
+            Detailed documentation for calculating the material fluxes is located at
+            /py-sim/docs.
 
         Args:
             radius (float):
@@ -715,7 +718,9 @@ class SphericalDropletActor(ActorBase):
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
         """create a function that calculates the integrated outwards flux at
         the droplet surface given some imposed concentration value at the outer
-        shell.
+        shell.The fluxes are calcuated by solving the ReactionDiffusion or the 
+        Diffusion equation inside each shell sector. Detailed documentation for 
+        calculating the material fluxes is located at /py-sim/docs.
 
         Returns:
             callable: the function with the signature
