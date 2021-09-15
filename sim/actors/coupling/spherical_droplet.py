@@ -667,17 +667,13 @@ class SphericalDropletActor(ActorBase):
         if self._cache["dim"] == 1:
             if no_reaction:
 
-                def flux_outside(
-                    R: float, c_far: float, cEqOut: float, droplet_id: int
-                ) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 1d droplet without reaction"""
                     return 2 * D * (cEqOut - c_far) / L
 
             else:
 
-                def flux_outside(
-                    R: float, c_far: float, cEqOut: float, droplet_id: int
-                ) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 1d droplet with reaction"""
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
@@ -697,16 +693,13 @@ class SphericalDropletActor(ActorBase):
         elif self._cache["dim"] == 2:
             if no_reaction:
 
-                def flux_outside(
-                    R: float, c_far: float, cEqOut: float, droplet_id: int
-                ) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 2d droplet without reaction"""
                     return 2 * π * D * (cEqOut - c_far) / float(np.log1p(L / R))
 
             else:
 
-                def flux_outside(R: float, c_far: float, cEqOut: float,
-                                 droplet_id: int) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float,droplet_id: int) -> float:
                     """ flux for 2d droplet with reaction """
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
@@ -727,17 +720,13 @@ class SphericalDropletActor(ActorBase):
         elif self._cache["dim"] == 3:
             if no_reaction:
 
-                def flux_outside(
-                    R: float, c_far: float, cEqOut: float, droplet_id: int
-                ) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 3d droplet without reaction"""
                     return 4 * π * D * R * (1 + R / L) * (cEqOut - c_far)
 
             else:
 
-                def flux_outside(
-                    R: float, c_far: float, cEqOut: float, droplet_id: int
-                ) -> float:
+                def flux_outside(R: float, c_far: float, cEqOut: float, droplet_id: int) -> float:
                     """flux for 3d droplet with reaction"""
                     def flux_outside(R: float, c_far: float, cEqOut: float,
                                  droplet_id: int) -> float:
