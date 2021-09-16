@@ -394,7 +394,7 @@ class SphericalDropletActor(ActorBase):
         ),
         Parameter(
             "shell_thickness",
-            "1",
+            "dx",
             str,
             "The thickness of the shell around droplets. This can be either a length "
             "in non-dimensional units or an expression that can be parsed with sympy. "
@@ -410,7 +410,7 @@ class SphericalDropletActor(ActorBase):
         ),
         Parameter(
             "shell_sector_size",
-            "1",
+            "dx",
             str,
             "The typical azimuthal size of a shell sector. This can be either a length "
             "in non-dimensional units or an expression that can be parsed with sympy. "
@@ -718,8 +718,8 @@ class SphericalDropletActor(ActorBase):
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
         """create a function that calculates the integrated outwards flux at
         the droplet surface given some imposed concentration value at the outer
-        shell.The fluxes are calcuated by solving the ReactionDiffusion or the 
-        Diffusion equation inside each shell sector. Detailed documentation for 
+        shell.The fluxes are calcuated by solving the ReactionDiffusion or the
+        Diffusion equation inside each shell sector. Detailed documentation for
         calculating the material fluxes is located at /py-sim/docs.
 
         Returns:
