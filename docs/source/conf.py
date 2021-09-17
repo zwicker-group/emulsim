@@ -17,8 +17,8 @@ import os.path
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
-sys.path.insert(0, os.path.abspath("../../../py-pde"))
-sys.path.insert(0, os.path.abspath("../../../py-droplets"))
+sys.path.insert(0, os.path.abspath("../../submodules/py-pde"))
+sys.path.insert(0, os.path.abspath("../../submodules/py-droplets"))
 sys.path.insert(0, ".")
 
 from datetime import date
