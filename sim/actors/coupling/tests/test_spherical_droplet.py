@@ -289,7 +289,7 @@ def test_linearized_fluxes(dim, backend):
     simulation.add_actor(("droplets", "background"), droplet_actor)
 
     # run simulation
-    result = simulation.run(t_range=int(1e3), tracker=None, backend=backed)
+    result = simulation.run(t_range=int(1e3), tracker=None, backend=backend)
 
     # Check if droplet radii within the second decimal place
     final_droplet_radii = result.data[-1]['radius']
