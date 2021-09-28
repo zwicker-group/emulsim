@@ -630,10 +630,10 @@ class SphericalDropletActor(ActorBase):
                     B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
                     A = sOut_c_far + B * c_far
                     l = np.sqrt(D / B)
-                    term1 = ((A - B * c_far) * l +
-                            (-A + B * cEqOut)* radius * (sc.i1(radius / l) * sc.k0((L + radius) / l) +
+                    term1 = ((A - B * c_far) * l + \
+                            (-A + B * cEqOut)* radius * (sc.i1(radius / l) * sc.k0((L + radius) / l) + \
                             sc.i0((L + radius) / l) * sc.k1(radius / l)))
-                    term2 = (sc.i0((L + radius) / l) * sc.k0(radius / l) -
+                    term2 = (sc.i0((L + radius) / l) * sc.k0(radius / l) - \
                             sc.i0(radius / l) * sc.k0((L + radius) / l))
                     final_expression = (2* D* π* term1) / (B* l* term2)
 
@@ -666,7 +666,7 @@ class SphericalDropletActor(ActorBase):
                     B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
                     A = sOut_c_far + B * c_far
                     l = np.sqrt(D / B)
-                    term1 = -((A - B * cEqOut) * (l + radius / np.tanh(L / l))) +
+                    term1 = -((A - B * cEqOut) * (l + radius / np.tanh(L / l))) + \
                             (A - B * c_far) * (L + radius) / np.sinh(L / l)
                     final_expression = (4* D* π* radius* term1) / (B * l)
 
