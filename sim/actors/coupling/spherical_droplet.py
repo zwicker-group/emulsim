@@ -21,6 +21,7 @@ from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
 import numba as nb
 import numpy as np
+import scipy.special as sc
 
 from pde import ScalarField
 from pde.grids.base import DimensionError
@@ -393,7 +394,7 @@ class SphericalDropletActor(ActorBase):
         ),
         Parameter(
             "shell_thickness",
-            "1",
+            "dx",
             str,
             "The thickness of the shell around droplets. This can be either a length "
             "in non-dimensional units or an expression that can be parsed with sympy. "
@@ -409,7 +410,7 @@ class SphericalDropletActor(ActorBase):
         ),
         Parameter(
             "shell_sector_size",
-            "1",
+            "dx",
             str,
             "The typical azimuthal size of a shell sector. This can be either a length "
             "in non-dimensional units or an expression that can be parsed with sympy. "
@@ -550,7 +551,10 @@ class SphericalDropletActor(ActorBase):
         Note:
             We assume that the flux is integrated over the entire spherical
             surface, so that it needs to be multiplied by the surface fraction
-            when only a sector is considered.
+            when only a sector is considered. The fluxes are calcuated by solving
+            the ReactionDiffusion or the Diffusion equation inside each shell sector.
+            Detailed documentation for calculating the material fluxes is located at
+            /py-sim/docs.
 
         Args:
             radius (float):
@@ -569,27 +573,120 @@ class SphericalDropletActor(ActorBase):
         Returns:
             float: the integrated flux in the outward normal direction.
         """
+        FLUX_TOLERANCE = 1e-10
+
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         calc_sOut = self._cache["sOut"]
-        sOut = calc_sOut((c_far + cEqOut) / 2, droplet_id)
 
         if self._cache["dim"] == 1:
             # flux for 1d droplet
-            return 2 * D * (cEqOut - c_far) / L - L * sOut  # type: ignore
+            sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+            sOut_c_far = calc_sOut(c_far, droplet_id)
+
+            if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
+                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                ):
+                    # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
+                    # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
+                    # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                    # Approximate the reaction rate at the center of the shell sector.
+                    A = (sOut_cEqOut + sOut_c_far) / 2
+                    final_expression = (2 * cEqOut * D - 2 * c_far * D - A * L * L) / L
+
+                else:  # B is either 0 or a finite value
+                    B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                    A = sOut_c_far + B * c_far
+                    l = np.sqrt(D / B)
+                    term = -A + B * c_far + (A - B * cEqOut) * np.cosh(L / l)
+                    final_expression = (-2 * D * term / np.sinh(L / l)) / (B * l)
+
+            else:  # Reactions are OFF
+
+                final_expression = 2 * D * (cEqOut - c_far) / L
+
+            return final_expression  # type: ignore
 
         elif self._cache["dim"] == 2:
             # flux for 2d droplet
-            log1pLR = np.log1p(L / radius)
-            term_diff = 4 * D * (cEqOut - c_far)
-            term_react = sOut * (2 * radius ** 2 * log1pLR - L * (L + 2 * radius))
-            return (π / 2) * (term_diff + term_react) / log1pLR  # type: ignore
+            sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+            sOut_c_far = calc_sOut(c_far, droplet_id)
+
+            if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
+                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                ):
+                    # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
+                    # the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
+                    # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                    # Approximate the reaction rate at the center of the shell sector.
+                    A = (sOut_cEqOut + sOut_c_far) / 2
+                    term = π * (
+                        -4 * cEqOut * D + 4 * c_far * D + A * L * (L + 2 * radius)
+                    )
+                    final_expression = A * π * radius * radius + term / (
+                        2 * np.log(radius / (L + radius))
+                    )
+
+                else:  # B is either 0 or a finite value
+                    B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                    A = sOut_c_far + B * c_far
+                    l = np.sqrt(D / B)
+                    term1 = (A - B * c_far) * l + (-A + B * cEqOut) * radius * (
+                        sc.i1(radius / l) * sc.k0((L + radius) / l)
+                        + sc.i0((L + radius) / l) * sc.k1(radius / l)
+                    )
+                    term2 = sc.i0((L + radius) / l) * sc.k0(radius / l) - sc.i0(
+                        radius / l
+                    ) * sc.k0((L + radius) / l)
+                    final_expression = (2 * D * π * term1) / (B * l * term2)
+
+            else:  # Reactions are OFF
+                term = 2 * D * π * (c_far - cEqOut)
+                final_expression = term / (np.log(radius / (L + radius)))
+
+            return final_expression  # type: ignore
 
         elif self._cache["dim"] == 3:
             # flux for 3d droplet
-            term_diff = 2 * D * (1 + radius / L) * (cEqOut - c_far)
-            term_react = -sOut * L * (L / 3 + radius)
-            return 2 * π * radius * (term_diff + term_react)  # type: ignore
+            sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+            sOut_c_far = calc_sOut(c_far, droplet_id)
+
+            if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
+                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                ):
+                    # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
+                    # the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
+                    # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                    # Approximate the reaction rate at the center of the shell sector.
+                    A = (sOut_cEqOut + sOut_c_far) / 2
+                    term = (
+                        -6 * cEqOut * D * (L + radius)
+                        + 6 * c_far * D * (L + radius)
+                        + A * L * L * (L + 3 * radius)
+                    )
+                    final_expression = (-2 * π * radius * term) / (3 * L)
+
+                else:  # B is either 0 or a finite value
+                    B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                    A = sOut_c_far + B * c_far
+                    l = np.sqrt(D / B)
+                    term = -((A - B * cEqOut) * (l + radius / np.tanh(L / l))) + (
+                        A - B * c_far
+                    ) * (L + radius) / np.sinh(L / l)
+                    final_expression = (4 * D * π * radius * term) / (B * l)
+
+            else:  # Reactions are OFF
+                final_expression = (
+                    4 * (cEqOut - c_far) * D * π * radius * (L + radius)
+                ) / L
+
+            return final_expression  # type: ignore
 
         else:
             raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
@@ -597,13 +694,16 @@ class SphericalDropletActor(ActorBase):
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
         """create a function that calculates the integrated outwards flux at
         the droplet surface given some imposed concentration value at the outer
-        shell.
+        shell.The fluxes are calcuated by solving the ReactionDiffusion or the
+        Diffusion equation inside each shell sector. Detailed documentation for
+        calculating the material fluxes is located at /py-sim/docs.
 
         Returns:
             callable: the function with the signature
                 (radius: float, c_far: float, cEqOut: float, droplet_id: int)
                 corresponding to :meth:`SphericalDropletActor.get_flux_outside`
         """
+        FLUX_TOLERANCE = 1e-10
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
@@ -629,8 +729,30 @@ class SphericalDropletActor(ActorBase):
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
                     """flux for 1d droplet with reaction"""
-                    rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
-                    return 2 * D * (cEqOut - c_far) / L - L * rate
+                    sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+                    sOut_c_far = calc_sOut(c_far, droplet_id)
+
+                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    ):
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
+                        # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
+                        # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                        # Approximate reaction rate at the center of the shell sector
+                        A = (sOut_cEqOut + sOut_c_far) / 2
+                        final_expression = (
+                            2 * cEqOut * D - 2 * c_far * D - A * L * L
+                        ) / L
+
+                    else:  # B is either 0 or a finite value
+                        B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                        A = sOut_c_far + B * c_far
+                        l = np.sqrt(D / B)
+                        term = -A + B * c_far + (A - B * cEqOut) * np.cosh(L / l)
+                        final_expression = (-2 * D * term / np.sinh(L / l)) / (B * l)
+
+                    return final_expression
 
         elif self._cache["dim"] == 2:
             if no_reaction:
@@ -647,11 +769,39 @@ class SphericalDropletActor(ActorBase):
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
                     """flux for 2d droplet with reaction"""
-                    rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
-                    log1pLR = float(np.log1p(L / R))
-                    term_diff = 4 * D * (cEqOut - c_far)
-                    term_react = rate * (2 * R ** 2 * log1pLR - L * (L + 2 * R))
-                    return (π / 2) * (term_diff + term_react) / log1pLR
+                    sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+                    sOut_c_far = calc_sOut(c_far, droplet_id)
+
+                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    ):
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
+                        # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
+                        # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                        # Approximate reaction rate at the center of the shell sector
+                        A = (sOut_cEqOut + sOut_c_far) / 2
+                        term = π * (
+                            -4 * cEqOut * D + 4 * c_far * D + A * L * (L + 2 * R)
+                        )
+                        final_expression = A * π * R * R + term / (
+                            2 * np.log(R / (L + R))
+                        )
+
+                    else:  # B is either 0 or a finite value
+                        B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                        A = sOut_c_far + B * c_far
+                        l = np.sqrt(D / B)
+                        term1 = (A - B * c_far) * l + (-A + B * cEqOut) * R * (
+                            sc.i1(R / l) * sc.k0((L + R) / l)
+                            + sc.i0((L + R) / l) * sc.k1(R / l)
+                        )
+                        term2 = sc.i0((L + R) / l) * sc.k0(R / l) - sc.i0(
+                            R / l
+                        ) * sc.k0((L + R) / l)
+                        final_expression = (2 * D * π * term1) / (B * l * term2)
+
+                    return final_expression  # type: ignore
 
         elif self._cache["dim"] == 3:
             if no_reaction:
@@ -668,10 +818,35 @@ class SphericalDropletActor(ActorBase):
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
                     """flux for 3d droplet with reaction"""
-                    rate = calc_sOut((c_far + cEqOut) / 2, droplet_id)
-                    term_diff = 2 * D * (1 + R / L) * (cEqOut - c_far)
-                    term_react = -rate * L * (L / 3 + R)
-                    return 2 * π * R * (term_diff + term_react)
+                    sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
+                    sOut_c_far = calc_sOut(c_far, droplet_id)
+
+                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    ):
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
+                        # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
+                        # A = (sOut_cEqOut + sOut_c_far) / 2
+
+                        # Approximate the reaction rate at the center of the shell sector.
+                        A = (sOut_cEqOut + sOut_c_far) / 2
+                        term = (
+                            -6 * cEqOut * D * (L + R)
+                            + 6 * c_far * D * (L + R)
+                            + A * L * L * (L + 3 * R)
+                        )
+                        final_expression = (-2 * π * R * term) / (3 * L)
+
+                    else:  # B is either 0 or a finite value
+                        B = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
+                        A = sOut_c_far + B * c_far
+                        l = np.sqrt(D / B)
+                        term = -((A - B * cEqOut) * (l + R / np.tanh(L / l))) + (
+                            A - B * c_far
+                        ) * (L + R) / np.sinh(L / l)
+                        final_expression = (4 * D * π * R * term) / (B * l)
+
+                    return final_expression
 
         else:
             raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
@@ -837,20 +1012,20 @@ class SphericalDropletActor(ActorBase):
             V = volume(R)
             shell_vectors, shell_weights = get_shell_data(R)
 
-            # get concentration distribution outside the droplet
-            ring_radius = R + shell_thickness
-            cShell = np.empty(len(shell_vectors))
-            for i in range(len(shell_vectors)):
-                pos = droplet_data.position + ring_radius * shell_vectors[i]
-                cShell[i] = get_concentration(field_data, pos)
-
             # obtain the material flux across the droplet surface
             cEqIn = cBaseIn
             cEqOut = calc_cEqOut(droplet_data.position, droplet_data.radius, droplet_id)
 
-            # Calculate the integrated fluxes at the droplet surface. The sign
-            # of the fluxes is such that positive values indicate outward fluxes
-            flux_out = calc_flux(R, cShell, cEqOut, droplet_id)
+            # get concentration distribution outside the droplet
+            ring_radius = R + shell_thickness
+            flux_out = np.empty(len(shell_vectors))
+            for i in range(len(shell_vectors)):
+                pos = droplet_data.position + ring_radius * shell_vectors[i]
+                cShell = get_concentration(field_data, pos)
+
+                # Calculate the integrated fluxes at the droplet surface. The sign
+                # of the fluxes is such that positive values indicate outward fluxes
+                flux_out[i] = calc_flux(R, cShell, cEqOut, droplet_id)
 
             # amount taken up from the outside per sector
             amount_per_shell_out = -dt * flux_out * shell_weights
@@ -1031,21 +1206,28 @@ class SphericalDropletActor(ActorBase):
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
+            # obtain the material flux across the droplet surface
+            cEqIn = droplets.parameters["droplet_concentration"]
+            cEqOut = self._cache["cEqOut"](droplet.position, droplet.radius, droplet_id)
+
             # get the correct shell for this droplet
             shell = shells.get_shell(droplet.radius)
 
             # get concentration distribution outside the droplet
             shell_radius = droplet.radius + self._cache["shell_thickness"]
             points = droplet.position[None, :] + shell_radius * shell.vectors
-            cShell = field.get_concentration(points)
 
-            # obtain the material flux across the droplet surface
-            cEqIn = droplets.parameters["droplet_concentration"]
-            cEqOut = self._cache["cEqOut"](droplet.position, droplet.radius, droplet_id)
+            flux_out = np.empty(len(points))
 
-            # Calculate the integrated fluxes at the droplet surface. The sign
-            # of the fluxes is such that positive values indicate outward fluxes
-            flux_out = self.get_flux_outside(droplet.radius, cShell, cEqOut, droplet_id)
+            for i in range(len(points)):
+
+                cShell = field.get_concentration(points[i])
+                # Calculate the integrated fluxes at the droplet surface. The sign
+                # of the fluxes is such that positive values indicate outward fluxes
+                flux_out[i] = self.get_flux_outside(
+                    droplet.radius, cShell, cEqOut, droplet_id
+                )
+
             # amount taken up from the outside per shell
             amount_per_shell_out = -dt * flux_out * shell.weights
             amount_total_out = amount_per_shell_out.sum()
