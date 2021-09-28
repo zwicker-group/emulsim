@@ -313,6 +313,34 @@ def test_spherical_droplets_drift(dim, backend):
             )
 
 
+@pytest.mark.parametrize("backend", ['numpy', 'numba'])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+
+def test_linearized_fluxes(dim, backend):
+
+    # set up state
+    grid = CartesianGrid([(0, 1000)] * dim, 1, periodic=True)
+
+    background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.005))
+    droplet_data = [SphericalDroplet(position=grid.get_random_point(), radius=np.random.uniform(4, 6))
+                            for _ in range(100)]
+    droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
+    state = sim.State({"background": background, "droplets": droplets})
+
+    # set up simulation
+    reaction_flux = "0.001 - 0.01 * c"
+    simulation = sim.Simulation(state)
+    simulation.add_actor("background", sim.ReactionDiffusionActor({"reaction_flux": reaction_flux}))
+    droplet_actor = sim.SphericalDropletActor({"reaction_inside": -0.01, "reaction_outside": reaction_flux})
+    simulation.add_actor(("droplets", "background"), droplet_actor)
+
+    # run simulation
+    result = simulation.run(t_range=int(1e3), tracker=None, backend=backend)
+
+    # Check if droplet radii within the second decimal place
+    final_droplet_radii = result.data[-1]['radius']
+    np.testing.assert_allclose(final_droplet_radii, final_droplet_radii.mean(), rtol=0.1, atol=0)
+
 def test_multithreading():
     """simple consistency test for multiprocessing"""
     grid = UnitGrid([1])
