@@ -502,7 +502,7 @@ class ScalarFieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
-        return self._field.grid.make_interpolator_compiled()
+        return self._field.make_interpolator(backend="numba")
 
     def make_add_amount_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
