@@ -264,7 +264,8 @@ def test_spherical_droplets_drift(dim, backend):
             np.testing.assert_allclose(
                 d.data["position"], np.full((1, dim), 2), rtol=1e-2
             )
-
+            
+@skipUnlessModule("phasesep")
 @pytest.mark.parametrize("backend", ['numpy', 'numba'])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim, backend):
