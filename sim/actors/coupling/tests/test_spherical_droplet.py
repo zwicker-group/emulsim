@@ -202,52 +202,34 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
         sim.evolve(state, 0, 0.5)
     assert d1.total_amount > d2.total_amount
 
-
-@skipUnlessModule("phasesep")
-@pytest.mark.parametrize("backend", ["numpy", "numba"])
+@pytest.mark.parametrize("backend", ['numpy', 'numba'])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim, backend):
     """a simple test for implementation of linearized fluxes for Active Emulsions under
     mean-field conditions"""
-    # Make meanfield grid
-    grid = CartesianGrid([(0, 1000)] * dim, 1, periodic=True)
-    background = ScalarFieldElement.from_field(ScalarField(grid, 0.005))
 
-    # Initialize radius and positions of 100 droplets
-    droplet_data = [
-        SphericalDroplet(
-            position=grid.get_random_point(), radius=np.random.uniform(4, 6)
-        )
-        for _ in range(100)
-    ]
+    # set up state
+    grid = CartesianGrid([(0, 1000)] * dim, 1, periodic=True)
+
+    background = ScalarFieldElement.from_field(ScalarField(grid, 0.005))
+    droplet_data = [SphericalDroplet(position=grid.get_random_point(), radius=np.random.uniform(4, 6))
+                            for _ in range(100)]
     droplets = SphericalDropletsElement.from_droplets(droplet_data)
     state = State({"background": background, "droplets": droplets})
 
-    # Initialize simulation
+    # set up simulation
     reaction_flux = "0.001 - 0.01 * c"
     simulation = Simulation(state)
-    simulation.add_actor(
-        "background", ReactionDiffusionActor({"reaction_flux": reaction_flux})
-    )
-    droplet_actor = SphericalDropletActor(
-        {
-            "shell_thickness": grid.discretization[0],
-            "shell_sector_size": grid.discretization[0],
-            "reaction_inside": -0.01,
-            "reaction_outside": reaction_flux,
-        }
-    )
+    simulation.add_actor("background", ReactionDiffusionActor({"reaction_flux": reaction_flux}))
+    droplet_actor = SphericalDropletActor({"reaction_inside": -0.01, "reaction_outside": reaction_flux})
     simulation.add_actor(("droplets", "background"), droplet_actor)
 
-    # Run simulation
-    result = simulation.run(t_range=int(1e3), backend=backend)
+    # run simulation
+    result = simulation.run(t_range=int(1e3), tracker=None, backend=backed)
 
     # Check if droplet radii within the second decimal place
-    final_droplet_radii = result["droplets"].data["radius"]
-    np.testing.assert_allclose(
-        final_droplet_radii, final_droplet_radii.mean(), rtol=0.1, atol=0
-    )
-
+    final_droplet_radii = result.data[-1]['radius']
+    np.testing.assert_allclose(final_droplet_radii, final_droplet_radii.mean(), rtol=0.1, atol=0)
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_coarsening(dim):
