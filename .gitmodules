@@ -1,0 +1,9 @@
+[submodule "submodules/py-phasesep"]
+	path = submodules/py-phasesep
+	url = https://github.com/zwicker-group/py-phasesep
+[submodule "submodules/py-pde"]
+	path = submodules/py-pde
+	url = https://github.com/zwicker-group/py-pde.git
+[submodule "submodules/py-droplets"]
+	path = submodules/py-droplets
+	url = https://github.com/zwicker-group/py-droplets.git

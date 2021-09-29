@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, Sequence, Tuple
 
 import numba as nb
 import numpy as np
+from numba.extending import register_jitable
 
 from pde.fields import ScalarField
 from pde.grids import CartesianGrid
@@ -502,7 +503,14 @@ class ScalarFieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
-        return self._field.grid.make_interpolator_compiled()
+        interpolate = self._field.make_interpolator(backend="numba")
+
+        @register_jitable
+        def get_concentration(data: np.ndarray, point: np.ndarray):
+            """helper function swapping the argument order"""
+            return interpolate(point, data)
+
+        return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
