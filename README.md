@@ -29,6 +29,20 @@ git clone https://github.com/david-zwicker/py-sim.git
 pip install -r sim/requirements.txt
 ```
 
+Note that the public packages `py-pde` and `py-droplets` are included as submodules in the
+`submodules` folder. To update these, please run
+
+```bash
+git pull --recurse-submodules
+```
+
+after cloning the `py-sim`. To update submodules automatically every time, the following
+git option is useful:
+
+```bash
+git config --global submodule.recurse true
+```
+
 
 Documentation
 -------------
