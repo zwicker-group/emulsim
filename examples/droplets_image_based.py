@@ -28,7 +28,7 @@ class cEqOutField:
 
     def get_compiled(self):
         """return compiled function for calculating c_eq for a position"""
-        interpolate = self.image.grid.make_interpolator_compiled()
+        interpolate = self.image.grid._make_interpolator_compiled()
         image_data = self.image.data
 
         @jit
