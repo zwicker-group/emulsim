@@ -573,7 +573,7 @@ class SphericalDropletActor(ActorBase):
         Returns:
             float: the integrated flux in the outward normal direction.
         """
-        FLUX_TOLERANCE = 1e-10
+        TOLERANCE = 1e-10
 
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
@@ -585,8 +585,8 @@ class SphericalDropletActor(ActorBase):
             sOut_c_far = calc_sOut(c_far, droplet_id)
 
             if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
-                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                if (abs(cEqOut - c_far) < TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                 ):
                     # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
                     # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
@@ -615,8 +615,8 @@ class SphericalDropletActor(ActorBase):
             sOut_c_far = calc_sOut(c_far, droplet_id)
 
             if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
-                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                if (abs(cEqOut - c_far) < TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                 ):
                     # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
                     # the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
@@ -656,8 +656,8 @@ class SphericalDropletActor(ActorBase):
             sOut_c_far = calc_sOut(c_far, droplet_id)
 
             if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
-                if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                    abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                if (abs(cEqOut - c_far) < TOLERANCE) or (
+                    abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                 ):
                     # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we solve
                     # the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
@@ -703,7 +703,7 @@ class SphericalDropletActor(ActorBase):
                 (radius: float, c_far: float, cEqOut: float, droplet_id: int)
                 corresponding to :meth:`SphericalDropletActor.get_flux_outside`
         """
-        FLUX_TOLERANCE = 1e-10
+        TOLERANCE = 1e-10
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
@@ -732,8 +732,8 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    if (abs(cEqOut - c_far) < TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                     ):
                         # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
                         # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
@@ -772,8 +772,8 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    if (abs(cEqOut - c_far) < TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                     ):
                         # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
                         # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where
@@ -821,8 +821,8 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < FLUX_TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < FLUX_TOLERANCE
+                    if (abs(cEqOut - c_far) < TOLERANCE) or (
+                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
                     ):
                         # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far. Hence we
                         # solve the Reaction_Diffusion eq D∇^2(phi) + A = 0, where

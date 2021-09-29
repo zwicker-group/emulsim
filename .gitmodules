@@ -1,0 +1,3 @@
+[submodule "submodules/py-phasesep"]
+	path = submodules/py-phasesep
+	url = https://github.com/zwicker-group/py-phasesep
