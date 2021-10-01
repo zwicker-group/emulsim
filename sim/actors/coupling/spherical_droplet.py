@@ -530,6 +530,18 @@ class SphericalDropletActor(ActorBase):
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """estimate the maximal time step for simulating this actor
 
+        (For the special case where we simulate mean-field coarsening
+        in passive droplets, shell_thickness = length of the domain.
+        The time step from the Von-Neumann analysis of the diffusion eq
+        inside the shell will be huge and lead to incorrect droplet dynamics.
+        Hence we calculate the time-step differently.
+        The growth rate for the droplets can be assumed as dR/dt ∝ D/R,
+        where D is the Diffusivity and R is the mean droplet radius.
+        Therfore ΔR/Δt ∝ D/R and we assume ΔR/R = ε
+        that is assuming droplets grow only a fraction of ε at each time step.
+        Hence Δt = ε*R*R/D and we choose the timestep as the minimum of
+        0.25*L*L/D and ε*R*R/D). Here we assume ε=0.25)
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -540,7 +552,14 @@ class SphericalDropletActor(ActorBase):
         self._check_cache(elements)
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
-        return 0.25 * L ** 2 / D
+
+        droplet_radius_array = []
+
+        for droplet in droplets.droplets:
+            droplet_radius_array.append(droplet.radius)
+        mean_radius = np.mean(droplet_radius_array)
+
+        return 0.25 * min(L, mean_radius) ** 2 / D
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
