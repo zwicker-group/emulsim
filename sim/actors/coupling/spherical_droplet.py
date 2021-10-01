@@ -550,16 +550,11 @@ class SphericalDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
-        D = float(self.parameters["diffusivity"])
-        L = float(self._cache["shell_thickness"])
-
         droplets, field = elements
 
-        droplet_radius_array = []
-
-        for droplet in droplets.droplets:
-            droplet_radius_array.append(droplet.radius)
-        mean_radius = np.mean(droplet_radius_array)
+        D = float(self.parameters["diffusivity"])
+        L = float(self._cache["shell_thickness"])
+        mean_radius = float(droplets.data["radius"].mean())
 
         return 0.25 * min(L, mean_radius) ** 2 / D
 
