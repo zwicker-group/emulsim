@@ -553,6 +553,8 @@ class SphericalDropletActor(ActorBase):
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
 
+        droplets, field = elements
+
         droplet_radius_array = []
 
         for droplet in droplets.droplets:
