@@ -538,7 +538,7 @@ class SphericalDropletActor(ActorBase):
         The growth rate for the droplets can be assumed as dR/dt ∝ D/R,
         where D is the Diffusivity and R is the mean droplet radius.
         Therfore ΔR/Δt ∝ D/R and we assume ΔR/R = ε
-        that is assuming droplets grow only a fraction of ε at each time step.
+        (that is assuming droplets grow only a fraction of ε at each time step).
         Hence Δt = ε*R*R/D and we choose the timestep as the minimum of
         0.25*L*L/D and ε*R*R/D). Here we assume ε=0.25)
 
