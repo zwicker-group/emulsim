@@ -530,17 +530,12 @@ class SphericalDropletActor(ActorBase):
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """estimate the maximal time step for simulating this actor
 
-        (For the special case where we simulate mean-field coarsening
-        in passive droplets, shell_thickness = length of the domain.
-        The time step from the Von-Neumann analysis of the diffusion eq
-        inside the shell will be huge and lead to incorrect droplet dynamics.
-        Hence we calculate the time-step differently.
-        The growth rate for the droplets can be assumed as dR/dt ∝ D/R,
-        where D is the Diffusivity and R is the mean droplet radius.
-        Therfore ΔR/Δt ∝ D/R and we assume ΔR/R = ε
-        (that is assuming droplets grow only a fraction of ε at each time step).
-        Hence Δt = ε*R*R/D and we choose the timestep as the minimum of
-        0.25*L*L/D and ε*R*R/D). Here we assume ε=0.25)
+        The time step is based on the time scale of diffusion in the shell. In the
+        special case of large shells (for instance in mean-field coarsening simulations))
+        the defining length scale is the mean droplet radius instead. This estimate is
+        based on the growth rate of droplets, dR/dt ∝ D/R, where D is the diffusivity
+        and R is the mean droplet radius. Therefore, ΔR/Δt ∝ D/R and ΔR/R = ε implies
+        Δt = ε*R*R/D, where we chose ε=0.25.
 
         Args:
             elements (tuple):
@@ -550,13 +545,17 @@ class SphericalDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
-        droplets, field = elements
+        droplets, _ = elements
 
         D = float(self.parameters["diffusivity"])
-        L = float(self._cache["shell_thickness"])
-        mean_radius = float(droplets.data["radius"].mean())
+        shell_thickness = float(self._cache["shell_thickness"])
+        if droplets.droplet_count > 0:
+            mean_radius = float(droplets.data["radius"].mean())
+            length_scale = min(shell_thickness, mean_radius)
+        else:
+            length_scale = shell_thickness
 
-        return 0.25 * min(L, mean_radius) ** 2 / D
+        return 0.25 * length_scale ** 2 / D
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
