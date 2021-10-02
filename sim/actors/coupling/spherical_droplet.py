@@ -530,6 +530,13 @@ class SphericalDropletActor(ActorBase):
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """estimate the maximal time step for simulating this actor
 
+        The time step is based on the time scale of diffusion in the shell. In the
+        special case of large shells (for instance in mean-field coarsening simulations))
+        the defining length scale is the mean droplet radius instead. This estimate is
+        based on the growth rate of droplets, dR/dt ∝ D/R, where D is the diffusivity
+        and R is the mean droplet radius. Therefore, ΔR/Δt ∝ D/R and ΔR/R = ε implies
+        Δt = ε*R*R/D, where we chose ε=0.25.
+
         Args:
             elements (tuple):
                 The state of all the droplets and of the field
@@ -538,9 +545,17 @@ class SphericalDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
+        droplets, _ = elements
+
         D = float(self.parameters["diffusivity"])
-        L = float(self._cache["shell_thickness"])
-        return 0.25 * L ** 2 / D
+        shell_thickness = float(self._cache["shell_thickness"])
+        if droplets.droplet_count > 0:
+            mean_radius = float(droplets.data["radius"].mean())
+            length_scale = min(shell_thickness, mean_radius)
+        else:
+            length_scale = shell_thickness
+
+        return 0.25 * length_scale ** 2 / D
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
