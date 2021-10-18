@@ -361,7 +361,8 @@ class SphericalDropletActor(ActorBase):
             ", respectively. Alternatively, the value can also be an instance defining "
             "a __call__ method that returns the equilibrium concentration and a "
             "`get_compiled` method that returns a numba compiled function for "
-            "calculating it.",
+            "calculating it. These functions must have the signature "
+            "(radius, position, i).",
         ),
         Parameter(
             "diffusivity",

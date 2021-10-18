@@ -35,11 +35,15 @@ class PointDropletActor(ActorBase):
         Parameter(
             "equilibrium_concentration",
             "1e-5 / radius",
-            str,
+            object,
             "Expression for the equilibrium concentration. This expression can contain "
-            "the variables `radius` and `position` denoting the droplet radius and its "
-            "position vector, respectively. Alternatively, the value can also be an "
-            "instance defining a __call__ method.",
+            "the variables `radius`, `position`, and `id` denoting the droplet radius, "
+            "its position vector, and its identity (the index in the list of droplets)"
+            ", respectively. Alternatively, the value can also be an instance defining "
+            "a __call__ method that returns the equilibrium concentration and a "
+            "`get_compiled` method that returns a numba compiled function for "
+            "calculating it. These functions must have the signature "
+            "(radius, position, i).",
         ),
         Parameter(
             "flux_model",
@@ -129,14 +133,17 @@ class PointDropletActor(ActorBase):
         elif self.parameters["flux_model"] == "linear":
             # estimate time scale from dissolution of droplet by flux
             exchange_rate = float(self.parameters["exchange_rate"])
-            ceq = self.get_equilibrium_concentrations(droplets).mean()
-            c0 = field.average_concentration
-            flux = exchange_rate * abs(ceq - c0)
-            if droplets.droplet_count > 0 and flux > 0:
-                mean_amount = droplets.total_amount / droplets.droplet_count
-                dt = float(1e-3 * mean_amount / flux)
-            else:
+            ceqs = self.get_equilibrium_concentrations(droplets)
+            if len(ceqs) == 0:
                 dt = np.nan  # cannot determine time step
+            else:
+                c0 = field.average_concentration
+                flux = exchange_rate * abs(ceqs.mean() - c0)
+                if droplets.droplet_count > 0 and flux > 0:
+                    mean_amount = droplets.total_amount / droplets.droplet_count
+                    dt = float(1e-3 * mean_amount / flux)
+                else:
+                    dt = np.nan  # cannot determine time step
 
         else:
             raise NotImplementedError(
@@ -243,8 +250,9 @@ class PointDropletActor(ActorBase):
         # calculate the equilibrium concentration for each droplet
         result = []
         for droplet_id, droplet in enumerate(droplets.droplets):
-            if droplet.radius > 0:
-                result.append(calc_eqout(droplet.position, droplet.radius, droplet_id))
+            ceq = calc_eqout(droplet.position, droplet.radius, droplet_id)
+            if np.isfinite(ceq):
+                result.append(ceq)
 
         return np.array(result)
 
@@ -293,12 +301,13 @@ class PointDropletActor(ActorBase):
         ) -> None:
             """update a single droplet based on the surrounding field"""
             R = droplet_data.radius
-            V = volume(R)
 
             # obtain the material flux across the droplet surface
-            cInf = get_concentration(field_data, droplet_data.position)
-            cEqIn = cBaseIn
             cEqOut = calc_cEqOut(droplet_data.position, droplet_data.radius, droplet_id)
+            if np.isinf(cEqOut):
+                return  # skip this droplet
+            cEqIn = cBaseIn
+            cInf = get_concentration(field_data, droplet_data.position)
 
             # Calculate the integrated fluxes at the droplet surface. The sign
             # of the fluxes is such that positive values indicate outward fluxes
@@ -309,6 +318,7 @@ class PointDropletActor(ActorBase):
 
             # amount produced in the inside
             sBaseIn = 0
+            V = volume(R)
             amount_in = dt * sBaseIn * V
 
             # update the droplet volume
@@ -351,9 +361,7 @@ class PointDropletActor(ActorBase):
             """evolve all droplets explicitly"""
             droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):
-                # skip droplets that have disappeared
-                if droplet_data.radius > 0:
-                    droplet_update(droplet_data, droplet_id, field_data, t, dt)
+                droplet_update(droplet_data, droplet_id, field_data, t, dt)
 
         return evolver  # type: ignore
 
@@ -373,13 +381,12 @@ class PointDropletActor(ActorBase):
         calc_cEqOut = self._cache["cEqOut"]
 
         for droplet_id, droplet in enumerate(droplets.droplets):
-            if droplet.radius == 0:
-                continue  # skip droplets that have disappeared
-
             # obtain the material flux across the droplet surface
-            cInf = field.get_concentration(droplet.position)
-            cEqIn = droplets.parameters["droplet_concentration"]
             cEqOut = calc_cEqOut(droplet.position, droplet.radius, droplet_id)
+            if np.isinf(cEqOut):
+                continue
+            cEqIn = droplets.parameters["droplet_concentration"]
+            cInf = field.get_concentration(droplet.position)
 
             # Calculate the integrated fluxes at the droplet surface. The sign
             # of the fluxes is such that positive values indicate outward fluxes
