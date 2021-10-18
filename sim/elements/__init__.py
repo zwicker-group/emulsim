@@ -22,8 +22,4 @@ from .fields import (
     ScalarFieldElement,
 )
 from .points import ArrowsElement, PointsElement
-
-try:
-    from .spherical_droplets import SphericalDropletsElement
-except ImportError:
-    pass
+from .spherical_droplets import SphericalDropletsElement
