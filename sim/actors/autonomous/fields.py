@@ -372,6 +372,6 @@ class ReactionDiffusionActor(ScalarPDEActor):
 
         # estimate the time step required for diffusion
         dx = element.grid.discretization.min()  # type: ignore
-        dt_diffusion = 0.2 * dx ** 2 / diffusivity
+        dt_diffusion = 0.1 * dx ** 2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore

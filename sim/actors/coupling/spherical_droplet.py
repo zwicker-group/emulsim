@@ -536,7 +536,7 @@ class SphericalDropletActor(ActorBase):
         the defining length scale is the mean droplet radius instead. This estimate is
         based on the growth rate of droplets, dR/dt ∝ D/R, where D is the diffusivity
         and R is the mean droplet radius. Therefore, ΔR/Δt ∝ D/R and ΔR/R = ε implies
-        Δt = ε*R*R/D, where we chose ε=0.25.
+        Δt = ε*R*R/D, where we chose ε=0.1.
 
         Args:
             elements (tuple):
@@ -556,7 +556,7 @@ class SphericalDropletActor(ActorBase):
         else:
             length_scale = shell_thickness
 
-        return 0.25 * length_scale ** 2 / D
+        return 0.1 * length_scale ** 2 / D
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
