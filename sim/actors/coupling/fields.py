@@ -4,7 +4,6 @@ Provides an actor coupling two or more fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from collections import OrderedDict
 from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
@@ -65,7 +64,7 @@ class FieldCouplingActor(ActorBase):
         for field in fields[1:]:
             grid.assert_grid_compatible(field.grid)  # type: ignore
 
-        rhs_expressions: Dict[int, ScalarExpression] = OrderedDict()
+        rhs_expressions: Dict[int, ScalarExpression] = dict()
         field_names = self.parameters["fields"]
         signature = field_names + ["t"]
         for field_name, rhs in self.parameters["evolution_rates"].items():

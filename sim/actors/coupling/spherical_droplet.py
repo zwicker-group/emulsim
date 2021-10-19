@@ -356,13 +356,13 @@ class SphericalDropletActor(ActorBase):
             "1e-5 / radius",
             object,
             "Expression for the equilibrium concentration. This expression can contain "
-            "the variables `radius`, `position`, and `id` denoting the droplet radius, "
+            "the variables `position`, `radius`, and `id` denoting the droplet radius, "
             "its position vector, and its identity (the index in the list of droplets)"
             ", respectively. Alternatively, the value can also be an instance defining "
             "a __call__ method that returns the equilibrium concentration and a "
             "`get_compiled` method that returns a numba compiled function for "
             "calculating it. These functions must have the signature "
-            "(radius, position, i).",
+            "(position, radius, i).",
         ),
         Parameter(
             "diffusivity",

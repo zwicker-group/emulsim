@@ -8,7 +8,7 @@ import copy
 import itertools
 import json
 import logging
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from typing import Optional  # @UnusedImport
 from typing import Any, Dict, Iterable, Sequence, Set, Tuple, Union
 
@@ -60,7 +60,7 @@ class State(Parameterized):
             self.dim = None
 
         # add elements to the simulation
-        self.elements: Dict[str, ElementBase] = OrderedDict()
+        self.elements: Dict[str, ElementBase] = dict()
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
