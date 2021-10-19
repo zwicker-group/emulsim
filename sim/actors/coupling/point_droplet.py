@@ -128,7 +128,7 @@ class PointDropletActor(ActorBase):
             # estimate time scale from diffusion across droplet
             D = float(self.parameters["diffusivity"])
             mean_radius = float(droplets.data["radius"].mean())
-            dt: float = mean_radius ** 2 / D
+            dt: float = 0.1 * mean_radius ** 2 / D
 
         elif self.parameters["flux_model"] == "linear":
             # estimate time scale from dissolution of droplet by flux
