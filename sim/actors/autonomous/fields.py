@@ -69,6 +69,16 @@ class MeanfieldActor(ActorBase):
         if s_max == 0:
             return float("inf")
         else:
+            # The maximum timestep for s(c) = dc/dt is based on the
+            # analysis of the differential equation based on a linearized
+            # expression for the flux as dc(t)/dt = k * c(t),
+            # which has the solution c(t) = c(0) * exp(k * t),
+            # where k is a growth or reaction rate.
+            # Using an explicit Euler stepping, we find that the relative
+            # error ε during a single time step of length Δt is given by
+            # ε ≈ 0.5 * (k * Δt)**2 to lowest order in Δt. If we want to limit
+            # ε ≤ 0.01, we thus have to choose Δt ≤ sqrt(2 * ε) / k = 0.1 / k.
+            
             return 0.1 / s_max  # type: ignore
 
     def make_evolver_numba(  # type: ignore
