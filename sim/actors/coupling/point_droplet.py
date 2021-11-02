@@ -151,15 +151,15 @@ class PointDropletActor(ActorBase):
             )
         return dt
 
-    def get_flux_outside(self, radius: float, c_far: float, cEqOut: float) -> float:
+    def get_flux_outside(self, radius: float, c_back: float, cEqOut: float) -> float:
         """returns the integrated outwards flux at the droplet surface given
         some imposed concentration value at the outer shell
 
         Args:
             radius (float):
                 The current droplet radius
-            c_far (float):
-                The concentration at the outer side of the shell sector
+            c_back (float):
+                The concentration in the background field at the position of the droplet
             cEqOut (float):
                 The concentration right at the inner side of the shell sector,
                 right at the droplet surface.
@@ -172,7 +172,7 @@ class PointDropletActor(ActorBase):
 
             if self._cache["dim"] == 3:
                 # flux for 3d droplet without reaction
-                return 4 * np.pi * D * radius * (cEqOut - c_far)
+                return 4 * np.pi * D * radius * (cEqOut - c_back)
 
             else:
                 raise NotImplementedError(
@@ -182,7 +182,7 @@ class PointDropletActor(ActorBase):
 
         elif self.parameters["flux_model"] == "linear":
             exchange_rate = float(self.parameters["exchange_rate"])
-            return exchange_rate * (cEqOut - c_far)
+            return exchange_rate * (cEqOut - c_back)
 
         else:
             raise NotImplementedError(
@@ -195,18 +195,17 @@ class PointDropletActor(ActorBase):
         shell.
 
         Returns:
-            callable: the function with the signature
-                (radius: float, c_far: float, cEqOut: float)
-                corresponding to :meth:`PointDropletActor.get_flux_outside`
+            callable: The function with the signature (radius: float, c_back: float,
+            cEqOut: float) corresponding to :meth:`PointDropletActor.get_flux_outside`
         """
         if self.parameters["flux_model"] == "diffusion":
             D = self.parameters["diffusivity"]
 
             if self._cache["dim"] == 3:
 
-                def flux_outside(radius: float, c_far: float, cEqOut: float):
+                def flux_outside(radius: float, c_back: float, cEqOut: float):
                     """diffusive exchange flux for 3d droplet"""
-                    return 4 * np.pi * D * radius * (cEqOut - c_far)
+                    return 4 * np.pi * D * radius * (cEqOut - c_back)
 
             else:
                 raise NotImplementedError(
@@ -217,9 +216,9 @@ class PointDropletActor(ActorBase):
         elif self.parameters["flux_model"] == "linear":
             exchange_rate = float(self.parameters["exchange_rate"])
 
-            def flux_outside(radius: float, c_far: float, cEqOut: float):
+            def flux_outside(radius: float, c_back: float, cEqOut: float):
                 """linear exchange flux"""
-                return exchange_rate * (cEqOut - c_far)
+                return exchange_rate * (cEqOut - c_back)
 
         else:
             raise NotImplementedError(
