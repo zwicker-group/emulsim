@@ -158,7 +158,7 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
     c1 = SphericalDropletActor()
 
     d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
-    c2 = SphericalDropletActor({"reaction_inside": "-1"})
+    c2 = SphericalDropletActor({"mean_reaction_inside": "-1"})
 
     state = State({"field": field, "d1": d1, "d2": d2})
     sim = Simulation(state)
@@ -230,7 +230,7 @@ def test_linearized_fluxes(dim, backend):
         "background", ReactionDiffusionActor({"reaction_flux": reaction_flux})
     )
     droplet_actor = SphericalDropletActor(
-        {"reaction_inside": -0.01, "reaction_outside": reaction_flux}
+        {"mean_reaction_inside": -0.01, "reaction_outside": reaction_flux}
     )
     simulation.add_actor(("droplets", "background"), droplet_actor)
 

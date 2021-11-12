@@ -78,7 +78,7 @@ class MeanfieldActor(ActorBase):
             # error ε during a single time step of length Δt is given by
             # ε ≈ 0.5 * (k * Δt)**2 to lowest order in Δt. If we want to limit
             # ε ≤ 0.01, we thus have to choose Δt ≤ sqrt(2 * ε) / k = 0.1 / k.
-            
+
             return 0.1 / s_max  # type: ignore
 
     def make_evolver_numba(  # type: ignore
