@@ -27,7 +27,7 @@ from pde import ScalarField
 from pde.grids.base import DimensionError
 from pde.tools import expressions, spherical
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
+from pde.tools.parameters import DeprecatedParameter, Parameter
 
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
@@ -380,11 +380,12 @@ class SphericalDropletActor(ActorBase):
             "outside the droplet, or the droplets identity `id` (the index in the list "
             "of droplets).",
         ),
+        DeprecatedParameter("reaction_inside", "0", str, "Use `mean_reaction_inside`"),
         Parameter(
-            "reaction_inside",
+            "mean_reaction_inside",
             "0",
             str,
-            "Reaction rate inside the droplet, which determines the production of "
+            "Mean reaction rate inside the droplet, which determines the production of "
             "droplet material per unit volume. This can be an expression that depends "
             "on the droplet radius `R`, its location `position`, or its identity `id` "
             "(the index in the list of droplets). Use negative values to destroy "
@@ -458,7 +459,7 @@ class SphericalDropletActor(ActorBase):
                 "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
             },
             {
-                "from": "reaction_inside",
+                "from": "mean_reaction_inside",
                 "to": "sBaseIn",
                 "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
             },
@@ -500,6 +501,18 @@ class SphericalDropletActor(ActorBase):
             )
 
         self._cache["dim"] = droplets.dim
+
+        # check whether the parameter `reaction_inside` was given. This parameter was
+        # deprecated 2021-11-12
+        reaction_inside = self.parameters["reaction_inside"]
+        if reaction_inside != "0":
+            warnings.warn(
+                "Parameter `reaction_inside` is deprecated. Use `mean_reaction_inside`",
+                DeprecationWarning,
+            )
+            if self.parameters["mean_reaction_inside"] == "0":
+                # only overwrite if mean_reaction_inside was not given
+                self.parameters["mean_reaction_inside"] = reaction_inside
 
         # parse the equilibrium concentration and the reaction rates
         self._parse_expressions(self._cache)
