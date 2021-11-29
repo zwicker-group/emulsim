@@ -1072,7 +1072,7 @@ class SphericalDropletActor(ActorBase):
             amount_total_in = dt * sBaseIn * V
 
             # update the droplet volume
-            dV = (amount_total_in + amount_total_out) / cEqIn
+            dV = (amount_total_in + amount_total_out) / (cEqIn - cEqOut)
             if V + dV < 0:
                 # droplet disappears
                 amount_remain = V * cEqIn - amount_total_in
@@ -1088,7 +1088,7 @@ class SphericalDropletActor(ActorBase):
 
             # adjust the droplet position
             if drift_enabled and droplet_data.radius > 0:
-                factor = float(dim) / cEqIn / surface(droplet_data.radius)
+                factor = float(dim) / (cEqIn - cEqOut) / surface(droplet_data.radius)
                 for i in range(len(shell_vectors)):
                     for j in range(dim):
                         droplet_data.position[j] += (
@@ -1271,7 +1271,7 @@ class SphericalDropletActor(ActorBase):
             amount_total_in = dt * sBaseIn * droplet.volume
 
             # update the droplet volume
-            dV = (amount_total_in + amount_total_out) / cEqIn
+            dV = (amount_total_in + amount_total_out) / (cEqIn - cEqOut)
             if droplet.volume + dV < 0:
                 # make sure
                 amount_remain = droplet.volume * cEqIn - amount_total_in
@@ -1288,5 +1288,5 @@ class SphericalDropletActor(ActorBase):
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
                 area = droplet.surface_area
-                d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
+                d = droplets.dim / ((cEqIn - cEqOut) * area) * amount_per_shell_out @ shell.vectors
                 droplet.position = field.grid.normalize_point(droplet.position + d)
