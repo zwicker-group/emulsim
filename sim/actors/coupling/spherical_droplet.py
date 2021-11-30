@@ -16,6 +16,7 @@ local size compared to all other shell sectors.
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import itertools
 import warnings
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
@@ -23,9 +24,11 @@ import numba as nb
 import numpy as np
 import scipy.special as sc
 
+from droplets.tools.spherical import surface_from_radius
 from pde import ScalarField
 from pde.grids.base import DimensionError
 from pde.tools import expressions, spherical
+from pde.tools.cache import cached_method
 from pde.tools.numba import jit
 from pde.tools.parameters import DeprecatedParameter, Parameter
 
@@ -33,6 +36,301 @@ from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsEle
 from ..base import ActorBase
 
 π = float(np.pi)
+
+
+def points_cartesian_to_spherical(points: np.ndarray) -> np.ndarray:
+    """Convert points from Cartesian to spherical coordinates
+
+    Args:
+        points (:class:`~numpy.ndarray`): Points in Cartesian coordinates
+
+    Returns:
+        :class:`~numpy.ndarray`: Points (r, θ, φ) in spherical coordinates
+    """
+    points = np.atleast_1d(points)
+    assert points.shape[-1] == 3, "Points must have 3 coordinates"
+
+    ps_spherical = np.empty(points.shape)
+    # calculate radius in [0, infinity]
+    ps_spherical[..., 0] = np.linalg.norm(points, axis=-1)
+    # calculate θ in [0, pi]
+    ps_spherical[..., 1] = np.arccos(points[..., 2] / ps_spherical[..., 0])
+    # calculate φ in [0, 2 * pi]
+    ps_spherical[..., 2] = np.arctan2(points[..., 1], points[..., 0]) % (2 * π)
+    return ps_spherical
+
+
+def points_spherical_to_cartesian(points: np.ndarray) -> np.ndarray:
+    """Convert points from spherical to Cartesian coordinates
+
+    Args:
+        points (:class:`~numpy.ndarray`):
+            Points in spherical coordinates (r, θ, φ)
+
+    Returns:
+        :class:`~numpy.ndarray`: Points in Cartesian coordinates
+    """
+    points = np.atleast_1d(points)
+    assert points.shape[-1] == 3, "Points must have 3 coordinates"
+
+    sin_θ = np.sin(points[..., 1])
+    ps_cartesian = np.empty(points.shape)
+    ps_cartesian[..., 0] = points[..., 0] * np.cos(points[..., 2]) * sin_θ
+    ps_cartesian[..., 1] = points[..., 0] * np.sin(points[..., 2]) * sin_θ
+    ps_cartesian[..., 2] = points[..., 0] * np.cos(points[..., 1])
+    return ps_cartesian
+
+
+def haversine_distance(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
+    """Calculate the haversine-based distance between two points on the surface
+    of a sphere. Should be more accurate than the arc cosine strategy.
+    See, for example: https://en.wikipedia.org/wiki/Haversine_formula
+
+    Adapted from https://github.com/tylerjereddy/spherical-SA-docker-demo
+    Licensed under MIT License (see copy in root of this project)
+
+    Args:
+        point1 (:class:`~numpy.ndarray`):
+            First point(s) on the sphere (given in Cartesian coordinates)
+        point2 (:class:`~numpy.ndarray`): Second point on the sphere
+            Second point(s) on the sphere (given in Cartesian coordinates)
+
+    Returns:
+        :class:`~numpy.ndarray`: The distances between the points
+    """
+    # note that latitude φ is θ and longitude λ is φ in our notation
+    coords = points_cartesian_to_spherical(point1)
+    r1, φ1, λ1 = coords[..., 0], coords[..., 1], coords[..., 2]
+    coords = points_cartesian_to_spherical(point2)
+    r2, φ2, λ2 = coords[..., 0], coords[..., 1], coords[..., 2]
+
+    # check whether both points lie on the same sphere
+    assert np.allclose(r1, r2)
+
+    # we rewrite the standard Haversine slightly as long/lat is not the same as
+    # spherical coordinates - φ differs by π/4
+    factor = (1 - np.cos(λ2 - λ1)) / 2
+    arg = (1 - np.cos(φ2 - φ1)) / 2 + np.sin(φ1) * np.sin(φ2) * factor
+    return 2 * r1 * np.arcsin(np.sqrt(arg))  # type: ignore
+
+
+def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float:
+    """Calculate the surface area of a polygon on the surface of a sphere.
+    Based on equation provided here:
+    http://mathworld.wolfram.com/LHuiliersTheorem.html
+    Decompose into triangles, calculate excess for each
+
+    Adapted from https://github.com/tylerjereddy/spherical-SA-docker-demo
+    Licensed under MIT License (see copy in root of this project)
+
+    Args:
+        vertices (:class:`~numpy.ndarray`): List of vertices (using Cartesian
+            coordinates) that describe the corners of the polygon. The vertices
+            need to be oriented.
+        radius (float): Radius of the sphere
+    """
+    # have to convert to unit sphere before applying the formula
+    spherical_coordinates = points_cartesian_to_spherical(vertices)
+    spherical_coordinates[..., 0] = 1.0
+    vertices = points_spherical_to_cartesian(spherical_coordinates)
+
+    n = vertices.shape[0]
+    # point we start from
+    root_point = vertices[0]
+    totalexcess = 0
+
+    # loop from 1 to n-2, with point 2 to n-1 as other vertex of triangle
+    # this could definitely be written more nicely
+    b_point = vertices[1]
+    root_b_dist = haversine_distance(root_point, b_point)
+    for i in np.arange(1, n - 1):
+        a_point = b_point
+        b_point = vertices[i + 1]
+        root_a_dist = root_b_dist
+        root_b_dist = haversine_distance(root_point, b_point)
+        a_b_dist = haversine_distance(a_point, b_point)
+        s = (root_a_dist + root_b_dist + a_b_dist) / 2.0
+        arg = (
+            np.tan(0.5 * s)
+            * np.tan(0.5 * (s - root_a_dist))
+            * np.tan(0.5 * (s - root_b_dist))
+            * np.tan(0.5 * (s - a_b_dist))
+        )
+        totalexcess += 4 * np.arctan(np.sqrt(arg))
+    return totalexcess * radius ** 2
+
+
+class PointsOnSphere:
+    """class representing points on an n-dimensional unit sphere"""
+
+    def __init__(self, points):
+        """
+        Args:
+            points (:class:`~numpy.ndarray`):
+                The list of points on the unit sphere
+        """
+        self.points = np.asarray(points, dtype=np.double)
+        # normalize vectors to force them onto the unit-sphere
+        self.points /= np.linalg.norm(self.points, axis=1)[:, np.newaxis]
+        self.dim = self.points.shape[-1]
+
+    @classmethod
+    def make_uniform(cls, dim: int, num_points: int = None):
+        """create uniformly distributed points on a sphere
+
+        Args:
+            dim (int): The dimension of space
+            num_points (int, optional): The number of points to generate. Note
+                that for one-dimensional spheres (intervals), only exactly two
+                points can be generated
+        """
+        if dim == 1:
+            # just have two directions in 2d
+            if num_points is None:
+                num_points = 2
+            if num_points != 2:
+                raise ValueError("Can only place 2 points in 1d")
+            points = [[-1], [1]]
+
+        elif dim == 2:
+            if num_points is None:
+                num_points = 8
+            # distribute points evenly around the circle
+            φs = np.linspace(0, 2 * π, num_points, endpoint=False)
+            points = np.c_[np.cos(φs), np.sin(φs)]
+
+        elif dim == 3:
+            # Distribute points on the unit sphere using a sunflower spiral
+            # (inspired by https://stackoverflow.com/a/44164075/932593)
+            if num_points is None:
+                num_points = 18
+            indices = np.arange(0, num_points) + 0.5
+            φ = np.arccos(1 - 2 * indices / num_points)
+            θ = π * (1 + 5 ** 0.5) * indices
+
+            # convert to Cartesian coordinates
+            points = np.c_[np.cos(θ) * np.sin(φ), np.sin(θ) * np.sin(φ), np.cos(φ)]
+
+        elif num_points is None:
+            # use vertices of hypercube in n dimensions
+            points = [
+                p  # type: ignore
+                for p in itertools.product([-1, 0, 1], repeat=dim)
+                if any(c != 0 for c in p)
+            ]
+
+        else:
+            raise NotImplementedError()
+
+        # normalize vectors
+        return cls(points)
+
+    @cached_method()
+    def get_area_weights(self, balance_axes: bool = True):
+        """return the weight of each point associated with the unit cell size
+
+        Args:
+            balance_axes (bool): Flag determining whether the weights should be
+                chosen such that the weighted average of all points is the
+                zero vector
+
+        Returns:
+            :class:`~numpy.ndarray`: The weight associated with each point
+        """
+        from scipy import spatial
+
+        points_flat = self.points.reshape(-1, self.dim)
+        if self.dim == 1:
+            assert points_flat.shape == (2, 1)
+            weights = np.array([0.5, 0.5])
+
+        elif self.dim == 2:
+            # get angles
+            φ = np.arctan2(points_flat[:, 1], points_flat[:, 0])
+            idx = np.argsort(φ)
+            s0 = φ[idx[0]] + 2 * π - φ[idx[-1]]
+            sizes = np.r_[s0, np.diff(φ[idx]), s0]
+            weights = (sizes[1:] + sizes[:-1]) / 2
+            weights /= 2 * π
+
+        elif self.dim == 3:
+            # calculate weights using spherical voronoi construction
+            voronoi = spatial.SphericalVoronoi(points_flat)
+            voronoi.sort_vertices_of_regions()
+
+            weight_vals = [
+                get_spherical_polygon_area(voronoi.vertices[ix])
+                for ix in voronoi.regions
+            ]
+            weights = np.array(weight_vals, dtype=np.double)
+            weights /= surface_from_radius(1, dim=self.dim)
+
+        else:
+            raise NotImplementedError()
+
+        if balance_axes:
+            weights /= weights.sum()  # normalize weights
+            # adjust weights such that all distances are weighted equally, i.e.,
+            # the weighted sum of all shell vectors should vanish. Additionally,
+            # the sum of all weights needs to be one. To satisfy these
+            # constraints simultaneously, the weights are adjusted minimally
+            # (in a least square sense).
+            matrix = np.c_[points_flat, np.ones(len(points_flat))]
+            vector = -weights @ matrix + np.r_[np.zeros(self.dim), 1]
+            weights += np.linalg.lstsq(matrix.T, vector, rcond=None)[0]
+
+        return weights.reshape(self.points.shape[:-1])
+
+    def get_distance_matrix(self):
+        """calculate the (spherical) distances between each point
+
+        Returns:
+            :class:`~numpy.ndarray`: the distance of each point to each other
+        """
+        from scipy import spatial
+
+        if self.dim == 1:
+            raise ValueError("Distances can only be calculated for dim >= 2")
+
+        elif self.dim == 2:
+            # use arc length on unit circle to calculate distances
+            def metric(a, b):
+                return np.arccos(a @ b)
+
+        elif self.dim == 3:
+            # calculate distances on sphere using haversine definition
+            metric = haversine_distance
+
+        else:
+            raise NotImplementedError()
+
+        # determine the distances between all points
+        dists = spatial.distance.pdist(self.points, metric)
+        return spatial.distance.squareform(dists)
+
+    def get_mean_separation(self) -> float:
+        """float: calculates the mean distance to the nearest neighbor"""
+        if len(self.points) < 1:
+            return float("nan")
+
+        dists_sorted = np.sort(self.get_distance_matrix(), axis=1)
+        return float(dists_sorted[:, 1].mean())
+
+    def write_to_xyz(self, path: str, comment: str = "", symbol: str = "S"):
+        """write the point coordinates to a xyz file
+
+        Args:
+            path (str): location of the file where data is written
+            comment (str, optional): comment that is written to the second line
+            symbol (str, optional): denotes the symbol used for the atoms
+        """
+        with open(path, "w") as fp:
+            fp.write("%d\n" % len(self.points))
+            fp.write(comment + "\n")
+            for point in self.points:
+                point_str = " ".join(("%.12g" % v for v in point))
+                line = "%s %s\n" % (symbol, point_str)
+                fp.write(line)
 
 
 class ShellSectors:
@@ -338,7 +636,7 @@ class ShellCollection:
         @jit
         def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
             """compiled helper function that extracts shell parameters"""
-            i = min(np.searchsorted(max_radii, radius), num - 1)  # type: ignore
+            i = int(min(np.searchsorted(max_radii, radius), num - 1))  # type: ignore
             return vectors[i], weights[i]
 
         return get_shell  # type: ignore
@@ -625,12 +923,12 @@ class SphericalDropletActor(ActorBase):
 
                     # Approximate the reaction rate at the center of the shell sector.
                     A = (sOut_cEqOut + sOut_c_far) / 2
-                    final_expression = (2*(cEqOut - c_far)*D)/L - A*L
+                    final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                    ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
+                    ζ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                     term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ζ)
                     final_expression = (-2 * D * term / np.sinh(L / ζ)) / (k * ζ)
 
@@ -665,14 +963,15 @@ class SphericalDropletActor(ActorBase):
 
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                    ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
+                    ζ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                     term1 = (A - k * c_far) * ζ + (-A + k * cEqOut) * radius * (
                         sc.i1(radius / ζ) * sc.k0((L + radius) / ζ)
                         + sc.i0((L + radius) / ζ) * sc.k1(radius / ζ)
                     )
                     term2 = sc.i0((L + radius) / ζ) * sc.k0(radius / ζ) - sc.i0(
-                        radius / ζ) * sc.k0((L + radius) / ζ)
+                        radius / ζ
+                    ) * sc.k0((L + radius) / ζ)
                     final_expression = (2 * D * π * term1) / (k * ζ * term2)
 
             else:  # Reactions are OFF
@@ -704,9 +1003,9 @@ class SphericalDropletActor(ActorBase):
                     )
                     final_expression = (-2 * π * radius * term) / (3 * L)
 
-                else: # k is a finite value
+                else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
                     ζ = np.sqrt(D / k)
                     term = -((A - k * cEqOut) * (ζ + radius / np.tanh(L / ζ))) + (
                         A - k * c_far
@@ -776,12 +1075,14 @@ class SphericalDropletActor(ActorBase):
 
                         # Approximate reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
-                        final_expression = (2*(cEqOut - c_far)*D)/L - A*L
+                        final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
                     else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                        ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            -cEqOut + c_far
+                        )
+                        ζ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                         term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ζ)
                         final_expression = (-2 * D * term / np.sinh(L / ζ)) / (k * ζ)
 
@@ -822,10 +1123,12 @@ class SphericalDropletActor(ActorBase):
                             2 * np.log(R / (L + R))
                         )
 
-                    else: # k is a finite value
+                    else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                        ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            -cEqOut + c_far
+                        )
+                        ζ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                         term1 = (A - k * c_far) * ζ + (-A + k * cEqOut) * R * (
                             sc.i1(R / ζ) * sc.k0((L + R) / ζ)
                             + sc.i0((L + R) / ζ) * sc.k1(R / ζ)
@@ -872,9 +1175,11 @@ class SphericalDropletActor(ActorBase):
                         )
                         final_expression = (-2 * π * R * term) / (3 * L)
 
-                    else: # k is a finite value
+                    else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            -cEqOut + c_far
+                        )
                         ζ = np.sqrt(D / k)
                         term = -((A - k * cEqOut) * (ζ + R / np.tanh(L / ζ))) + (
                             A - k * c_far
