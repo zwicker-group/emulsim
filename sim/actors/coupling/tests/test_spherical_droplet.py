@@ -252,6 +252,28 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
     assert d1.total_amount > d2.total_amount
 
 
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_material_conservation(backend):
+    """test whether the simulation conserves the total amount of material"""
+    grid = UnitGrid([4] * 3, periodic=True)
+    field_data = ScalarField(grid, 1.5)
+
+    field = ScalarFieldElement.from_field(field_data)
+    droplets = SphericalDropletsElement.from_droplets(
+        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": 3}
+    )
+    state = State({"droplets": droplets, "field": field})
+    total_amount = state.get_quantity("total_amount")
+
+    coupling = SphericalDropletActor({"equilibrium_concentration": "1"})
+
+    sim = Simulation(state)
+    sim.add_actor(("droplets", "field"), coupling)
+    res = sim.run(t_range=10, backend=backend)
+
+    assert res.get_quantity("total_amount") == pytest.approx(total_amount)
+
+
 @skipUnlessModule("phasesep")
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 @pytest.mark.parametrize("dim", [3])  # 1, 2, 3])
