@@ -265,7 +265,9 @@ def test_material_conservation(backend):
     state = State({"droplets": droplets, "field": field})
     total_amount = state.get_quantity("total_amount")
 
-    coupling = SphericalDropletActor({"equilibrium_concentration": "1"})
+    coupling = spherical_droplet.SphericalDropletActor(
+        {"equilibrium_concentration": "1"}
+    )
 
     sim = Simulation(state)
     sim.add_actor(("droplets", "field"), coupling)
