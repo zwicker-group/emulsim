@@ -321,7 +321,7 @@ class PointDropletActor(ActorBase):
             amount_in = dt * sBaseIn * V
 
             # update the droplet volume
-            dV = (amount_in + amount_out) / cEqIn
+            dV = (amount_in + amount_out) / cEqIn - cEqOut
             if V + dV < 0:
                 # droplet disappears
                 amount_out = -V * cEqIn - amount_in
@@ -397,7 +397,7 @@ class PointDropletActor(ActorBase):
             amount_in = 0
 
             # update the droplet volume
-            dV = (amount_in + amount_out) / cEqIn
+            dV = (amount_in + amount_out) / (cEqIn - cEqOut)
             if droplet.volume + dV < 0:
                 # make sure
                 amount_out = -droplet.volume * cEqIn - amount_in
