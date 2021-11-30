@@ -625,14 +625,14 @@ class SphericalDropletActor(ActorBase):
 
                     # Approximate the reaction rate at the center of the shell sector.
                     A = (sOut_cEqOut + sOut_c_far) / 2
-                    final_expression = (2*(cEqOut - c_far)*D)/L - A*L
+                    final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                    ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
-                    term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ζ)
-                    final_expression = (-2 * D * term / np.sinh(L / ζ)) / (k * ζ)
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
+                    ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                    term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
+                    final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
 
             else:  # Reactions are OFF
 
@@ -665,15 +665,14 @@ class SphericalDropletActor(ActorBase):
 
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                    ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
-                    term1 = (A - k * c_far) * ζ + (-A + k * cEqOut) * radius * (
-                        sc.i1(radius / ζ) * sc.k0((L + radius) / ζ)
-                        + sc.i0((L + radius) / ζ) * sc.k1(radius / ζ)
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
+                    ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                    r1, r2 = radius / ξ, (L + radius) / ξ
+                    term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * radius * (
+                        sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
                     )
-                    term2 = sc.i0((L + radius) / ζ) * sc.k0(radius / ζ) - sc.i0(
-                        radius / ζ) * sc.k0((L + radius) / ζ)
-                    final_expression = (2 * D * π * term1) / (k * ζ * term2)
+                    term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                    final_expression = (2 * D * π * term1) / (k * ξ * term2)
 
             else:  # Reactions are OFF
                 term = 2 * D * π * (c_far - cEqOut)
@@ -704,14 +703,14 @@ class SphericalDropletActor(ActorBase):
                     )
                     final_expression = (-2 * π * radius * term) / (3 * L)
 
-                else: # k is a finite value
+                else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                    ζ = np.sqrt(D / k)
-                    term = -((A - k * cEqOut) * (ζ + radius / np.tanh(L / ζ))) + (
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
+                    ξ = np.sqrt(D / k)
+                    term = -((A - k * cEqOut) * (ξ + radius / np.tanh(L / ξ))) + (
                         A - k * c_far
-                    ) * (L + radius) / np.sinh(L / ζ)
-                    final_expression = (4 * D * π * radius * term) / (k * ζ)
+                    ) * (L + radius) / np.sinh(L / ξ)
+                    final_expression = (4 * D * π * radius * term) / (k * ξ)
 
             else:  # Reactions are OFF
                 final_expression = (
@@ -776,14 +775,16 @@ class SphericalDropletActor(ActorBase):
 
                         # Approximate reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
-                        final_expression = (2*(cEqOut - c_far)*D)/L - A*L
+                        final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
                     else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                        ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
-                        term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ζ)
-                        final_expression = (-2 * D * term / np.sinh(L / ζ)) / (k * ζ)
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            c_far - cEqOut
+                        )
+                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
+                        final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
 
                     return final_expression
 
@@ -822,18 +823,18 @@ class SphericalDropletActor(ActorBase):
                             2 * np.log(R / (L + R))
                         )
 
-                    else: # k is a finite value
+                    else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                        ζ = np.sqrt(D / k) # Reaction-Diffusion length-scale
-                        term1 = (A - k * c_far) * ζ + (-A + k * cEqOut) * R * (
-                            sc.i1(R / ζ) * sc.k0((L + R) / ζ)
-                            + sc.i0((L + R) / ζ) * sc.k1(R / ζ)
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            -cEqOut + c_far
                         )
-                        term2 = sc.i0((L + R) / ζ) * sc.k0(R / ζ) - sc.i0(
-                            R / ζ
-                        ) * sc.k0((L + R) / ζ)
-                        final_expression = (2 * D * π * term1) / (k * ζ * term2)
+                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        r1, r2 = R / ξ, (L + R) / ξ
+                        term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * R * (
+                            sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
+                        )
+                        term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                        final_expression = (2 * D * π * term1) / (k * ξ * term2)
 
                     return final_expression  # type: ignore
 
@@ -872,14 +873,15 @@ class SphericalDropletActor(ActorBase):
                         )
                         final_expression = (-2 * π * R * term) / (3 * L)
 
-                    else: # k is a finite value
+                    else:  # k is a finite value
                         k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far)/(-cEqOut + c_far)
-                        ζ = np.sqrt(D / k)
-                        term = -((A - k * cEqOut) * (ζ + R / np.tanh(L / ζ))) + (
-                            A - k * c_far
-                        ) * (L + R) / np.sinh(L / ζ)
-                        final_expression = (4 * D * π * R * term) / (k * ζ)
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
+                            -cEqOut + c_far
+                        )
+                        ξ = np.sqrt(D / k)
+                        term1 = -(A - k * cEqOut) * (ξ + R / np.tanh(L / ξ))
+                        term2 = (A - k * c_far) * (L + R) / np.sinh(L / ξ)
+                        final_expression = (4 * D * π * R * (term1 + term2)) / (k * ξ)
 
                     return final_expression
 
