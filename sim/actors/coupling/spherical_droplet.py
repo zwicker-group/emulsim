@@ -1586,7 +1586,13 @@ class SphericalDropletActor(ActorBase):
                 field.add_amount(pos, -amount_per_shell_out[i])
 
             # adjust the droplet position
+            
             if self.parameters["drift_enabled"] and droplet.radius > 0:
+                
+                # Note: Currently amount_total_in has no influence on the droplet position 
+                # as amount_total_in is isotropic with respect to azimuthal and polar angle.
+                # Hence, amount_total_in contributes only in droplet growth.
+                
                 area = droplet.surface_area
                 d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
                 droplet.position = field.grid.normalize_point(droplet.position + d)
