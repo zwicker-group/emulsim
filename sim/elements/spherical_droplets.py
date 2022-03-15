@@ -4,6 +4,8 @@ Provides a simulation element representing spherical droplets
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict
 
 import numpy as np
@@ -60,13 +62,13 @@ class SphericalDropletsElement(ElementBase):
                 "determine the dimensionality of the element."
             )
 
-        self._data = self.droplets.get_linked_data()  # type: ignore
+        self._data = self.droplets.get_linked_data()
         self.dim = self.droplets.dim
 
     @classmethod
     def from_droplets(
         cls, droplets: Emulsion, copy: bool = False, parameters: Dict[str, Any] = None
-    ) -> "SphericalDropletsElement":
+    ) -> SphericalDropletsElement:
         """
         Args:
             droplets (:class:`droplets.emulsions.Emulsion`):

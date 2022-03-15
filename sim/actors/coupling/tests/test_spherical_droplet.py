@@ -3,9 +3,9 @@
 .. codeauthor:: Ajinkya Kulkarni <ajinkya.kulkarni@ds.mpg.de>
 """
 
-
 import numpy as np
 import pytest
+from scipy import spatial
 
 from droplets import Emulsion, SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
@@ -14,7 +14,7 @@ from pde.tools.misc import skipUnlessModule
 
 from .... import ReactionDiffusionActor, Simulation, State
 from ....elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
-from ..spherical_droplet import ShellCollection, SphericalDropletActor
+from .. import spherical_droplet
 
 
 def recarrays_allclose(a, b):
@@ -24,9 +24,58 @@ def recarrays_allclose(a, b):
     return all(np.allclose(a[name], b[name]) for name in a.dtype.names)
 
 
+def test_spherical_polygon_area():
+    """test the function get_spherical_polygon_area"""
+    area = spherical_droplet.get_spherical_polygon_area
+    sector_area = area([[0, 1.0, 0], [0, 0, 1.0], [-1.0, 0, 0]])
+    assert sector_area == pytest.approx(np.pi / 2)
+
+
+def test_spherical_voronoi():
+    """test spatial.SphericalVoronoi"""
+    # random points on the sphere
+    ps = np.random.random((32, 3)) - 0.5
+    ps /= np.linalg.norm(ps, axis=1)[:, None]
+
+    voronoi = spatial.SphericalVoronoi(ps)
+    voronoi.sort_vertices_of_regions()
+
+    total = sum(
+        spherical_droplet.get_spherical_polygon_area(voronoi.vertices[reg])
+        for reg in voronoi.regions
+    )
+    assert total == pytest.approx(4 * np.pi)
+
+
+@pytest.mark.parametrize("dim", range(1, 4))
+def test_points_on_sphere(dim, tmp_path):
+    """test spatial.SphericalVoronoi"""
+    shell = spherical_droplet.PointsOnSphere.make_uniform(dim=dim)
+    assert shell.dim == dim
+
+    for balance_axes in [True, False]:
+        ws = shell.get_area_weights(balance_axes=balance_axes)
+        assert ws.sum() == pytest.approx(1)
+        np.testing.assert_allclose(ws, 1 / len(shell.points), rtol=0.1)
+
+    ws = shell.get_area_weights(balance_axes=True)
+    np.testing.assert_allclose(ws @ shell.points, 0, atol=1e-15)
+
+    path = tmp_path / f"test_points_on_sphere_{dim}.xyz"
+    shell.write_to_xyz(path=path)
+    assert path.stat().st_size > 0
+
+
+def test_points_on_sphere_2():
+    """special tests for 2 dimensions"""
+    num = np.random.randint(3, 9)
+    shell = spherical_droplet.PointsOnSphere.make_uniform(dim=2, num_points=num)
+    assert num * shell.get_mean_separation() == pytest.approx(2 * np.pi)
+
+
 def test_shells_1d():
     """test shell collection in 1 dimensions"""
-    sc = ShellCollection.generate(dim=1)
+    sc = spherical_droplet.ShellCollection.generate(dim=1)
     assert len(sc) == 1
     shell = sc.get_shell(1e3)
     assert shell.vectors.shape == (2, 1)
@@ -37,7 +86,7 @@ def test_shells_1d():
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_shells_general(dim):
     """test shell collections in 2 and 3 dimensions"""
-    sc = ShellCollection.generate(dim=dim)
+    sc = spherical_droplet.ShellCollection.generate(dim=dim)
 
     for shell in sc:
         vs, ws = shell.vectors, shell.weights
@@ -58,7 +107,7 @@ def test_spherical_droplets(dim):
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == 1
 
-    coupling = SphericalDropletActor()
+    coupling = spherical_droplet.SphericalDropletActor()
     assert isinstance(coupling.info, dict)
     assert coupling.num_elements == 2
 
@@ -91,7 +140,7 @@ def test_spherical_droplets(dim):
     droplets = SphericalDropletsElement.from_droplets(
         [SphericalDroplet([1] * droplet_dim, 1)]
     )
-    coupling = SphericalDropletActor()
+    coupling = spherical_droplet.SphericalDropletActor()
     with pytest.raises(DimensionError):
         coupling.make_evolver_numba((droplets, field))
 
@@ -107,7 +156,7 @@ def test_spherical_droplets_const_shell_count(dim):
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == 1
 
-    coupling = SphericalDropletActor(
+    coupling = spherical_droplet.SphericalDropletActor(
         {"shell_sector_method": "count", "shell_sector_count": 2 * dim}
     )
     assert isinstance(coupling.info, dict)
@@ -142,7 +191,7 @@ def test_spherical_droplets_const_shell_count(dim):
     droplets = SphericalDropletsElement.from_droplets(
         [SphericalDroplet([1] * droplet_dim, 1)]
     )
-    coupling = SphericalDropletActor()
+    coupling = spherical_droplet.SphericalDropletActor()
     with pytest.raises(DimensionError):
         coupling.make_evolver_numba((droplets, field))
 
@@ -155,10 +204,10 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
     d1 = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * dim, 1)])
-    c1 = SphericalDropletActor()
+    c1 = spherical_droplet.SphericalDropletActor()
 
     d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
-    c2 = SphericalDropletActor({"reaction_inside": "-1"})
+    c2 = spherical_droplet.SphericalDropletActor({"mean_reaction_inside": "-1"})
 
     state = State({"field": field, "d1": d1, "d2": d2})
     sim = Simulation(state)
@@ -183,10 +232,10 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
     d1 = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * dim, 1)])
-    c1 = SphericalDropletActor()
+    c1 = spherical_droplet.SphericalDropletActor()
 
     d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
-    c2 = SphericalDropletActor({"reaction_outside": "-1"})
+    c2 = spherical_droplet.SphericalDropletActor({"reaction_outside": "-1"})
 
     state = State({"field": field, "d1": d1, "d2": d2})
     sim = Simulation(state)
@@ -201,6 +250,30 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
     else:
         sim.evolve(state, 0, 0.5)
     assert d1.total_amount > d2.total_amount
+
+
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_material_conservation(backend):
+    """test whether the simulation conserves the total amount of material"""
+    grid = UnitGrid([4] * 3, periodic=True)
+    field_data = ScalarField(grid, 1.5)
+
+    field = ScalarFieldElement.from_field(field_data)
+    droplets = SphericalDropletsElement.from_droplets(
+        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": 3}
+    )
+    state = State({"droplets": droplets, "field": field})
+    total_amount = state.get_quantity("total_amount")
+
+    coupling = spherical_droplet.SphericalDropletActor(
+        {"equilibrium_concentration": "1"}
+    )
+
+    sim = Simulation(state)
+    sim.add_actor(("droplets", "field"), coupling)
+    res = sim.run(t_range=10, backend=backend)
+
+    assert res.get_quantity("total_amount") == pytest.approx(total_amount)
 
 
 @skipUnlessModule("phasesep")
@@ -229,8 +302,8 @@ def test_linearized_fluxes(dim, backend):
     simulation.add_actor(
         "background", ReactionDiffusionActor({"reaction_flux": reaction_flux})
     )
-    droplet_actor = SphericalDropletActor(
-        {"reaction_inside": -0.01, "reaction_outside": reaction_flux}
+    droplet_actor = spherical_droplet.SphericalDropletActor(
+        {"mean_reaction_inside": -0.01, "reaction_outside": reaction_flux}
     )
     simulation.add_actor(("droplets", "background"), droplet_actor)
 
@@ -258,7 +331,7 @@ def test_coarsening(dim):
     )
     droplets = SphericalDropletsElement.from_droplets(emulsion)
 
-    coupling = SphericalDropletActor()
+    coupling = spherical_droplet.SphericalDropletActor()
 
     ceq = coupling.get_equilibrium_concentrations(droplets).mean()
     field.concentration = ceq
@@ -287,7 +360,7 @@ def test_spherical_droplets_drift(dim, backend):
         )
         state = State({"droplets": droplets, "field": field})
 
-        coupling = SphericalDropletActor({"drift_enabled": drift})
+        coupling = spherical_droplet.SphericalDropletActor({"drift_enabled": drift})
 
         sim = Simulation(state)
         sim.add_actor(("droplets", "field"), coupling)
@@ -323,8 +396,8 @@ def test_multithreading():
     droplets1 = SphericalDropletsElement.from_droplets(emulsion)
     droplets2 = SphericalDropletsElement.from_droplets(emulsion)
 
-    coupling1 = SphericalDropletActor({"num_threads": 1})
-    coupling2 = SphericalDropletActor({"num_threads": 2})
+    coupling1 = spherical_droplet.SphericalDropletActor({"num_threads": 1})
+    coupling2 = spherical_droplet.SphericalDropletActor({"num_threads": 2})
 
     evolver1 = coupling1.make_evolver_numba((droplets1, field1))
     evolver2 = coupling2.make_evolver_numba((droplets2, field2))

@@ -10,6 +10,8 @@ from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
 from pde.grids.base import DimensionError
 
+from sim import Simulation, State
+
 from ....elements import MeanfieldElement, SphericalDropletsElement
 from ..point_droplet import PointDropletActor
 
@@ -84,6 +86,27 @@ def test_point_droplets_diffusion_coarsening(dim):
 
     assert emulsion[0].radius < 0.1
     assert emulsion[1].radius > 0.2
+
+
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_material_conservation(backend):
+    """test whether the simulation conserves the total amount of material"""
+    grid = UnitGrid([4] * 3, periodic=True)
+    field = MeanfieldElement(1, {"bounds": grid.axes_bounds})
+
+    droplets = SphericalDropletsElement.from_droplets(
+        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": 3}
+    )
+    state = State({"droplets": droplets, "field": field})
+    total_amount = state.get_quantity("total_amount")
+
+    coupling = PointDropletActor({"equilibrium_concentration": "1"})
+
+    sim = Simulation(state)
+    sim.add_actor(("droplets", "field"), coupling)
+    res = sim.run(t_range=10, backend=backend)
+
+    assert res.get_quantity("total_amount") == pytest.approx(total_amount)
 
 
 @pytest.mark.parametrize("dim", [1, 2])

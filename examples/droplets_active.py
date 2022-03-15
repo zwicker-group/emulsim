@@ -19,7 +19,7 @@ simulation.add_actor(
     "background", sim.ReactionDiffusionActor({"reaction_flux": reaction_flux})
 )
 droplet_actor = sim.SphericalDropletActor(
-    {"reaction_inside": -0.01, "reaction_outside": reaction_flux}
+    {"mean_reaction_inside": -0.01, "reaction_outside": reaction_flux}
 )
 simulation.add_actor(("droplets", "background"), droplet_actor)
 
