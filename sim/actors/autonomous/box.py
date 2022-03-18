@@ -94,7 +94,7 @@ class BoxActor(ActorBase):
         size = bounds[:, 1] - bounds[:, 0]
 
         # figure out which axes need to be considered for flipping direction
-        if "direction" in points_element.data.dtype.fields:  # type: ignore
+        if "direction" in points_element.data.dtype.fields:
             flip_ax = np.flatnonzero(np.logical_not(self._grid.periodic))
         else:
             flip_ax = np.empty((0,))
@@ -149,12 +149,12 @@ class BoxActor(ActorBase):
         (points,) = elements  # extract single element
         assert self.parameters["point_like"]
 
-        if "direction" in points.data.dtype.fields:  # type: ignore
+        if "direction" in points.data.dtype.fields:
             # flip direction if out of bound
             midpoint = self._grid.cuboid.centroid
             size = np.array(self._grid.cuboid.size)
             if not self.parameters["point_like"]:
-                size = size[:, np.newaxis] - 2 * points.radius[np.newaxis, :]
+                size = size[:, np.newaxis] - 2 * points.radius[np.newaxis, :]  # type: ignore
 
             for ax in range(points.dim):  # type: ignore
                 if self._grid.periodic[ax]:

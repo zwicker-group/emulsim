@@ -9,10 +9,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]  # [macos-latest, ubuntu-latest, windows-latest]
-        python-version: [3.7]
+        python-version: ['3.7']
         include:
           - os: ubuntu-latest
-            python-version: 3.8
+            python-version: '3.10'
 
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
          submodules: 'true'    
          token: ${{ secrets.ACCESS_TOKEN }}
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
         

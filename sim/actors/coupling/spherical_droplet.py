@@ -24,10 +24,10 @@ import numba as nb
 import numpy as np
 import scipy.special as sc
 
-from droplets.tools.spherical import surface_from_radius
+from droplets.tools import spherical
 from pde import ScalarField
 from pde.grids.base import DimensionError
-from pde.tools import expressions, spherical
+from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.numba import jit
 from pde.tools.parameters import DeprecatedParameter, Parameter
@@ -263,7 +263,7 @@ class PointsOnSphere:
                 for ix in voronoi.regions
             ]
             weights = np.array(weight_vals, dtype=np.double)
-            weights /= surface_from_radius(1, dim=self.dim)
+            weights /= spherical.surface_from_radius(1, dim=self.dim)
 
         else:
             raise NotImplementedError()
@@ -374,12 +374,10 @@ class ShellSectors:
         """
         if dim == 1:
             # special case where two sectors is the only useful choice
-            shell = spherical.PointsOnSphere.make_uniform(dim=1)
+            shell = PointsOnSphere.make_uniform(dim=1)
 
         else:  # higher dimensions
-            shell = spherical.PointsOnSphere.make_uniform(
-                dim=dim, num_points=sector_count
-            )
+            shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
             assert sector_count == len(shell.points)
 
         weights = shell.get_area_weights(balance_axes=True)
@@ -522,7 +520,7 @@ class ShellCollection:
         """
         if dim == 1:
             # special case since only one shell exists
-            shell = spherical.PointsOnSphere.make_uniform(dim=1)
+            shell = PointsOnSphere.make_uniform(dim=1)
             shell_data = {
                 "vectors": shell.points,
                 "weights": shell.get_area_weights(),
@@ -553,9 +551,7 @@ class ShellCollection:
             data = []
             while sector_count_approx <= max_sector_count:
                 sector_count = int(np.floor(sector_count_approx))
-                shell = spherical.PointsOnSphere.make_uniform(
-                    dim=dim, num_points=sector_count
-                )
+                shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
                 assert sector_count == len(shell.points)
 
                 # get maximal radius of a sphere such that the average area for

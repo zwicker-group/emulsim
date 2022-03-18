@@ -8,8 +8,8 @@ from typing import Callable, List, Tuple, Union
 
 import numpy as np
 
+from droplets.tools import spherical
 from pde.grids.base import DimensionError
-from pde.tools import spherical
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
@@ -87,7 +87,7 @@ class PointDropletActor(ActorBase):
         """
         if callable(expr):
             # assume that the expression supports the correct syntax
-            return expr  # type: ignore
+            return expr
         else:
             # parse the expression
             return ScalarExpression(str(expr), signature, allow_indexed=True)
@@ -187,7 +187,7 @@ class PointDropletActor(ActorBase):
 
         elif self.parameters["flux_model"] in {"linear", "expression"}:
             calc_exchange_rate = self._cache["exchange_rate"]
-            return calc_exchange_rate(radius) * (cEqOut - c_back)
+            return calc_exchange_rate(radius) * (cEqOut - c_back)  # type: ignore
 
         else:
             raise NotImplementedError(

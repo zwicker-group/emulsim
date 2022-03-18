@@ -50,8 +50,8 @@ class BrownianMotionActor(ActorBase):
                 The state of all the droplets and of the field
         """
         fields = elements[0].data.dtype.fields
-        assert "position" in fields  # type: ignore
-        self._cache["has_radius"] = "radius" in fields  # type: ignore
+        assert "position" in fields
+        self._cache["has_radius"] = "radius" in fields
         if self._cache["has_radius"]:
             self._cache["diffusivity"] = ScalarExpression(
                 self.parameters["diffusivity"], [["radius", "R"], ["time", "t"]]

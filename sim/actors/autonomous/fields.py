@@ -184,7 +184,7 @@ class ScalarPDEActor(ScalarFieldActorBase):
 
         if inspect.isclass(pde):
             self._logger.warning("Got class `%s` instead of an instance", pde)
-            self.pde = pde()  # type: ignore
+            self.pde = pde()
         else:
             self.pde = pde
 

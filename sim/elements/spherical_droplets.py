@@ -62,7 +62,7 @@ class SphericalDropletsElement(ElementBase):
                 "determine the dimensionality of the element."
             )
 
-        self._data = self.droplets.get_linked_data()
+        self._data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
 
     @classmethod
@@ -92,10 +92,10 @@ class SphericalDropletsElement(ElementBase):
                 cls_name = droplet.__class__.__name__
                 raise ValueError(f"DropletAgentsElement does not support `{cls_name}`")
 
-        obj._data = obj.droplets.get_linked_data()
+        obj._data = obj.droplets.get_linked_data()  # type: ignore
         obj.dim = obj.droplets.dim
 
-        return obj  # type: ignore
+        return obj
 
     def __len__(self) -> int:
         return len(self.droplets)
