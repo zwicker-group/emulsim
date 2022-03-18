@@ -5,6 +5,7 @@
 
 import numpy as np
 import pytest
+from numpy.lib.recfunctions import structured_to_unstructured
 
 from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
@@ -62,30 +63,40 @@ def test_point_droplets_diffusion(dim):
 def test_point_droplets_diffusion_coarsening(dim):
     """simple test of coarsening with diffusive exchange"""
     grid = UnitGrid([3] * dim)
-    field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
-    assert field.concentration == pytest.approx(0)
+    field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
+    assert field1.concentration == pytest.approx(0)
 
-    emulsion = Emulsion(
+    emulsion1 = Emulsion(
         [
             SphericalDroplet(grid.get_random_point(), 0.1),
             SphericalDroplet(grid.get_random_point(), 0.2),
         ]
     )
-    droplets = SphericalDropletsElement.from_droplets(emulsion)
-    assert droplets.droplet_count == 2
+    droplets1 = SphericalDropletsElement.from_droplets(emulsion1)
+    droplets2 = SphericalDropletsElement.from_droplets(emulsion1, copy=True)
+    assert droplets1.droplet_count == 2
 
-    coupling = PointDropletActor()
+    coupling1 = PointDropletActor()
+    ceq = coupling1.get_equilibrium_concentrations(droplets1).mean()
+    field1.concentration = ceq
+    field2 = field1.copy()
 
-    ceq = coupling.get_equilibrium_concentrations(droplets).mean()
-    field.concentration = ceq
+    total_amount = pytest.approx(field1.total_amount + droplets1.total_amount)
 
-    total_amount = pytest.approx(field.total_amount + droplets.total_amount)
+    coupling1.evolve((droplets1, field1), 0, 0.1)
+    assert field1.total_amount + droplets1.total_amount == total_amount
+    assert emulsion1[0].radius < 0.1
+    assert emulsion1[1].radius > 0.2
 
-    coupling.evolve((droplets, field), 0, 0.1)
-    assert field.total_amount + droplets.total_amount == total_amount
-
-    assert emulsion[0].radius < 0.1
-    assert emulsion[1].radius > 0.2
+    coupling2 = PointDropletActor(
+        {"flux_model": "linear", "exchange_rate": "4 * pi * R"}
+    )
+    coupling2.evolve((droplets2, field2), 0, 0.1)
+    assert field2.total_amount + droplets2.total_amount == total_amount
+    np.testing.assert_allclose(
+        structured_to_unstructured(droplets1.data),
+        structured_to_unstructured(droplets2.data),
+    )
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])

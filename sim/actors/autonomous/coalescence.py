@@ -6,7 +6,7 @@ from typing import Callable, Tuple
 
 import numpy as np
 
-from pde.tools import spherical
+from droplets.tools import spherical
 from pde.tools.numba import jit
 
 from ...elements import SphericalDropletsElement

@@ -1,5 +1,10 @@
 TODO
 ====
+* Support storage for storing trajectories to memory and file
+	- introduce the concept of trajectories of states
+	- this is simple for MemoryStorage (could reuse py-pde?)
+	- think about how to abstract this for FileStorage
+	- this might depend on the py-model package
 * Support random number generators
 * Add test for re-running a simulation with use_cache
 * Add interactive plotting using napari
@@ -19,7 +24,7 @@ TODO
 * Simulation:
 	Add diagnostic information (dt, step_count, degrees of freedom)
 * Think about introducing data class that holds integrated, global variables
-    - this might be helpful to implement lagrange multipliers and the like
+    - this might be helpful to implement Lagrange multipliers and the like
     - generally, we should use a state class that contains the state of a pde
       (in most cases, this would be a FieldBase)
     - the state class should also handle serialization and io with hdf
