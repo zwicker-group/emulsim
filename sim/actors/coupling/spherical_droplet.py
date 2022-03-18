@@ -29,6 +29,7 @@ from pde import ScalarField
 from pde.grids.base import DimensionError
 from pde.tools import expressions
 from pde.tools.cache import cached_method
+from pde.tools.misc import module_available
 from pde.tools.numba import jit
 from pde.tools.parameters import DeprecatedParameter, Parameter
 
@@ -731,6 +732,9 @@ class SphericalDropletActor(ActorBase):
 
     element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
+    reaction_rate_tolerance: float = 1e-10
+    """float: tolerance determining when a simpler expression for reactions is used"""
+
     def _parse_expressions(self, out: Dict[str, Any] = None) -> Dict[str, Any]:
         """parse expressions that depend on droplet variables
 
@@ -1035,7 +1039,7 @@ class SphericalDropletActor(ActorBase):
                 (radius: float, c_far: float, cEqOut: float, droplet_id: int)
                 corresponding to :meth:`SphericalDropletActor.get_flux_outside`
         """
-        TOLERANCE = 1e-10
+        tolerance = self.reaction_rate_tolerance
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
@@ -1044,7 +1048,7 @@ class SphericalDropletActor(ActorBase):
         try:
             no_reaction = sOut.constant and sOut.value == 0
         except AttributeError:
-            no_reaction = False  # cannot determine whether reaction is present
+            no_reaction = False  # reaction seems to be present
 
         if self._cache["dim"] == 1:
             if no_reaction:
@@ -1064,15 +1068,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate reaction rate at the center of the shell sector
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
@@ -1081,7 +1085,7 @@ class SphericalDropletActor(ActorBase):
                         A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
                             c_far - cEqOut
                         )
-                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        ξ = np.sqrt(D / k)  # Reaction-diffusion length-scale
                         term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
                         final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
 
@@ -1098,6 +1102,12 @@ class SphericalDropletActor(ActorBase):
 
             else:
 
+                if not module_available("numba_scipy"):
+                    self._logger.error(
+                        "Python package `numba_scipy` is not installed. This package "
+                        "is required to compile the Bessel function appearing in 2D."
+                    )
+
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
@@ -1105,15 +1115,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate reaction rate at the center of the shell sector
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         term = π * (
                             -4 * cEqOut * D + 4 * c_far * D + A * L * (L + 2 * R)
@@ -1155,15 +1165,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate the reaction rate at the center of the shell sector.
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         term = (
                             -6 * cEqOut * D * (L + R)

@@ -8,7 +8,7 @@ import os
 import subprocess as sp
 import sys
 from pathlib import Path
-from typing import List  # @UnusedImport
+from typing import Set
 
 import pytest
 
@@ -16,6 +16,11 @@ from pde.tools.misc import module_available
 
 PACKAGEPATH = Path(__file__).parents[2].resolve()
 EXAMPLE_PATH = PACKAGEPATH / "examples"
+SKIP_EXAMPLES: Set[str] = set()
+if not module_available("phasesep"):
+    SKIP_EXAMPLES.add("droplets_active.py")
+if not module_available("numba_scipy"):
+    SKIP_EXAMPLES.add("droplets_active.py")
 
 
 @pytest.mark.no_cover
@@ -23,8 +28,8 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 @pytest.mark.parametrize("path", glob.glob(str(EXAMPLE_PATH / "*.py")))
 def test_examples(path):
     """runs an example script given by path"""
-    if path.endswith("droplets_active.py") and not module_available("phasesep"):
-        pytest.skip("The example droplets_active.py requires the `phasesep` package")
+    if any(name in path for name in SKIP_EXAMPLES):
+        pytest.skip(f"Skip test {path} since module is missing")
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PACKAGEPATH) + ":" + env.get("PYTHONPATH", "")
