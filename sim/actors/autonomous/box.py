@@ -20,6 +20,12 @@ class BoxActor(ActorBase):
     parameters_default = [
         Parameter("bounds", [], np.array, "The bounds of the box"),
         Parameter("periodic", False, np.array, "The bounds of the box"),
+        Parameter(
+            "point_like",
+            True,
+            bool,
+            "When False, the radius of the object is used in the distance calculation",
+        ),
     ]
 
     element_classes = ((PointsElement, ArrowsElement, SphericalDropletsElement),)
@@ -32,13 +38,13 @@ class BoxActor(ActorBase):
                 :meth:`~BoxActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
-        # self.bounds = np.atleast_2d(self.parameters["bounds"])
-        # assert self.bounds.shape[1] == 2
-        # self.dim = self.bounds.shape[0]
-        # self.periodic = np.broadcast_to(self.parameters["periodic"], (self.dim,))
-        self._grid = CartesianGrid(
-            self.parameters["bounds"], 1, self.parameters["periodic"]
-        )
+
+        # convert periodicity information into useful format
+        periodic = self.parameters["periodic"]
+        if isinstance(periodic, np.ndarray) and periodic.size == 1:
+            periodic = periodic.item()
+
+        self._grid = CartesianGrid(self.parameters["bounds"], 1, periodic)
 
     @classmethod
     def from_grid(cls, grid: CartesianGridBase):
@@ -94,6 +100,8 @@ class BoxActor(ActorBase):
             flip_ax = np.empty((0,))
         test_for_flipping = flip_ax.size > 0
 
+        point_like = self.parameters["point_like"]
+
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve all points explicitly"""
@@ -101,10 +109,15 @@ class BoxActor(ActorBase):
             for i in range(num_points):
                 pos = points[i].position
 
+                if point_like:
+                    radius = 0
+                else:
+                    radius = points[i].radius
+
                 # flip direction if out of bound
                 if test_for_flipping:
                     for ax in flip_ax:
-                        dist_norm = (pos[ax] - midpoint[ax]) / size[ax]
+                        dist_norm = (pos[ax] - midpoint[ax]) / (size[ax] - 2 * radius)
                         if (dist_norm - 0.5) % 2 - 1 < 0:
                             points[i].direction[ax] *= -1
                 # TODO: this function's performance could be improved by calculating
@@ -115,8 +128,10 @@ class BoxActor(ActorBase):
                     if periodic[ax]:
                         pos[ax] = (pos[ax] - xmin[ax]) % size[ax] + xmin[ax]
                     else:
-                        arg = (pos[ax] - xmax[ax]) % (2 * size[ax]) - size[ax]
-                        pos[ax] = xmin[ax] + abs(arg)
+                        dist_left = pos[ax] - (xmax[ax] - radius)
+                        size_red = size[ax] - 2 * radius
+                        arg = (dist_left) % (2 * size_red) - size_red
+                        pos[ax] = xmin[ax] + radius + abs(arg)
 
         return evolver  # type: ignore
 
@@ -132,11 +147,15 @@ class BoxActor(ActorBase):
                 The time step
         """
         (points,) = elements  # extract single element
+        assert self.parameters["point_like"]
 
         if "direction" in points.data.dtype.fields:  # type: ignore
             # flip direction if out of bound
             midpoint = self._grid.cuboid.centroid
-            size = self._grid.cuboid.size
+            size = np.array(self._grid.cuboid.size)
+            if not self.parameters["point_like"]:
+                size = size[:, np.newaxis] - 2 * points.radius[np.newaxis, :]
+
             for ax in range(points.dim):  # type: ignore
                 if self._grid.periodic[ax]:
                     continue  # do nothing for periodic axes
@@ -146,6 +165,7 @@ class BoxActor(ActorBase):
                 points.directions[..., ax] *= factor  # type: ignore
 
         # move the points to inside the box
+        # TODO: support extended objects, where `point_like` is False
         points.positions[...] = self._grid.normalize_point(  # type: ignore
             points.positions, reflect=True  # type: ignore
         )

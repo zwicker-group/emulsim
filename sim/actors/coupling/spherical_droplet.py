@@ -157,7 +157,7 @@ def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float
             * np.tan(0.5 * (s - a_b_dist))
         )
         totalexcess += 4 * np.arctan(np.sqrt(arg))
-    return totalexcess * radius ** 2
+    return totalexcess * radius**2
 
 
 class PointsOnSphere:
@@ -206,7 +206,7 @@ class PointsOnSphere:
                 num_points = 18
             indices = np.arange(0, num_points) + 0.5
             φ = np.arccos(1 - 2 * indices / num_points)
-            θ = π * (1 + 5 ** 0.5) * indices
+            θ = π * (1 + 5**0.5) * indices
 
             # convert to Cartesian coordinates
             points = np.c_[np.cos(θ) * np.sin(φ), np.sin(θ) * np.sin(φ), np.cos(φ)]
@@ -843,11 +843,11 @@ class SphericalDropletActor(ActorBase):
         """estimate the maximal time step for simulating this actor
 
         The time step is based on the time scale of diffusion in the shell. In the
-        special case of large shells (for instance in mean-field coarsening simulations))
+        special case of large shells (for instance in mean-field coarsening simulations)
         the defining length scale is the mean droplet radius instead. This estimate is
         based on the growth rate of droplets, dR/dt ∝ D/R, where D is the diffusivity
         and R is the mean droplet radius. Therefore, ΔR/Δt ∝ D/R and ΔR/R = ε implies
-        Δt = ε*R*R/D, where we chose ε=0.1.
+        Δt = ε * R**2 / D, where we chose ε=0.1.
 
         Args:
             elements (tuple):
@@ -857,9 +857,9 @@ class SphericalDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
-        droplets, _ = elements
+        droplets, field = elements
 
-        D = float(self.parameters["diffusivity"])
+        # determine minimal dt based on diffusion in shell
         shell_thickness = float(self._cache["shell_thickness"])
         if droplets.droplet_count > 0:
             mean_radius = float(droplets.data["radius"].mean())
@@ -867,7 +867,12 @@ class SphericalDropletActor(ActorBase):
         else:
             length_scale = shell_thickness
 
-        return 0.1 * length_scale ** 2 / D
+        # ensure that characteristic length scale is not too small
+        grid_size = max(bounds[1] - bounds[0] for bounds in field.grid.axes_bounds)
+        length_scale = max(length_scale, 1e-4 * grid_size)
+
+        # calculate time scale from length scale and diffusivity
+        return 0.1 * length_scale**2 / float(self.parameters["diffusivity"])
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
@@ -1586,13 +1591,12 @@ class SphericalDropletActor(ActorBase):
                 field.add_amount(pos, -amount_per_shell_out[i])
 
             # adjust the droplet position
-            
             if self.parameters["drift_enabled"] and droplet.radius > 0:
-                
-                # Note: Currently amount_total_in has no influence on the droplet position 
+
+                # Note: Currently amount_total_in has no influence on the droplet position
                 # as amount_total_in is isotropic with respect to azimuthal and polar angle.
                 # Hence, amount_total_in contributes only in droplet growth.
-                
+
                 area = droplet.surface_area
                 d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
                 droplet.position = field.grid.normalize_point(droplet.position + d)

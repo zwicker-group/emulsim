@@ -249,7 +249,7 @@ class DiffusionActor(ScalarPDEActor):
         ),
         Parameter(
             "boundary_conditions",
-            "natural",
+            "auto_periodic_neumann",
             object,
             "Defines the boundary conditions on the field."
             + get_text_block("ARG_BOUNDARIES"),
@@ -288,7 +288,7 @@ class DiffusionActor(ScalarPDEActor):
         """
         (element,) = elements  # extract single element
         dx = float(element.grid.discretization.min())  # type: ignore
-        return 0.1 * dx ** 2 / float(self.pde.diffusivity)
+        return 0.1 * dx**2 / float(self.pde.diffusivity)
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
@@ -315,7 +315,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
         ),
         Parameter(
             "boundary_conditions",
-            "natural",
+            "auto_periodic_neumann",
             object,
             "Defines the boundary conditions on the field."
             + get_text_block("ARG_BOUNDARIES"),
@@ -382,6 +382,6 @@ class ReactionDiffusionActor(ScalarPDEActor):
 
         # estimate the time step required for diffusion
         dx = element.grid.discretization.min()  # type: ignore
-        dt_diffusion = 0.1 * dx ** 2 / diffusivity
+        dt_diffusion = 0.1 * dx**2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore
