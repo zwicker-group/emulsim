@@ -4,12 +4,12 @@ Provides an actor coupling point-like droplets to a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
 
+from droplets.tools import spherical
 from pde.grids.base import DimensionError
-from pde.tools import spherical
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
@@ -68,29 +68,28 @@ class PointDropletActor(ActorBase):
         Parameter(
             "exchange_rate",
             1.0,
-            float,
+            object,
             "Rate with which droplet material is exchanged with the dilute phase when "
-            "the `flux_model` is `linear`.",
+            "the `flux_model` is `linear`. This can either be a number of an "
+            "expression, which can depend on the radius `R` of the droplet.",
         ),
     ]
 
     element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
-    def _parse_equilibrium_concentration(self) -> Callable:
-        """parse the expression for the equilibrium concentration
+    def _parse_expression(
+        self, expr: Union[Callable, str, float], signature: List[List[str]]
+    ) -> Callable:
+        """parse an expression for a parameter
 
         Returns:
-            callable: A function that can be evaluated to obtain the equilibrium
-            concentration at a certain position and radius of a droplet
+            callable: A function that can be evaluated to obtain the expression
         """
-        # parse the equilibrium concentration
-        expr = self.parameters["equilibrium_concentration"]
         if callable(expr):
             # assume that the expression supports the correct syntax
-            return expr  # type: ignore
+            return expr
         else:
             # parse the expression
-            signature = [["position", "pos", "x"], ["radius", "R"], ["i", "id"]]
             return ScalarExpression(str(expr), signature, allow_indexed=True)
 
     def _update_cache(self, elements: ActorElementType) -> None:
@@ -109,7 +108,13 @@ class PointDropletActor(ActorBase):
             )
 
         self._cache["dim"] = droplets.dim
-        self._cache["cEqOut"] = self._parse_equilibrium_concentration()
+        self._cache["cEqOut"] = self._parse_expression(
+            self.parameters["equilibrium_concentration"],
+            [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
+        )
+        self._cache["exchange_rate"] = self._parse_expression(
+            self.parameters["exchange_rate"], [["radius", "R"]]
+        )
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """estimate the maximal time step for simulating this actor
@@ -128,7 +133,7 @@ class PointDropletActor(ActorBase):
             # estimate time scale from diffusion across droplet
             D = float(self.parameters["diffusivity"])
             mean_radius = float(droplets.data["radius"].mean())
-            dt: float = 0.1 * mean_radius ** 2 / D
+            dt: float = 0.1 * mean_radius**2 / D
 
         elif self.parameters["flux_model"] == "linear":
             # estimate time scale from dissolution of droplet by flux
@@ -180,9 +185,9 @@ class PointDropletActor(ActorBase):
                     f"(current dimension is {self._cache['dim']})"
                 )
 
-        elif self.parameters["flux_model"] == "linear":
-            exchange_rate = float(self.parameters["exchange_rate"])
-            return exchange_rate * (cEqOut - c_back)
+        elif self.parameters["flux_model"] in {"linear", "expression"}:
+            calc_exchange_rate = self._cache["exchange_rate"]
+            return calc_exchange_rate(radius) * (cEqOut - c_back)  # type: ignore
 
         else:
             raise NotImplementedError(
@@ -213,12 +218,17 @@ class PointDropletActor(ActorBase):
                     f"(current dimension is {self._cache['dim']})"
                 )
 
-        elif self.parameters["flux_model"] == "linear":
-            exchange_rate = float(self.parameters["exchange_rate"])
+        elif self.parameters["flux_model"] in {"linear", "expression"}:
+            exchange_rate = self._cache["exchange_rate"]
+            if hasattr(exchange_rate, "get_compiled"):
+                calc_exchange_rate = exchange_rate.get_compiled()
+            else:
+                # try compiling in case exchange_rate is a function
+                calc_exchange_rate = jit(exchange_rate)
 
             def flux_outside(radius: float, c_back: float, cEqOut: float):
                 """linear exchange flux"""
-                return exchange_rate * (cEqOut - c_back)
+                return calc_exchange_rate(radius) * (cEqOut - c_back)
 
         else:
             raise NotImplementedError(
@@ -244,7 +254,10 @@ class PointDropletActor(ActorBase):
         try:
             calc_eqout = self._cache["cEqOut"]  # use cached version
         except KeyError:
-            calc_eqout = self._parse_equilibrium_concentration()
+            calc_eqout = self._parse_expression(
+                self.parameters["equilibrium_concentration"],
+                [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
+            )
 
         # calculate the equilibrium concentration for each droplet
         result = []

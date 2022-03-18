@@ -10,7 +10,7 @@ from scipy import spatial
 from droplets import Emulsion, SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
 from pde.grids.base import DimensionError
-from pde.tools.misc import skipUnlessModule
+from pde.tools.misc import module_available, skipUnlessModule
 
 from .... import ReactionDiffusionActor, Simulation, State
 from ....elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
@@ -228,6 +228,9 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_outside(dim, compiled):
     """simple test of SphericalDropletAgents with reactions"""
+    if compiled and dim == 2 and not module_available("numba_scipy"):
+        pytest.skip("Python module `numba_scipy` not installed")
+
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 

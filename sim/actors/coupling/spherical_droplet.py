@@ -24,11 +24,12 @@ import numba as nb
 import numpy as np
 import scipy.special as sc
 
-from droplets.tools.spherical import surface_from_radius
+from droplets.tools import spherical
 from pde import ScalarField
 from pde.grids.base import DimensionError
-from pde.tools import expressions, spherical
+from pde.tools import expressions
 from pde.tools.cache import cached_method
+from pde.tools.misc import module_available
 from pde.tools.numba import jit
 from pde.tools.parameters import DeprecatedParameter, Parameter
 
@@ -157,7 +158,7 @@ def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float
             * np.tan(0.5 * (s - a_b_dist))
         )
         totalexcess += 4 * np.arctan(np.sqrt(arg))
-    return totalexcess * radius ** 2
+    return totalexcess * radius**2
 
 
 class PointsOnSphere:
@@ -206,7 +207,7 @@ class PointsOnSphere:
                 num_points = 18
             indices = np.arange(0, num_points) + 0.5
             φ = np.arccos(1 - 2 * indices / num_points)
-            θ = π * (1 + 5 ** 0.5) * indices
+            θ = π * (1 + 5**0.5) * indices
 
             # convert to Cartesian coordinates
             points = np.c_[np.cos(θ) * np.sin(φ), np.sin(θ) * np.sin(φ), np.cos(φ)]
@@ -263,7 +264,7 @@ class PointsOnSphere:
                 for ix in voronoi.regions
             ]
             weights = np.array(weight_vals, dtype=np.double)
-            weights /= surface_from_radius(1, dim=self.dim)
+            weights /= spherical.surface_from_radius(1, dim=self.dim)
 
         else:
             raise NotImplementedError()
@@ -374,12 +375,10 @@ class ShellSectors:
         """
         if dim == 1:
             # special case where two sectors is the only useful choice
-            shell = spherical.PointsOnSphere.make_uniform(dim=1)
+            shell = PointsOnSphere.make_uniform(dim=1)
 
         else:  # higher dimensions
-            shell = spherical.PointsOnSphere.make_uniform(
-                dim=dim, num_points=sector_count
-            )
+            shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
             assert sector_count == len(shell.points)
 
         weights = shell.get_area_weights(balance_axes=True)
@@ -522,7 +521,7 @@ class ShellCollection:
         """
         if dim == 1:
             # special case since only one shell exists
-            shell = spherical.PointsOnSphere.make_uniform(dim=1)
+            shell = PointsOnSphere.make_uniform(dim=1)
             shell_data = {
                 "vectors": shell.points,
                 "weights": shell.get_area_weights(),
@@ -553,9 +552,7 @@ class ShellCollection:
             data = []
             while sector_count_approx <= max_sector_count:
                 sector_count = int(np.floor(sector_count_approx))
-                shell = spherical.PointsOnSphere.make_uniform(
-                    dim=dim, num_points=sector_count
-                )
+                shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
                 assert sector_count == len(shell.points)
 
                 # get maximal radius of a sphere such that the average area for
@@ -735,6 +732,9 @@ class SphericalDropletActor(ActorBase):
 
     element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
+    reaction_rate_tolerance: float = 1e-10
+    """float: tolerance determining when a simpler expression for reactions is used"""
+
     def _parse_expressions(self, out: Dict[str, Any] = None) -> Dict[str, Any]:
         """parse expressions that depend on droplet variables
 
@@ -843,11 +843,11 @@ class SphericalDropletActor(ActorBase):
         """estimate the maximal time step for simulating this actor
 
         The time step is based on the time scale of diffusion in the shell. In the
-        special case of large shells (for instance in mean-field coarsening simulations))
+        special case of large shells (for instance in mean-field coarsening simulations)
         the defining length scale is the mean droplet radius instead. This estimate is
         based on the growth rate of droplets, dR/dt ∝ D/R, where D is the diffusivity
         and R is the mean droplet radius. Therefore, ΔR/Δt ∝ D/R and ΔR/R = ε implies
-        Δt = ε*R*R/D, where we chose ε=0.1.
+        Δt = ε * R**2 / D, where we chose ε=0.1.
 
         Args:
             elements (tuple):
@@ -857,9 +857,9 @@ class SphericalDropletActor(ActorBase):
             float: the maximal time step
         """
         self._check_cache(elements)
-        droplets, _ = elements
+        droplets, field = elements
 
-        D = float(self.parameters["diffusivity"])
+        # determine minimal dt based on diffusion in shell
         shell_thickness = float(self._cache["shell_thickness"])
         if droplets.droplet_count > 0:
             mean_radius = float(droplets.data["radius"].mean())
@@ -867,7 +867,12 @@ class SphericalDropletActor(ActorBase):
         else:
             length_scale = shell_thickness
 
-        return 0.1 * length_scale ** 2 / D
+        # ensure that characteristic length scale is not too small
+        grid_size = max(bounds[1] - bounds[0] for bounds in field.grid.axes_bounds)
+        length_scale = max(length_scale, 1e-4 * grid_size)
+
+        # calculate time scale from length scale and diffusivity
+        return 0.1 * length_scale**2 / float(self.parameters["diffusivity"])
 
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
@@ -1034,7 +1039,7 @@ class SphericalDropletActor(ActorBase):
                 (radius: float, c_far: float, cEqOut: float, droplet_id: int)
                 corresponding to :meth:`SphericalDropletActor.get_flux_outside`
         """
-        TOLERANCE = 1e-10
+        tolerance = self.reaction_rate_tolerance
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
@@ -1043,7 +1048,7 @@ class SphericalDropletActor(ActorBase):
         try:
             no_reaction = sOut.constant and sOut.value == 0
         except AttributeError:
-            no_reaction = False  # cannot determine whether reaction is present
+            no_reaction = False  # reaction seems to be present
 
         if self._cache["dim"] == 1:
             if no_reaction:
@@ -1063,15 +1068,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate reaction rate at the center of the shell sector
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         final_expression = (2 * (cEqOut - c_far) * D) / L - A * L
 
@@ -1080,7 +1085,7 @@ class SphericalDropletActor(ActorBase):
                         A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
                             c_far - cEqOut
                         )
-                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        ξ = np.sqrt(D / k)  # Reaction-diffusion length-scale
                         term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
                         final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
 
@@ -1097,6 +1102,12 @@ class SphericalDropletActor(ActorBase):
 
             else:
 
+                if not module_available("numba_scipy"):
+                    self._logger.error(
+                        "Python package `numba_scipy` is not installed. This package "
+                        "is required to compile the Bessel function appearing in 2D."
+                    )
+
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
@@ -1104,15 +1115,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate reaction rate at the center of the shell sector
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         term = π * (
                             -4 * cEqOut * D + 4 * c_far * D + A * L * (L + 2 * R)
@@ -1154,15 +1165,15 @@ class SphericalDropletActor(ActorBase):
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
-                    if (abs(cEqOut - c_far) < TOLERANCE) or (
-                        abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
+                    if (abs(cEqOut - c_far) < tolerance) or (
+                        abs(sOut_cEqOut - sOut_c_far) < tolerance
                     ):
-                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                        # As k->0, we solve
-                        # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                        # A = (sOut_cEqOut + sOut_c_far) / 2
+                        # parameters are in a limiting case that we treat separately
 
-                        # Approximate the reaction rate at the center of the shell sector.
+                        # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far, so k is not
+                        # well defined. However, reactions are weak, so we solve
+                        # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                        # is the reaction rate at the center of the shell sector
                         A = (sOut_cEqOut + sOut_c_far) / 2
                         term = (
                             -6 * cEqOut * D * (L + R)
@@ -1586,13 +1597,12 @@ class SphericalDropletActor(ActorBase):
                 field.add_amount(pos, -amount_per_shell_out[i])
 
             # adjust the droplet position
-            
             if self.parameters["drift_enabled"] and droplet.radius > 0:
-                
-                # Note: Currently amount_total_in has no influence on the droplet position 
+
+                # Note: Currently amount_total_in has no influence on the droplet position
                 # as amount_total_in is isotropic with respect to azimuthal and polar angle.
                 # Hence, amount_total_in contributes only in droplet growth.
-                
+
                 area = droplet.surface_area
                 d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
                 droplet.position = field.grid.normalize_point(droplet.position + d)
