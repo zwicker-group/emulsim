@@ -1,8 +1,8 @@
-matplotlib>=3.1.0
-numpy<=1.20.0
-numba==0.53.0
-scipy==1.6.1
-sympy>=1.5.0
+matplotlib
+numpy
+numba
+scipy
+sympy
 py-pde>=0.16.0
 py-droplets>=0.9.0
 numba-scipy==0.3.0
