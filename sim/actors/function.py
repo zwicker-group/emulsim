@@ -15,6 +15,8 @@ from __future__ import annotations
 import inspect
 from typing import Callable
 
+from numba import TypingError
+
 from pde.tools.numba import jit
 
 from ..elements.base import ElementBase
@@ -122,7 +124,16 @@ class NumbaFunctionActor(ActorBase):
                 (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `state_data`
         """
-        return jit(self.func)  # type: ignore
+        # run a quick test to see whether the function supports the correct arguments
+        elements_data = tuple(el.copy().data for el in elements)
+        self.func(elements_data, 10.0, 1e-3)  # test call with arbitrary t and dt
+
+        # actually compile the function since it seemed to have passed the test
+        try:
+            return jit(self.func)  # type: ignore
+        except (RuntimeError, TypingError):
+            self._logger.warning("Could not compile user-supplied function")
+            raise NotImplementedError
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
         """evolve the state from time `t` to `t + dt`
