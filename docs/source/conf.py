@@ -251,12 +251,12 @@ intersphinx_mapping = {
     "http://docs.h5py.org/en/latest/": None,
     "https://py-pde.readthedocs.io/en/latest": None,
     "https://py-droplets.readthedocs.io/en/latest": None,
-    "https://napari.org/docs/dev/": None,
+    "https://napari.org/": None,
 }
 
 
 def setup(app):
-    """ entry point for this extension """
+    """entry point for this extension"""
     from pde.tools.parameters import sphinx_display_parameters
 
     app.connect("autodoc-process-docstring", sphinx_display_parameters)
