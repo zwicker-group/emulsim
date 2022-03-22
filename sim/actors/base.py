@@ -4,6 +4,8 @@ Supplies the base class for actors
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
@@ -55,7 +57,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """dict: information about the actor"""
         return {"class": self.__class__.__name__, "parameters": self.parameters}
 
-    def copy(self) -> "ActorBase":
+    def copy(self) -> ActorBase:
         """returns a copy the actor"""
         return self.__class__(self.parameters.copy())
 

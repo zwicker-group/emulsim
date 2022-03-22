@@ -6,6 +6,8 @@ state of elements in time.
    :nosignatures:
 
    ~base.ActorBase
+   ~function.FunctionActor
+   ~function.NumbaFunctionActor
    ~autonomous.brownian_motion.BrownianMotionActor
    ~autonomous.coalescence.CoalescenceDropletActor
    ~autonomous.fields.MeanfieldActor
@@ -22,3 +24,4 @@ state of elements in time.
 from .autonomous import *
 from .base import ActorBase
 from .coupling import *
+from .function import FunctionActor
