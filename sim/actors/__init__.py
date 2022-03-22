@@ -24,4 +24,4 @@ state of elements in time.
 from .autonomous import *
 from .base import ActorBase
 from .coupling import *
-from .function import FunctionActor
+from .function import FunctionActor, NumbaFunctionActor
