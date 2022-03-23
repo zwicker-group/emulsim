@@ -623,10 +623,15 @@ class FieldCollectionElement(ElementBase):
     def plot(self, ax=None, **kwargs):
         """plot the field
 
-        Note that only the first field is plotted for now. This simply calls
-        :meth:`~pde.fields.base.DataFieldBase.plot` and all arguments are forwarded.
+        Note that only the first field is plotted if the dimension is different from 1.
+        The method simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
+        arguments are forwarded.
         """
-        return self._field[0].plot(ax=ax, **kwargs)
+        if self.dim == 1:
+            for field in self._field:
+                field.plot(ax=ax, **kwargs)
+        else:
+            self._field[0].plot(ax=ax, **kwargs)
 
     @property
     def total_amount(self) -> float:
