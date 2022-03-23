@@ -21,6 +21,7 @@ from .brownian_motion import BrownianMotionActor
 from .coalescence import CoalescenceDropletActor
 from .emitters import EmittersActor
 from .fields import (
+    CollectionPDEActor,
     DiffusionActor,
     MeanfieldActor,
     ReactionDiffusionActor,

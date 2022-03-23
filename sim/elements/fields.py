@@ -11,6 +11,8 @@ Provides elements that represent extended, discretized fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Any, Callable, Dict, Sequence, Tuple
 
@@ -18,7 +20,7 @@ import numba as nb
 import numpy as np
 from numba.extending import register_jitable
 
-from pde.fields import ScalarField
+from pde.fields import FieldCollection, ScalarField
 from pde.grids import CartesianGrid
 from pde.grids.cartesian import CartesianGridBase, GridBase
 from pde.tools.cuboid import Cuboid
@@ -424,8 +426,7 @@ class ScalarFieldElement(FieldElementBase):
 
         if not isinstance(self.grid, CartesianGridBase):
             raise NotImplementedError(
-                "The simulations are only been "
-                "implemented for Cartesian grids and not "
+                "The simulations are only been implemented for Cartesian grids and not "
                 f"for {self.grid.__class__.__name__}"
             )
 
@@ -434,7 +435,7 @@ class ScalarFieldElement(FieldElementBase):
         self.set_bounds(self.grid.axes_bounds)
 
     @classmethod
-    def from_field(cls, field: ScalarField) -> "ScalarFieldElement":
+    def from_field(cls, field: ScalarField) -> ScalarFieldElement:
         """create a scalar field element from a scalar field
 
         Args:
@@ -444,6 +445,7 @@ class ScalarFieldElement(FieldElementBase):
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
         """
+        assert isinstance(field, ScalarField)
         return cls(field.data, {"grid": field.grid, "label": field.label})
 
     @property
@@ -459,7 +461,7 @@ class ScalarFieldElement(FieldElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return int(np.product(self.grid.shape))
+        return self.data.size
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -521,3 +523,112 @@ class ScalarFieldElement(FieldElementBase):
             to the field state given by `data` at point `point`.
         """
         return self._field.grid.make_inserter_compiled()
+
+
+class FieldCollectionElement(ElementBase):
+    """the state associated with a spatially resolved field"""
+
+    parameters_default = [
+        Parameter(
+            "grid",
+            None,
+            description="The grid on which the field is discretized. The grid also "
+            "determines the space dimension and its extension.",
+            extra={
+                "serializer": lambda grid: grid.state_serialized,
+                "unserializer": GridBase.from_state,
+            },
+        ),
+        Parameter("label", "", str, "The name of the field collection"),
+    ]
+
+    def __init__(
+        self,
+        data: np.ndarray,
+        parameters: Dict[str, Any] = None,
+    ):
+        """
+        Args:
+            num_fields (int):
+                The number of fields in the collection
+            data (:class:`~numpy.ndarray`):
+                Field values at the support points of the grid
+            parameters (dict):
+                Additional parameters determining how the element behaves. Most
+                importantly, the entry 'grid' determines the discretization grid
+                on which this field is defined.
+        """
+        super().__init__(None, parameters)
+
+        if not isinstance(self.grid, CartesianGridBase):
+            raise NotImplementedError(
+                "The simulations are only been implemented for Cartesian grids and not "
+                f"for {self.grid.__class__.__name__}"
+            )
+
+        data = np.asarray(data)
+        if data.size == 1:
+            fields = [ScalarField(self.grid, data)]
+        else:
+            fields = [ScalarField(self.grid, field_data) for field_data in data]
+        self._field = FieldCollection(fields, label=self.parameters["label"])
+
+        self._data = self._field.data
+
+        self._cuboid = Cuboid.from_bounds(
+            np.array(self.grid.axes_bounds, np.double), mutable=False
+        )
+        self.dim: int = self._cuboid.dim
+        self.bounds = self._cuboid.bounds
+        self.volume = float(self._cuboid.volume)
+
+    @property
+    def num_fields(self) -> int:
+        """int: the number of fields described by this collection"""
+        return len(self._field)
+
+    @classmethod
+    def from_field(cls, field: FieldCollection) -> FieldCollectionElement:
+        """create a scalar field element from a scalar field
+
+        Args:
+            field (:class:`~pde.fields.collection.FieldCollection`):
+                The field collection that initializes the element
+
+        Returns:
+            :class:`FieldCollectionElement`: The initialized instance
+        """
+        for f in field:
+            assert isinstance(f, ScalarField)
+        return cls(
+            data=field.data,
+            parameters={"grid": field.grid, "label": field.label},
+        )
+
+    @property
+    def grid(self) -> CartesianGrid:
+        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        return self.parameters["grid"]  # type: ignore
+
+    @property
+    def field(self) -> FieldCollection:
+        """:class:`~pde.fields.scalar.ScalarField`: the scalar field"""
+        return self._field
+
+    @property
+    def degrees_of_freedom(self) -> int:
+        """int: the number of degrees of freedom for this element"""
+        return self.data.size
+
+    def plot(self, ax=None, **kwargs):
+        """plot the field
+
+        Note that only the first field is plotted for now. This simply calls
+        :meth:`~pde.fields.base.DataFieldBase.plot` and all arguments are forwarded.
+        """
+        return self._field[0].plot(ax=ax, **kwargs)
+
+    @property
+    def total_amount(self) -> float:
+        """float: the total material amount in the field"""
+        return np.sum(self._field.integrals).real  # type: ignore
