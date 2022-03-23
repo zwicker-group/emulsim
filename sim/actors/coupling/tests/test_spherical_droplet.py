@@ -296,7 +296,7 @@ def test_linearized_fluxes(dim):
         SphericalDroplet(
             position=grid.get_random_point(), radius=np.random.uniform(4, 6)
         )
-        for _ in range(100)
+        for _ in range(10)
     ]
     droplets = SphericalDropletsElement.from_droplets(droplet_data)
     state = State({"background": background, "droplets": droplets})
@@ -313,7 +313,7 @@ def test_linearized_fluxes(dim):
     simulation.add_actor(("droplets", "background"), droplet_actor)
 
     # Run simulation
-    result = simulation.run(t_range=1e3)
+    result = simulation.run(t_range=1000)
 
     # Check if droplet radii within the second decimal place
     final_droplet_radii = result["droplets"].data["radius"]
