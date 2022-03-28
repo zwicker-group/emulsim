@@ -7,6 +7,7 @@ Provides elements that represent extended, discretized fields
    ~MeanfieldElement
    ~ReservoirElement
    ~ScalarFieldElement
+   ~FieldCollectionElement
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -526,13 +527,13 @@ class ScalarFieldElement(FieldElementBase):
 
 
 class FieldCollectionElement(ElementBase):
-    """the state associated with a spatially resolved field"""
+    """the state associated with multiple spatially resolved fields"""
 
     parameters_default = [
         Parameter(
             "grid",
             None,
-            description="The grid on which the field is discretized. The grid also "
+            description="The grid on which the fields are discretized. The grid also "
             "determines the space dimension and its extension.",
             extra={
                 "serializer": lambda grid: grid.state_serialized,
