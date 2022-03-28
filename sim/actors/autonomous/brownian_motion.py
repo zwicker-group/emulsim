@@ -35,7 +35,7 @@ class BrownianMotionActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The element that is effected by the Brownian motion
+                The element that is affected by the Brownian motion
 
         Returns:
             float: the maximal time step
@@ -68,7 +68,7 @@ class BrownianMotionActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The field element that is effected by the Brownian motion
+                The field element that is affected by the Brownian motion
 
         Returns:
             callable: A function with signature
@@ -109,7 +109,7 @@ class BrownianMotionActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The element that is effected by the Brownian motion
+                The element that is affected by the Brownian motion
             t (float):
                 The current time point
             dt (float):

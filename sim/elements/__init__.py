@@ -7,6 +7,7 @@ Provides classes representing elements of a simulation
    ~fields.MeanfieldElement
    ~fields.ReservoirElement
    ~fields.ScalarFieldElement
+   ~fields.FieldCollectionElement
    ~points.PointsElement
    ~points.ArrowsElement
    ~spherical_droplets.SphericalDropletsElement
@@ -16,6 +17,7 @@ Provides classes representing elements of a simulation
 
 from .base import ElementBase
 from .fields import (
+    FieldCollectionElement,
     FieldElementBase,
     MeanfieldElement,
     ReservoirElement,

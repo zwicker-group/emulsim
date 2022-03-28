@@ -280,11 +280,13 @@ def test_material_conservation(backend):
 
 
 @skipUnlessModule("phasesep")
-@pytest.mark.parametrize("backend", ["numpy", "numba"])
-@pytest.mark.parametrize("dim", [3])  # 1, 2, 3])
-def test_linearized_fluxes(dim, backend):
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_linearized_fluxes(dim):
     """a simple test for implementation of linearized fluxes for Active Emulsions under
     mean-field conditions"""
+    if dim == 2 and not module_available("numba_scipy"):
+        pytest.skip("Module `numba_scipy` not available")
+
     # make meanfield grid
     grid = CartesianGrid([(0, 1000)] * dim, 1, periodic=True)
     background = ScalarFieldElement.from_field(ScalarField(grid, 0.005))
@@ -294,7 +296,7 @@ def test_linearized_fluxes(dim, backend):
         SphericalDroplet(
             position=grid.get_random_point(), radius=np.random.uniform(4, 6)
         )
-        for _ in range(100)
+        for _ in range(10)
     ]
     droplets = SphericalDropletsElement.from_droplets(droplet_data)
     state = State({"background": background, "droplets": droplets})
@@ -306,12 +308,12 @@ def test_linearized_fluxes(dim, backend):
         "background", ReactionDiffusionActor({"reaction_flux": reaction_flux})
     )
     droplet_actor = spherical_droplet.SphericalDropletActor(
-        {"mean_reaction_inside": -0.01, "reaction_outside": reaction_flux}
+        {"reaction_outside": reaction_flux}
     )
     simulation.add_actor(("droplets", "background"), droplet_actor)
 
     # Run simulation
-    result = simulation.run(t_range=int(1e3), backend=backend)
+    result = simulation.run(t_range=1000)
 
     # Check if droplet radii within the second decimal place
     final_droplet_radii = result["droplets"].data["radius"]

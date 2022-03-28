@@ -8,13 +8,13 @@ Provides actors that influence scalar fields
    ~ScalarPDEActor
    ~DiffusionActor
    ~ReactionDiffusionActor
+   ~CollectionPDEActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
 
 import inspect
-from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
 
 import numba as nb
@@ -26,7 +26,7 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ...elements import MeanfieldElement, ScalarFieldElement
+from ...elements import FieldCollectionElement, MeanfieldElement, ScalarFieldElement
 from ..base import ActorBase, ElementsType
 
 
@@ -119,55 +119,10 @@ class MeanfieldActor(ActorBase):
         element.data[...] += dt * self._reaction(element.data, t)
 
 
-class ScalarFieldActorBase(ActorBase, metaclass=ABCMeta):
-    """base class for actors affecting discretized scalar fields"""
+class ScalarPDEActor(ActorBase):
+    """actor evolving a field according to a PDE"""
 
     element_classes = (ScalarFieldElement,)
-
-    def estimate_dt(self, elements: ElementsType) -> float:
-        """get the optimal time step for the simulation of the actor
-
-        Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
-                The element affected by the actor
-
-        Returns:
-            float: the time step
-        """
-        raise NotImplementedError
-
-    def make_evolver_numba(  # type: ignore
-        self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
-        """return a function evolving the field from time `t` to `t + dt`
-
-        Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
-                The element affected by the actor
-
-        Returns:
-            callable: A function with signature (field_data, t: float,
-                dt: float), which evolves the field_data.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def evolve(self, elements: ElementsType, t: float, dt: float):
-        """evolve the field from time `t` to `t + dt`
-
-        Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
-                The element affected by the actor
-            t (float):
-                The current time point
-            dt (float):
-                The time step used to evolve the element
-        """
-        pass
-
-
-class ScalarPDEActor(ScalarFieldActorBase):
-    """actor evolving a field according to a PDE"""
 
     def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
         """initialize the actor and its PDE
@@ -265,16 +220,15 @@ class DiffusionActor(ScalarPDEActor):
         """
         from pde import DiffusionPDE
 
-        # skip calling the parent init since it expects the pde, but we first
-        # need to parse the parameters. We thus simply call the grand-parent
-        # init method directly
-        ScalarFieldActorBase.__init__(self, parameters=parameters)
+        # parse parameters
+        parameters = self._parse_parameters(parameters, include_deprecated=True)
 
         # initialize diffusion equation
-        self.pde = DiffusionPDE(
-            diffusivity=self.parameters["diffusivity"],
-            bc=self.parameters["boundary_conditions"],
+        eq = DiffusionPDE(
+            diffusivity=parameters["diffusivity"],
+            bc=parameters["boundary_conditions"],
         )
+        super().__init__(eq, parameters)
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """get the optimal time step for the simulation of the actor
@@ -331,18 +285,16 @@ class ReactionDiffusionActor(ScalarPDEActor):
         """
         from phasesep.pdes import ReactionDiffusionPDE
 
-        # skip calling the parent init since it expects the pde, but we first
-        # need to parse the parameters. We thus simply call the grand-parent
-        # init method directly
-        ScalarFieldActorBase.__init__(self, parameters=parameters)
+        # parse parameters
+        parameters = self._parse_parameters(parameters, include_deprecated=True)
 
         # initialize reaction-diffusion equation
         pde_params = {
-            "diffusivity": self.parameters["diffusivity"],
-            "reaction_flux": self.parameters["reaction_flux"],
-            "bc": self.parameters["boundary_conditions"],
+            "diffusivity": parameters["diffusivity"],
+            "reaction_flux": parameters["reaction_flux"],
+            "bc": parameters["boundary_conditions"],
         }
-        self.pde = ReactionDiffusionPDE(pde_params)
+        super().__init__(ReactionDiffusionPDE(pde_params), parameters)
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """get the optimal time step for the simulation of the actor
@@ -385,3 +337,74 @@ class ReactionDiffusionActor(ScalarPDEActor):
         dt_diffusion = 0.1 * dx**2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore
+
+
+class CollectionPDEActor(ActorBase):
+    """actor evolving a field collection according to a PDE"""
+
+    element_classes = (FieldCollectionElement,)
+
+    def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
+        """initialize the actor and its PDE
+
+        Args:
+            pde (:class:`~pde.pdes.base.PDEBase`):
+                The partial differential equation describing the dynamics of the
+                scalar field.
+            parameters (dict):
+                Parameters affecting the actor. Call
+                :meth:`~ScalarPDEActor.show_parameters` for details.
+        """
+        super().__init__(parameters=parameters)
+
+        if inspect.isclass(pde):
+            self._logger.warning("Got class `%s` instead of an instance", pde)
+            self.pde = pde()
+        else:
+            self.pde = pde
+
+    @property
+    def info(self) -> Dict[str, Any]:
+        """dict: information about the actor"""
+        result = super().info
+        result["pde"] = {"class": self.pde.__class__.__name__}
+        return result
+
+    def make_evolver_numba(  # type: ignore
+        self, elements: ElementsType
+    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+        """return a function evolving the field from time `t` to `t + dt`
+
+        Args:
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
+
+        Returns:
+            callable: A function with signature (field_data, t: float,
+                dt: float), which evolves the field_data.
+        """
+        (element,) = elements  # extract single element
+        pde_rhs = self.pde._make_pde_rhs_numba(element._field)  # type: ignore
+
+        @jit
+        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+            """evolve the PDE explicitly"""
+            (field_data,) = fields_data
+            field_data += dt * pde_rhs(field_data, t)
+
+        return evolver  # type: ignore
+
+    def evolve(self, elements: ElementsType, t: float, dt: float):
+        """evolve the field from time `t` to `t + dt`
+
+        Args:
+            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
+            t (float):
+                The current time point
+            dt (float):
+                The time step used to evolve the element
+        """
+        (element,) = elements  # extract single element
+        rate = self.pde.evolution_rate(element._field, t)  # type: ignore
+        element._field += dt * rate  # type: ignore
