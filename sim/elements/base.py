@@ -7,7 +7,6 @@ Module defining the abstract base class of elements
 import copy
 import json
 import logging
-import warnings
 from abc import ABCMeta
 from typing import Any, Callable, Dict, Optional, Type, Union  # @UnusedImport
 
@@ -207,55 +206,6 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                 value[key] = unserializer(value[key])
 
         return value
-
-    @property
-    def attributes_serialized(self) -> Dict[str, str]:
-        """dict: serialized version of the attributes"""
-        # deprecated since 2021-02-26
-        warnings.warn(
-            "property `attributes_serialized` is deprecated", DeprecationWarning
-        )
-
-        # serialize all remaining attributes
-        return {
-            name: self.serialize_attribute(name, value)
-            for name, value in self.attributes.items()
-        }
-
-    @classmethod
-    def unserialize_attributes(cls, attributes: Dict[str, str]) -> Dict[str, Any]:
-        """unserializes the given attributes
-
-        Args:
-            attributes (dict):
-                The serialized attributes
-
-        Returns:
-            dict: The unserialized attributes
-        """
-        # deprecated since 2021-02-26
-        warnings.warn(
-            "method `unserialize_attributes` is deprecated", DeprecationWarning
-        )
-
-        # unserialize all attributes
-        attributes = {key: json.loads(value) for key, value in attributes.items()}
-
-        # unserialize the individual parameters
-        default_parameters = cls.get_parameters(
-            include_hidden=True, include_deprecated=True, sort=False
-        )
-
-        parameters = attributes["parameters"]
-        for key in parameters:
-            unserializer = json.loads
-            if key in default_parameters:
-                def_param_extra = default_parameters[key].extra
-                if "unserializer" in def_param_extra:
-                    unserializer = def_param_extra["unserializer"]
-            parameters[key] = unserializer(parameters[key])  # type: ignore
-
-        return attributes
 
     def to_file(self, filename: str, **kwargs):
         r"""store element state in a file

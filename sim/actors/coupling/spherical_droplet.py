@@ -31,7 +31,7 @@ from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
 from pde.tools.numba import jit
-from pde.tools.parameters import DeprecatedParameter, Parameter
+from pde.tools.parameters import Parameter
 
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
@@ -675,7 +675,6 @@ class SphericalDropletActor(ActorBase):
             "outside the droplet, or the droplets identity `id` (the index in the list "
             "of droplets).",
         ),
-        DeprecatedParameter("reaction_inside", "0", str, "Use `mean_reaction_inside`"),
         Parameter(
             "mean_reaction_inside",
             "automatic",
@@ -789,18 +788,6 @@ class SphericalDropletActor(ActorBase):
             )
 
         self._cache["dim"] = droplets.dim
-
-        # check whether the parameter `reaction_inside` was given. This parameter was
-        # deprecated 2021-11-12
-        reaction_inside = self.parameters["reaction_inside"]
-        if reaction_inside != "0":
-            warnings.warn(
-                "Parameter `reaction_inside` is deprecated. Use `mean_reaction_inside`",
-                DeprecationWarning,
-            )
-            if self.parameters["mean_reaction_inside"] == "automatic":
-                # only overwrite if mean_reaction_inside was not given
-                self.parameters["mean_reaction_inside"] = reaction_inside
 
         # parse the equilibrium concentration and the reaction rates outside
         self._cache["cEqOut"] = self._parse_expression("equilibrium_concentration")

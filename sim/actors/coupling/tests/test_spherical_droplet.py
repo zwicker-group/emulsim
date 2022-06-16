@@ -266,7 +266,7 @@ def test_material_conservation(backend):
         [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": 3}
     )
     state = State({"droplets": droplets, "field": field})
-    total_amount = state.get_quantity("total_amount")
+    total_amount = state.get_total_quantity("total_amount")
 
     coupling = spherical_droplet.SphericalDropletActor(
         {"equilibrium_concentration": "1"}
@@ -276,7 +276,7 @@ def test_material_conservation(backend):
     sim.add_actor(("droplets", "field"), coupling)
     res = sim.run(t_range=10, backend=backend)
 
-    assert res.get_quantity("total_amount") == pytest.approx(total_amount)
+    assert res.get_total_quantity("total_amount") == pytest.approx(total_amount)
 
 
 @skipUnlessModule("phasesep")
