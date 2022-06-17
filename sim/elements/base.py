@@ -4,11 +4,13 @@ Module defining the abstract base class of elements
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import copy
 import json
 import logging
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Optional, Type, Union  # @UnusedImport
+from typing import Any, Dict, Optional, Sequence, Union, TYPE_CHECKING
 
 import numpy as np
 
@@ -18,13 +20,17 @@ from pde.tools.parameters import Parameterized
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 
+if TYPE_CHECKING:
+    from ..actors.base import ActorBase
+
 
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """represents a simulation element"""
 
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
-    _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
+    _subclasses: Dict[str, ElementBase] = {}  # type: ignore
+    _compatible_actors: Sequence[ActorBase] = []
 
     _data: np.ndarray
 
@@ -62,7 +68,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         cls._subclasses[cls.__name__] = cls
 
     @classmethod
-    def from_state(cls, attributes: Dict[str, Any], data=None) -> "ElementBase":
+    def from_state(cls, attributes: Dict[str, Any], data=None) -> ElementBase:
         """create the element state from attributes and data
 
         Args:
@@ -81,7 +87,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return cls(data, attributes.get("parameters", None))
 
     @classmethod
-    def _from_hdf_dataset(cls, dataset) -> "ElementBase":
+    def _from_hdf_dataset(cls, dataset) -> ElementBase:
         """construct the element by reading data from an hdf5 dataset
 
         Args:
@@ -117,7 +123,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return field_cls.from_state(attributes, data=dataset)
 
     @classmethod
-    def from_file(cls, path: str) -> "ElementBase":
+    def from_file(cls, path: str) -> ElementBase:
         """create element instance from a stored state
 
         Args:
