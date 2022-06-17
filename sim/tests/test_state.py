@@ -46,12 +46,12 @@ def test_state(dim):
     assert list(s.items()) == list(s)
 
     # test get_quantities
-    quantities = s.get_quantity("total_amount", total=False)
+    quantities = s.get_quantities("total_amount")
     quantity_els = [name for name, element in s if hasattr(element, "total_amount")]
     assert set(quantities.keys()) == set(quantity_els)
-    assert s.get_quantity("total_amount", total=True) > 0
-    assert len(s.get_quantity("nonsense", total=False)) == 0
-    assert s.get_quantity("nonsense", total=True) == 0
+    assert s.get_total_quantity("total_amount") > 0
+    assert len(s.get_quantities("nonsense")) == 0
+    assert s.get_total_quantity("nonsense") == 0
 
     if dim == 2:
         s.plot()

@@ -14,7 +14,7 @@ from ..base import ActorBase, ElementsType
 
 
 class CoalescenceDropletActor(ActorBase):
-    """represents actor that moves droplets according to Brownian motion"""
+    """represents actor that merges overlapping droplets"""
 
     element_classes = (SphericalDropletsElement,)
 
@@ -25,7 +25,7 @@ class CoalescenceDropletActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The field element that is effected by the Brownian motion
+                The field element that contains the droplet information
 
         Returns:
             callable: A function with signature
@@ -73,7 +73,7 @@ class CoalescenceDropletActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
-                The field element that is effected by the Brownian motion
+                The field element that contains the droplet information
             t (float):
                 The current time point
             dt (float):

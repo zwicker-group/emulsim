@@ -31,7 +31,7 @@ from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
 from pde.tools.numba import jit
-from pde.tools.parameters import DeprecatedParameter, Parameter
+from pde.tools.parameters import Parameter
 
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
@@ -675,16 +675,17 @@ class SphericalDropletActor(ActorBase):
             "outside the droplet, or the droplets identity `id` (the index in the list "
             "of droplets).",
         ),
-        DeprecatedParameter("reaction_inside", "0", str, "Use `mean_reaction_inside`"),
         Parameter(
             "mean_reaction_inside",
-            "0",
+            "automatic",
             str,
             "Mean reaction rate inside the droplet, which determines the production of "
             "droplet material per unit volume. This can be an expression that depends "
             "on the droplet radius `R`, its location `position`, or its identity `id` "
             "(the index in the list of droplets). Use negative values to destroy "
-            "droplet material inside the droplet.",
+            "droplet material inside the droplet. The special value `automatic` will "
+            "determine this rate by using the parameter `reaction_outside` evaluated "
+            "at `droplet_concentration` specified by the droplets.",
         ),
         Parameter(
             "drift_enabled", True, bool, "Flag determining whether droplets can move"
@@ -735,7 +736,7 @@ class SphericalDropletActor(ActorBase):
     reaction_rate_tolerance: float = 1e-10
     """float: tolerance determining when a simpler expression for reactions is used"""
 
-    def _parse_expressions(self, out: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _parse_expression(self, parameter_key: str) -> Callable:
         """parse expressions that depend on droplet variables
 
         Args:
@@ -746,42 +747,30 @@ class SphericalDropletActor(ActorBase):
             A dictionary with the expressions. This is `out` if it was supplied.
             Otherwise, a new dictionary is returned.
         """
-        if out is None:
-            out = {}
-
-        # define which parameters need to be parsed
-        PARAMETER_TRANSLATE_LIST = [
-            {
-                "from": "equilibrium_concentration",
-                "to": "cEqOut",
-                "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
-            },
-            {
-                "from": "mean_reaction_inside",
-                "to": "sBaseIn",
-                "signature": [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
-            },
-            {
-                "from": "reaction_outside",
-                "to": "sOut",
-                "signature": [["concentration", "phi", "c"], ["i", "id"]],
-            },
-        ]
-
-        # parse the equilibrium concentration and the reaction rates
-        for translate in PARAMETER_TRANSLATE_LIST:
-
-            expr = self.parameters[translate["from"]]  # type: ignore
-            if callable(expr):
-                # assume that the expression supports the correct syntax
-                out[translate["to"]] = expr  # type: ignore
-            else:
-                # parse the expression
-                out[translate["to"]] = expressions.ScalarExpression(  # type: ignore
-                    str(expr), translate["signature"], allow_indexed=True  # type: ignore
-                )
-
-        return out
+        # define common signatures
+        SIGNATURE = {
+            "equilibrium_concentration": [
+                ["position", "pos", "x"],
+                ["radius", "R"],
+                ["i", "id"],
+            ],
+            "mean_reaction_inside": [
+                ["position", "pos", "x"],
+                ["radius", "R"],
+                ["i", "id"],
+            ],
+            "reaction_outside": [["concentration", "phi", "c"], ["i", "id"]],
+        }
+        # obtain the parameter and parse further
+        expr = self.parameters[parameter_key]
+        if callable(expr):
+            # assume that the expression supports the correct syntax
+            return expr  # type: ignore
+        else:
+            # parse the expression
+            return expressions.ScalarExpression(
+                str(expr), SIGNATURE.get(parameter_key), allow_indexed=True
+            )
 
     def _update_cache(self, elements: ActorElementType) -> None:
         """prepare the simulation doing pre-calculations
@@ -800,20 +789,17 @@ class SphericalDropletActor(ActorBase):
 
         self._cache["dim"] = droplets.dim
 
-        # check whether the parameter `reaction_inside` was given. This parameter was
-        # deprecated 2021-11-12
-        reaction_inside = self.parameters["reaction_inside"]
-        if reaction_inside != "0":
-            warnings.warn(
-                "Parameter `reaction_inside` is deprecated. Use `mean_reaction_inside`",
-                DeprecationWarning,
-            )
-            if self.parameters["mean_reaction_inside"] == "0":
-                # only overwrite if mean_reaction_inside was not given
-                self.parameters["mean_reaction_inside"] = reaction_inside
+        # parse the equilibrium concentration and the reaction rates outside
+        self._cache["cEqOut"] = self._parse_expression("equilibrium_concentration")
+        self._cache["sOut"] = self._parse_expression("reaction_outside")
 
-        # parse the equilibrium concentration and the reaction rates
-        self._parse_expressions(self._cache)
+        # determine the reaction rate inside droplets
+        if self.parameters["mean_reaction_inside"] == "automatic":
+            self._logger.info("Determine reaction rate inside droplets automatically")
+            cEqIn = droplets.parameters["droplet_concentration"]
+            sBaseIn = self._cache["sOut"](cEqIn, 0)
+            self.parameters["mean_reaction_inside"] = str(sBaseIn)
+        self._cache["sBaseIn"] = self._parse_expression("mean_reaction_inside")
 
         # parse the parameters using initialization values from the background
         discretization = field.grid.typical_discretization
@@ -1216,7 +1202,8 @@ class SphericalDropletActor(ActorBase):
         try:
             calc_eqout = self._cache["cEqOut"]  # use cached version
         except KeyError:
-            calc_eqout = self._parse_expressions()["cEqOut"]
+            calc_eqout = self._parse_expression("equilibrium_concentration")
+            self._cache["cEqOut"] = calc_eqout  # cache for next use
 
         # calculate the equilibrium concentration for each droplet
         result = []

@@ -139,24 +139,27 @@ class Simulation:
             # check whether all elements have the expected type
             for element_name, element_class in zip(elements, actor.element_classes):
                 element = self.state.elements[element_name]
+
+                # check whether the actor declares the element as matching
+                mismatch_cls = None
                 if hasattr(element_class, "__iter__"):
                     # actor supports multiple classes for this element
                     if not any(isinstance(element, cls) for cls in element_class):  # type: ignore
-                        show_msg(
-                            f"Element '{element_name}' is a "
-                            f"`{element.__class__.__name__}`, but actor type "
-                            f"`{actor.__class__.__name__}` expects any of "
-                            f"`{', '.join(cls.__name__ for cls in element_class)}`"  # type: ignore
-                        )
-
+                        mismatch_cls = ", ".join(cls.__name__ for cls in element_class)  # type: ignore
                 else:
                     # actor supports a single class for this element
                     if not isinstance(element, element_class):
+                        mismatch_cls = element_class.__name__  # type: ignore
+
+                if mismatch_cls is not None:
+                    # the actor did not accept the element
+
+                    # check whether the element declares the actor as compatible
+                    if actor.__class__ not in element._compatible_actors:
                         show_msg(
-                            f"Element '{element_name}' is a "  # type: ignore
+                            f"Element '{element_name}' is a "
                             f"`{element.__class__.__name__}`, but actor type "
-                            f"`{actor.__class__.__name__}` expects "
-                            f"`{element_class.__name__}`"
+                            f"`{actor.__class__.__name__}` expects `{mismatch_cls}`."
                         )
 
             # check whether the same actor has already been added earlier
@@ -304,7 +307,7 @@ class Simulation:
         for elements, actor in self.actors:
 
             # create the evolver for this actor
-            evolver = actor.make_evolver_numba(state[elements])
+            actor_evolver = actor.make_evolver_numba(state[elements])
             element_indices = tuple(state.get_index(name) for name in elements)
             get_element_states = make_get_element_states(element_indices)
 
@@ -318,7 +321,7 @@ class Simulation:
                     """evolve the states affected by this actor and record runtime"""
                     with nb.objmode(time_start="f8"):
                         time_start = time.perf_counter()
-                    evolver(get_element_states(state_data), t, dt)
+                    actor_evolver(get_element_states(state_data), t, dt)
                     with nb.objmode(runtime="f8"):
                         runtime = time.perf_counter() - time_start
                     return runtime
@@ -331,14 +334,14 @@ class Simulation:
                 ):
                     """evolve the states affected by this actor"""
                     states = get_element_states(state_data)
-                    evolver(states, t, dt)
+                    actor_evolver(states, t, dt)
 
             # store data for this actor
             evolvers.append(evolve_state)
 
         def chain(actor_id: int, inner: Callable = None) -> Callable:
             """recursive helper function for running all actors"""
-            evolver = evolvers[actor_id]  # consider this particular evolver
+            actor_evolver = evolvers[actor_id]  # consider this particular evolver
 
             if self.profile:
 
@@ -351,7 +354,7 @@ class Simulation:
                 ) -> None:
                     if inner is not None:
                         inner(state_data, t, dt, timings)
-                    timings[actor_id] += evolver(state_data, t, dt)
+                    timings[actor_id] += actor_evolver(state_data, t, dt)
 
             else:
 
@@ -361,7 +364,7 @@ class Simulation:
                 ) -> None:
                     if inner is not None:
                         inner(state_data, t, dt)
-                    evolver(state_data, t, dt)
+                    actor_evolver(state_data, t, dt)
 
             if actor_id < len(evolvers) - 1:
                 # there are more items in the chain
@@ -370,15 +373,13 @@ class Simulation:
                 # this is the outermost function
                 return wrap  # type: ignore
 
-        # compile the recursive chain
-        evolver_chain = chain(0)
-
-        # add code recording the profiling timings
         if self.profile:
+            # add code recording the profiling timings
 
             self._logger.info("Construct the main evolver with timing information")
             self.timings = np.zeros(len(self.actors))  # initialize timing information
             get_timings_arr = make_array_constructor(self.timings)
+            evolver_chain = chain(0)  # compile the recursive chain
 
             @jit
             def evolver(state_data: Tuple[np.ndarray, ...], t: float, dt: float):
@@ -387,13 +388,15 @@ class Simulation:
                 evolver_chain(state_data, t, dt, timings)
 
             # prevent garbage collection of array
-            evolver._timings = self.timings  # type: ignore
+            evolver._timings = self.timings
 
         else:
+            # construct the normal evolver using recursion
             self._logger.info("Construct the main evolver")
+            evolver_chain = chain(0)  # compile the recursive chain
             evolver = jit(evolver_chain)
 
-        return evolver
+        return evolver  # type: ignore
 
     def evolve(self, state: State, t: float, dt: float) -> None:
         """evolve the state from time `t` to `t + dt`

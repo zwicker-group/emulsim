@@ -4,6 +4,7 @@ Provides actors that affect multiple elements in a simulation.
 .. autosummary::
    :nosignatures:
 
+   ~fields.FieldCouplingActor
    ~point_droplet.PointDropletActor
    ~spherical_droplet.SphericalDropletActor
 

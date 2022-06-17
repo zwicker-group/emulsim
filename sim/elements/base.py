@@ -4,12 +4,13 @@ Module defining the abstract base class of elements
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import copy
 import json
 import logging
-import warnings
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Optional, Type, Union  # @UnusedImport
+from typing import Any, Dict, Optional, Sequence, Union, TYPE_CHECKING
 
 import numpy as np
 
@@ -19,13 +20,17 @@ from pde.tools.parameters import Parameterized
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
 
+if TYPE_CHECKING:
+    from ..actors.base import ActorBase
+
 
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """represents a simulation element"""
 
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
-    _subclasses: Dict[str, "ElementBase"] = {}  # type: ignore
+    _subclasses: Dict[str, ElementBase] = {}  # type: ignore
+    _compatible_actors: Sequence[ActorBase] = []
 
     _data: np.ndarray
 
@@ -63,7 +68,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         cls._subclasses[cls.__name__] = cls
 
     @classmethod
-    def from_state(cls, attributes: Dict[str, Any], data=None) -> "ElementBase":
+    def from_state(cls, attributes: Dict[str, Any], data=None) -> ElementBase:
         """create the element state from attributes and data
 
         Args:
@@ -82,7 +87,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return cls(data, attributes.get("parameters", None))
 
     @classmethod
-    def _from_hdf_dataset(cls, dataset) -> "ElementBase":
+    def _from_hdf_dataset(cls, dataset) -> ElementBase:
         """construct the element by reading data from an hdf5 dataset
 
         Args:
@@ -118,7 +123,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return field_cls.from_state(attributes, data=dataset)
 
     @classmethod
-    def from_file(cls, path: str) -> "ElementBase":
+    def from_file(cls, path: str) -> ElementBase:
         """create element instance from a stored state
 
         Args:
@@ -207,55 +212,6 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
                 value[key] = unserializer(value[key])
 
         return value
-
-    @property
-    def attributes_serialized(self) -> Dict[str, str]:
-        """dict: serialized version of the attributes"""
-        # deprecated since 2021-02-26
-        warnings.warn(
-            "property `attributes_serialized` is deprecated", DeprecationWarning
-        )
-
-        # serialize all remaining attributes
-        return {
-            name: self.serialize_attribute(name, value)
-            for name, value in self.attributes.items()
-        }
-
-    @classmethod
-    def unserialize_attributes(cls, attributes: Dict[str, str]) -> Dict[str, Any]:
-        """unserializes the given attributes
-
-        Args:
-            attributes (dict):
-                The serialized attributes
-
-        Returns:
-            dict: The unserialized attributes
-        """
-        # deprecated since 2021-02-26
-        warnings.warn(
-            "method `unserialize_attributes` is deprecated", DeprecationWarning
-        )
-
-        # unserialize all attributes
-        attributes = {key: json.loads(value) for key, value in attributes.items()}
-
-        # unserialize the individual parameters
-        default_parameters = cls.get_parameters(
-            include_hidden=True, include_deprecated=True, sort=False
-        )
-
-        parameters = attributes["parameters"]
-        for key in parameters:
-            unserializer = json.loads
-            if key in default_parameters:
-                def_param_extra = default_parameters[key].extra
-                if "unserializer" in def_param_extra:
-                    unserializer = def_param_extra["unserializer"]
-            parameters[key] = unserializer(parameters[key])  # type: ignore
-
-        return attributes
 
     def to_file(self, filename: str, **kwargs):
         r"""store element state in a file
