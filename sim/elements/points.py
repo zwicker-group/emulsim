@@ -20,7 +20,7 @@ class PointsElement(ElementBase):
 
     parameters_default = [
         Parameter(
-            "representative_radius",
+            "plot_radius",
             1,
             float,
             "Radius used for representing the point when plotting",
@@ -97,7 +97,7 @@ class PointsElement(ElementBase):
             raise RuntimeError(f"Cannot plot points with dimension {self.dim}")
 
         # create the patches
-        radius = self.parameters["representative_radius"]
+        radius = self.parameters["plot_radius"]
         patches = [mpl.patches.Circle(pos, radius) for pos in positions]
 
         # add all patches as a collection
@@ -138,7 +138,7 @@ class ArrowsElement(PointsElement):
     #
     # parameters_default = [
     #     Parameter(
-    #         "representative_radius",
+    #         "plot_radius",
     #         1,
     #         float,
     #         "Radius used for representing the point when plotting",
@@ -271,7 +271,7 @@ class ArrowsElement(PointsElement):
     #         raise RuntimeError(f"Cannot plot points with dimension {self.dim}")
     #
     #     # create the patches
-    #     radius = self.parameters["representative_radius"]
+    #     radius = self.parameters["plot_radius"]
     #     patches = [mpl.patches.Circle(pos, radius) for pos in positions]
     #
     #     # add all patches as a collection

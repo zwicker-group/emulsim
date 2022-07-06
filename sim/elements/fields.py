@@ -25,6 +25,7 @@ from pde.fields import FieldCollection, ScalarField
 from pde.grids import CartesianGrid
 from pde.grids.cartesian import CartesianGridBase, GridBase
 from pde.tools.cuboid import Cuboid
+from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
@@ -638,3 +639,243 @@ class FieldCollectionElement(ElementBase):
     def total_amount(self) -> float:
         """float: the total material amount in the field"""
         return np.sum(self._field.integrals).real  # type: ignore
+
+
+class ScalarBoundaryFieldElement(ScalarFieldElement):
+    """the state associated with a spatially resolved boundary"""
+
+    parameters_default = [
+        Parameter(
+            "grid",
+            None,
+            description="The grid on which the field is discretized. The grid also "
+            "determines the space dimension and its extension.",
+            extra={
+                "serializer": lambda grid: grid.state_serialized,
+                "unserializer": GridBase.from_state,
+            },
+        ),
+        Parameter(
+            "axis", -1, int, description="Axis along which the boundary is placed"
+        ),
+        Parameter(
+            "axis_position",
+            np.nan,
+            float,
+            description="Position of the boundary along the axis. If omitted, the "
+            "boundary might not support some operations.",
+        ),
+        Parameter(
+            "thickness",
+            1,
+            float,
+            description="Thickness of the boundary, which affects calculations of "
+            "total amounts and potentially boundary conditions",
+        ),
+        Parameter(
+            "plot_thickness",
+            1,
+            float,
+            description="Thickness used when plotting the boundary",
+        ),
+        Parameter("label", "", str, "The name of the field"),
+    ]
+
+    def __init__(self, data: NumberOrArray = 0, parameters: Dict[str, Any] = None):
+        """
+        Args:
+            data (:class:`~numpy.ndarray` or float, optional):
+                Field values at the support points of the grid
+            parameters (dict):
+                Additional parameters determining how the element behaves. Most
+                importantly, the entry 'grid' determines the discretization grid
+                on which this field is defined.
+        """
+        # set temporary data first and overwrite it later
+        super().__init__(None, parameters)
+
+        axis = self.parameters["axis"]
+        if not 0 <= axis <= self.grid.dim:
+            raise ValueError(f"`axis={axis}` is out of bounds")
+
+        if not isinstance(self.grid, CartesianGridBase):
+            raise NotImplementedError(
+                "The simulations are only been implemented for Cartesian grids and not "
+                f"for {self.grid.__class__.__name__}"
+            )
+
+        self._field = ScalarField(self.grid, data, label=self.parameters["label"])
+        self._data = self._field.data
+        self.set_bounds(self.grid.axes_bounds)
+
+        # correct some values to make them bulk quantities
+        self.dim = self.grid.dim + 1
+        self.volume = self._cuboid.volume * self.parameters["thickness"]
+
+    @property
+    def axis(self) -> int:
+        """int: the axis of the full domain that this boundary is associated with"""
+        return self.parameters["axis"]
+
+    @classmethod
+    def from_field(cls, field: ScalarField) -> ScalarBoundaryFieldElement:
+        """create a scalar boundary element from a scalar field
+
+        Args:
+            field (:class:`~pde.fields.scalar.ScalarField`):
+                The scalar field that initializes the element
+
+        Returns:
+            :class:`ScalarFieldElement`: The initialized instance
+        """
+        raise NotImplementedError  # overwrite inherited method
+
+    @classmethod
+    def from_domain(
+        cls,
+        domain: ScalarField,
+        axis: int,
+        upper: bool = None,
+        data: NumberOrArray = 0,
+        parameters: Dict[str, Any] = None,
+    ) -> ScalarBoundaryFieldElement:
+        """create a scalar boundary element using a full domain
+
+        Args:
+            domain (:class:`ScalarField`):
+                The full domain
+            axis (int):
+                The axis along which the boundary is initialized
+            upper (bool):
+                Specified whether the upper or lower boundary along the given axis is
+                specified by this field.
+            data (:class:`~numpy.ndarray` or float, optional):
+                Field values at the support points of the grid
+            parameters (dict):
+                Additional parameters determining how the element behaves.
+        """
+        if parameters is None:
+            parameters = {}
+        for key in ["grid", "axis", "axis_position"]:
+            if key in parameters:
+                raise ValueError(f"`{key}` parameter not accepted by `from_domain`")
+
+        indices = tuple(i for i in range(domain.dim) if i != axis)
+        parameters["grid"] = domain.grid.get_subgrid(indices)
+        parameters["axis"] = axis
+        if upper is None:
+            parameters["axis_position"] = np.nan
+        elif upper is True:
+            parameters["axis_position"] = domain.grid.axes_bounds[axis][1]
+        elif upper is False:
+            parameters["axis_position"] = domain.grid.axes_bounds[axis][0]
+        else:
+            raise TypeError
+        return cls(data, parameters)
+
+    @plot_on_axes()
+    def plot(self, ax=None, colorbar: bool = False, **kwargs):
+        """plot the boundary field element
+
+        Args:
+            {PLOT_ARGS}
+            colorbar (bool):
+                Flag determining whether a colorbar is shown.
+            **kwargs:
+                All remaining parameters are forwarded to
+                :class:`matplotlib.axes.Axes.pcolormesh`
+        """
+        if self.dim == 2:
+            # plot boundary of 2d domain as a line
+            axis_position = self.parameters["axis_position"]
+            plot_thickness = self.parameters["plot_thickness"]
+            if np.isnan(axis_position):
+                self._logger.debug("Cannot plot since `axis_position` not specified")
+                return  # silently fail
+
+            # determine coordinates
+            x = self.grid.axes_coords[0]
+            dx2 = self.grid.discretization[0] / 2
+            xs_half = np.r_[x[0] - dx2, x + dx2]
+            xs = np.c_[xs_half, xs_half]
+
+            ys = np.c_[
+                np.full_like(xs_half, axis_position - plot_thickness / 2),
+                np.full_like(xs_half, axis_position + plot_thickness / 2),
+            ]
+
+            if self.axis == 0:
+                xs, ys = ys.T, xs.T
+                data = self._field.data.reshape(1, -1)
+            elif self.axis == 1:
+                data = self._field.data.reshape(-1, 1)
+            else:
+                raise RuntimeError("`axis` value out of bounds")
+
+            # show concentration along the line
+            colormesh = ax.pcolormesh(xs, ys, data, shading="flat", **kwargs)
+            if colorbar:
+                from pde.tools.plotting import add_scaled_colorbar
+
+                add_scaled_colorbar(colormesh, ax=ax)
+
+        else:
+            raise NotImplementedError(f"Plotting dim={self.dim} not implemented")
+
+    def get_concentration(self, points: np.ndarray):
+        """determine concentration at the given points
+
+        Args:
+            points (:class:`~numpy.ndarray`):
+                The coordinates of the single point or the list of points at
+                which the concentration is returned
+        """
+        return self._field.interpolate(points)
+
+    def add_amount(self, point: np.ndarray, amount: float):
+        """add the given amount to the field
+
+        Args:
+            point (:class:`~numpy.ndarray`):
+                Point where the amount is added to the field
+            amount (float):
+                The total amount added to the field
+        """
+        self._field.insert(point, amount / self.parameters["thickness"])
+
+    def make_get_concentration_compiled(self) -> Callable:
+        """get a compiled function for obtaining concentrations
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentration
+            at point `point` given the field state `data`.
+        """
+        interpolate = self._field.make_interpolator(backend="numba")
+
+        @register_jitable
+        def get_concentration(data: np.ndarray, point: np.ndarray):
+            """helper function swapping the argument order"""
+            return interpolate(point, data)
+
+        return get_concentration  # type: ignore
+
+    def make_add_amount_compiled(self) -> Callable:
+        """get a compiled function for adding amount to the field
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
+            to the field state given by `data` at point `point`.
+        """
+        inserter = self._field.grid.make_inserter_compiled()
+        thickness = self.parameters["thickness"]
+
+        @jit
+        def insert(data: np.ndarray, point: np.ndarray, amount: NumberOrArray) -> None:
+            inserter(data, point, amount / thickness)
+
+        return insert
+
+    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+        raise NotImplementedError

@@ -172,8 +172,13 @@ class Simulation:
 
         self.actors.append((elements, actor))
 
-    def get_graph(self):
+    def get_graph(self, with_data: bool = True):
         """return a graph representation of the simulation
+
+        Args:
+            with_data (bool):
+                Flag determining whether the element and actor objects are added to the
+                vertices.
 
         Returns:
             :class:`networkx.DiGraph`: A graph where all elements and actors are
@@ -184,11 +189,17 @@ class Simulation:
         graph = DiGraph()
 
         for name, element in self.state:
-            graph.add_node(f"element_{name}", obj=element, label=name)
+            if with_data:
+                graph.add_node(f"element_{name}", obj=element, label=name)
+            else:
+                graph.add_node(f"element_{name}", label=name)
 
         for actor_id, (element_names, actor) in enumerate(self.actors, 1):
             actor_name = f"actor_{actor_id}"
-            graph.add_node(actor_name, obj=actor, label=actor.__class__.__name__)
+            if with_data:
+                graph.add_node(actor_name, obj=actor, label=actor.__class__.__name__)
+            else:
+                graph.add_node(actor_name, label=actor.__class__.__name__)
             for element_name in element_names:
                 graph.add_edge(actor_name, f"element_{element_name}")
 
@@ -214,8 +225,7 @@ class Simulation:
 
         # draw all nodes
         node_color = [
-            "tab:orange" if name.startswith("element") else "tab:blue"
-            for name in graph.nodes
+            "C1" if name.startswith("element") else "C0" for name in graph.nodes
         ]
         kwargs.setdefault("node_size", 1000)
         kwargs.setdefault("node_color", node_color)
@@ -225,32 +235,46 @@ class Simulation:
         labels = {k: v["label"] for k, v in graph.nodes(data=True)}
         nx.draw_networkx_labels(graph, pos, labels)
 
-    def get_interacting_elements(self):
+    def get_interacting_elements(self, with_data: bool = True):
         """return a graph representation the interacting elements of a simulation
 
+        Args:
+            with_data (bool):
+                Flag determining whether the element and actor objects are added to the
+                vertices and edges, respectively.
+
         Returns:
-            :class:`networkx.DiGraph`: A graph where all elements are represented as nodes
-            and their interactions are represented as edges.
+            :class:`networkx.DiGraph`: A graph where all elements are represented as
+            nodes and their interactions are represented as edges.
         """
         from networkx import Graph
 
         graph = Graph()
 
         for name, element in self.state:
-            graph.add_node(name, element=element)
+            if with_data:
+                graph.add_node(name, element=element)
+            else:
+                graph.add_node(name)
 
-        for names, actor in self.actors:
-            for i in range(len(names)):
-                for j in range(i + 1, len(names)):
-                    graph.add_edge(names[i], names[j], actor=actor)
+        for elements, actor in self.actors:
+            label = actor.__class__.__name__
+            for i in range(len(elements)):
+                for j in range(i + 1, len(elements)):
+                    if with_data:
+                        graph.add_edge(
+                            elements[i], elements[j], actor=actor, label=label
+                        )
+                    else:
+                        graph.add_edge(elements[i], elements[j], label=label)
 
         return graph
 
-    def plot_interacting_elements(self, **kwargs) -> None:
+    def plot_interacting_elements(self, label_edges: bool = True, **kwargs) -> None:
         """plot all interacting elements as a graph"""
         import networkx as nx
 
-        graph = self.get_interacting_elements()
+        graph = self.get_interacting_elements(with_data=False)
 
         # determine the layout of the graph
         try:
@@ -262,6 +286,12 @@ class Simulation:
         kwargs.setdefault("with_labels", True)
         kwargs.setdefault("node_color", "tab:orange")
         nx.draw(graph, pos, **kwargs)
+
+        if label_edges:
+            edge_labels = {(n1, n2): d["label"] for n1, n2, d in graph.edges(data=True)}
+            nx.draw_networkx_edge_labels(
+                graph, pos, edge_labels=edge_labels, label_pos=0.5
+            )
 
     def estimate_dt(self, state: State = None) -> float:
         """get the optimal time step for the simulation

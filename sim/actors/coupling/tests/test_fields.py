@@ -8,8 +8,14 @@ import pytest
 
 from pde import ScalarField, UnitGrid
 
-from ....elements import MeanfieldElement, ScalarFieldElement
-from ..fields import FieldCouplingActor
+from .... import Simulation, State
+from ....elements import (
+    MeanfieldElement,
+    ScalarBoundaryFieldElement,
+    ScalarFieldElement,
+)
+from ...autonomous import DiffusionActor
+from ..fields import FieldBoundaryCouplingActor, FieldCouplingActor
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
@@ -62,3 +68,29 @@ def test_fields_2(dim):
     evolver((e1.data, e2.data), 0, 1)
     assert np.allclose(e1.data, element1.data + element2.data)
     assert np.allclose(e2.data, element2.data)
+
+
+def test_fields_boundary_coupling():
+    """simple test of the boundary coupling"""
+
+    # set up state
+    grid = UnitGrid([4, 4], periodic=True)
+    bulk = ScalarFieldElement.from_field(ScalarField(grid, 0.001))
+    data = np.random.randn(4)
+    bndry = ScalarBoundaryFieldElement.from_domain(bulk, axis=1, upper=True, data=data)
+    state = State({"bulk": bulk, "bndry": bndry})
+    total_amount = state.get_total_quantity("total_amount")
+
+    # set up simulation
+    simulation = Simulation(state)
+    simulation.add_actor("bulk", DiffusionActor())
+    boundary_coupling = FieldBoundaryCouplingActor({"exchange_flux": "bulk - boundary"})
+    simulation.add_actor(("bulk", "bndry"), boundary_coupling)
+
+    res1 = simulation.run(t_range=1, backend="numpy", tracker=None)
+    res2 = simulation.run(t_range=1, backend="numba", tracker=None)
+
+    np.testing.assert_allclose(res1["bulk"].data, res2["bulk"].data)
+    np.testing.assert_allclose(res1["bndry"].data, res2["bndry"].data)
+    assert pytest.approx(total_amount) == res1.get_total_quantity("total_amount")
+    assert pytest.approx(total_amount) == res2.get_total_quantity("total_amount")

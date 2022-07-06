@@ -8,32 +8,31 @@ from droplets import SphericalDroplet
 from pde import DiffusionPDE, ScalarField, UnitGrid
 from pde.tools.misc import module_available
 
-from .. import *
+import sim
 
 
 def test_simulation():
     """test some methods of the Simulation class"""
-
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
-    background = ScalarFieldElement.from_field(ScalarField(grid, 0.1))
+    background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
     droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
-    droplets = SphericalDropletsElement.from_droplets(droplet_data)
-    state = State({"background": background, "droplets": droplets})
+    droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
+    state = sim.State({"background": background, "droplets": droplets})
 
     # setup simulation
-    simulation = Simulation(state, actors=[("background", DiffusionActor())])
-    simulation.add_actor(("droplets", "background"), SphericalDropletActor())
+    simulation = sim.Simulation(state, actors=[("background", sim.DiffusionActor())])
+    simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
     with pytest.raises(ValueError):
-        simulation.add_actor("nonsense", DiffusionActor())
+        simulation.add_actor("nonsense", sim.DiffusionActor())
     with pytest.raises(ValueError):
-        simulation.add_actor(("background", "background"), DiffusionActor())
+        simulation.add_actor(("background", "background"), sim.DiffusionActor())
     with pytest.raises(RuntimeError):
-        simulation.add_actor(("droplets",), DiffusionActor(), check="raise")
+        simulation.add_actor(("droplets",), sim.DiffusionActor(), check="raise")
     with pytest.raises(RuntimeError):
         simulation.add_actor(
-            ("droplets", "background"), SphericalDropletActor(), check="raise"
+            ("droplets", "background"), sim.SphericalDropletActor(), check="raise"
         )
 
     assert isinstance(str(simulation), str)
@@ -53,13 +52,13 @@ def test_simulation_timing():
     """test some methods of the Simulation class"""
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
-    element = ScalarFieldElement.from_field(field)
-    state = State({"field": element})
+    element = sim.ScalarFieldElement.from_field(field)
+    state = sim.State({"field": element})
 
     # set up simulation
-    simulation = Simulation(state, profile=True)
+    simulation = sim.Simulation(state, profile=True)
     eq = DiffusionPDE(diffusivity=0.1)
-    simulation.add_actor("field", ScalarPDEActor(eq))
+    simulation.add_actor("field", sim.ScalarPDEActor(eq))
 
     # run simulation using the numpy backend
     simulation.run(t_range=1, backend="numpy")
