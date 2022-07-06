@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Multiple coupled PDEs
+=====================
+
+Demonstrates how multiple PDEs can be coupled.
+"""
+
 
 from pde import PDE, FieldCollection, ScalarField, UnitGrid
 

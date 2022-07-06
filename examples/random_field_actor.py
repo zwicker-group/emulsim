@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Random field actor
+==================
+
+Demonstrates a custom actor class that sets a field to random values 
+"""
 
 import numba as nb
 import numpy as np

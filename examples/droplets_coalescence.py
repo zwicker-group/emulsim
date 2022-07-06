@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Brownian droplet coarsening 
+===========================
+
+Simple examples of droplets subjected to Brownian motion and coalescence.
+"""
 
 import numpy as np
 
@@ -18,3 +24,5 @@ simulation.add_actor("droplets", sim.CoalescenceDropletActor())
 
 # run simulation
 result = simulation.run(t_range=1e3, dt=1, tracker=pde.PlotTracker(10, show=True))
+
+result.plot()

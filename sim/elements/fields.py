@@ -14,6 +14,7 @@ Provides elements that represent extended, discretized fields
 
 from __future__ import annotations
 
+import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Any, Callable, Dict, Sequence, Tuple
 
@@ -660,7 +661,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         ),
         Parameter(
             "axis_position",
-            np.nan,
+            math.nan,
             float,
             description="Position of the boundary along the axis. If omitted, the "
             "boundary might not support some operations.",

@@ -17,8 +17,10 @@ import os.path
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
-sys.path.insert(0, os.path.abspath("../../submodules/py-pde"))
 sys.path.insert(0, os.path.abspath("../../submodules/py-droplets"))
+sys.path.insert(0, os.path.abspath("../../submodules/py-pde"))
+sys.path.insert(0, os.path.abspath("../../submodules/py-pde/docs/sphinx_ext"))
+sys.path.insert(0, os.path.abspath("../../submodules/py-phasesep"))
 sys.path.insert(0, ".")
 
 from datetime import date
@@ -66,6 +68,9 @@ extensions = [
     #     'sphinx_autodoc_annotation',
     "sphinx_simplify_typehints",
     "sphinx.ext.inheritance_diagram",
+    "sphinx_gallery.gen_gallery",
+    # our own extensions
+    "toctree_filter",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -267,6 +272,27 @@ def setup(app):
         "parallel_write_safe": True,
     }
 
+
+# -- Options for sphinx-gallery extension ---------------------------------------
+
+# filter toctree, inspired by https://stackoverflow.com/a/46600038/932593
+if tags.has("exclude_gallery"):
+    # exclude gallery from toc when creating a latex document
+    print("Example gallery will be excluded...")
+    toc_filter_exclude = ["gallery"]
+else:
+    print("Example gallery will be included...")
+    toc_filter_exclude = []
+
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples",
+    "gallery_dirs": "examples_gallery",
+    "filename_pattern": "/",
+    "ignore_pattern": r".*movie.*|.*interactive.*",
+    "capture_repr": (),
+    "show_signature": False,
+}
 
 # run autodoc
 from run_autodoc import main

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Simple droplet dynamics
+=======================
+
+Minimal examples of passive droplets interacting in a common background.
+"""
 
 from droplets import SphericalDroplet
 from pde import ScalarField, UnitGrid

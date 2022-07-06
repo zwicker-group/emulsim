@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
 """
-.. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
+Bulk-boundary coupling 
+======================
+
+Demonstrates coupling of bulk and boundary fields.
 """
 
 import numpy as np
