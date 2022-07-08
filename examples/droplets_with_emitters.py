@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Droplets with emitters
+======================
+
+Demonstrates how the dynamics of droplets can be affected by randomly positioned points
+in the background fluid that emit extra material.
+"""
 
 from droplets import SphericalDroplet
 from pde import UnitGrid

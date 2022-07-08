@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Simple PDE
+==========
+
+Demonstrates a minimal example involving the diffusion equation
+"""
 
 from pde import DiffusionPDE, ScalarField, UnitGrid
 
@@ -15,6 +21,6 @@ eq = DiffusionPDE(diffusivity=0.1)
 simulation.add_actor("field", sim.ScalarPDEActor(eq))
 
 # run simulation
-result = simulation.run(t_range=10)
+result = simulation.run(t_range=10, dt=0.1)
 
 result.plot()

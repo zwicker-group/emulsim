@@ -4,6 +4,7 @@ Provides an actor coupling point-like droplets to a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import math
 from typing import Callable, List, Tuple, Union
 
 import numpy as np
@@ -140,7 +141,7 @@ class PointDropletActor(ActorBase):
             exchange_rate = float(self.parameters["exchange_rate"])
             ceqs = self.get_equilibrium_concentrations(droplets)
             if len(ceqs) == 0:
-                dt = np.nan  # cannot determine time step
+                dt = math.nan  # cannot determine time step
             else:
                 c0 = field.average_concentration
                 flux = exchange_rate * abs(ceqs.mean() - c0)
@@ -148,7 +149,7 @@ class PointDropletActor(ActorBase):
                     mean_amount = droplets.total_amount / droplets.droplet_count
                     dt = float(1e-3 * mean_amount / flux)
                 else:
-                    dt = np.nan  # cannot determine time step
+                    dt = math.nan  # cannot determine time step
 
         else:
             raise NotImplementedError(

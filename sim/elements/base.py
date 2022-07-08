@@ -10,7 +10,7 @@ import copy
 import json
 import logging
 from abc import ABCMeta
-from typing import Any, Dict, Optional, Sequence, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 
 import numpy as np
 

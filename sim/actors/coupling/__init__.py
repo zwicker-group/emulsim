@@ -5,12 +5,13 @@ Provides actors that affect multiple elements in a simulation.
    :nosignatures:
 
    ~fields.FieldCouplingActor
+   ~fields.FieldBoundaryCouplingActor
    ~point_droplet.PointDropletActor
    ~spherical_droplet.SphericalDropletActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .fields import FieldCouplingActor
+from .fields import FieldBoundaryCouplingActor, FieldCouplingActor
 from .point_droplet import PointDropletActor
 from .spherical_droplet import SphericalDropletActor

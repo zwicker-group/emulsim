@@ -5,4 +5,4 @@ export PYTHONPATH=submodules/py-pde:submodules/py-droplets:submodules/py-phasese
 
 echo 'Determine coverage of all unittests...'
 
-./run_tests.py --unit --coverage --no_numba --parallel
+./run_tests.py --unit --coverage --nojit --parallel

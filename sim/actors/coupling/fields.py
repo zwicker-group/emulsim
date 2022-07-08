@@ -4,15 +4,17 @@ Provides an actor coupling two or more fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import functools
 from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
 
+from pde.grids import CartesianGrid
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
-from ...elements import FieldElementBase
+from ...elements import FieldElementBase, ScalarBoundaryFieldElement, ScalarFieldElement
 from ..base import ActorBase, ElementsType
 
 
@@ -147,3 +149,138 @@ class FieldCouplingActor(ActorBase):
 
         for field_id, rhs in self._cache["rhs_expressions"].items():
             fields[field_id].data[...] += dt * rhs(*field_data, t)
+
+
+class FieldBoundaryCouplingActor(ActorBase):
+    """actor that couples a field with its boundary by local interactions"""
+
+    parameters_default = [
+        Parameter(
+            "exchange_flux",
+            "0",
+            str,
+            "The expressions determining the flux from the bulk to the boundary. The "
+            "expression may depend on the concentration in the bulk (`bulk`), the "
+            "concentration in the boundary (`boundary`), and explicit time (`t`).",
+        ),
+    ]
+
+    element_classes = (ScalarFieldElement, ScalarBoundaryFieldElement)
+
+    def _update_cache(self, fields: ElementsType) -> None:
+        """prepare the simulation doing pre-calculations
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+        """
+        bulk, boundary = fields
+        assert isinstance(bulk.grid, CartesianGrid)
+
+        assert bulk.dim == boundary.dim
+        axis = boundary.parameters["axis"]
+        axis_position = boundary.parameters["axis_position"]
+
+        # check whether the boundary is at the upper part of the boundary
+        if np.isclose(bulk.grid.axes_bounds[axis][0], axis_position):
+            upper = False
+        elif np.isclose(bulk.grid.axes_bounds[axis][1], axis_position):
+            upper = True
+        else:
+            raise ValueError(f"Position ({axis_position}) is not close to boundary")
+
+        # determine the cell volumes of both fields
+        def get_cell_volume(grid: CartesianGrid) -> float:
+            cell_volume = functools.reduce(np.outer, grid.cell_volume_data)
+            assert cell_volume.size == 1
+            return float(np.squeeze(cell_volume))
+
+        self._cache["bulk_volume"] = get_cell_volume(bulk.grid)
+        self._cache["boundary_area"] = get_cell_volume(boundary.grid)
+
+        # determine the indices to access the bulk concentration close to boundary
+        indicies = []
+        for i in range(bulk.dim):
+            if i != axis:
+                indicies.append(...)
+            elif upper:
+                indicies.append(-1)
+            else:
+                indicies.append(0)
+        self._cache["bulk_boundary_indices"] = tuple(indicies)
+
+        # prepare exchange flux
+        expression = self.parameters["exchange_flux"]
+        signature = ["bulk", "boundary", "t"]
+        self._cache["exchange_flux"] = ScalarExpression(expression, signature)
+
+    def make_evolver_numba(
+        self, fields: ElementsType
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+        """return a function evolve the state from time `t` to `t + dt`
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+
+        Returns:
+            callable: A function with signature
+                (droplets_data: :class:`~numpy.ndarray`, field_data, t: float,
+                dt: float), evolving `droplets_data` and `field_data`
+        """
+        self._check_cache(fields)
+
+        _, boundary = fields
+        bulk_boundary_indices = self._cache["bulk_boundary_indices"]
+        exchange_flux = self._cache["exchange_flux"].get_compiled()
+        thickness = boundary.parameters["thickness"]
+        volume_factor = self._cache["boundary_area"] / self._cache["bulk_volume"]
+
+        @jit
+        def evolver(
+            elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+        ) -> None:
+            """evolve the flux between bulk and boundary"""
+            bulk_data, boundary_data = elements_data
+
+            # determine flux between boundary and
+            c_bulk = bulk_data[bulk_boundary_indices]
+            c_boundary = boundary_data
+            flux = exchange_flux(c_bulk, c_boundary, t)
+
+            # change boundary data
+            boundary_data += dt * flux * volume_factor
+            bulk_data[bulk_boundary_indices] -= dt * flux / thickness
+
+        # compile the recursive chain
+        return evolver
+
+    def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
+        """evolve the state from time `t` to `t + dt`
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+            t (float):
+                The current time point
+            dt (float):
+                The time step
+        """
+        self._check_cache(fields)
+        bulk, boundary = fields
+
+        # determine flux between boundary and
+        bulk_boundary_indices = self._cache["bulk_boundary_indices"]
+        c_bulk = bulk.data[bulk_boundary_indices]
+        c_boundary = boundary.data
+        flux = self._cache["exchange_flux"](c_bulk, c_boundary, t)
+
+        # change boundary data
+        thickness = boundary.parameters["thickness"]
+        volume_factor = self._cache["boundary_area"] / self._cache["bulk_volume"]
+        boundary.data[...] += dt * flux * volume_factor
+        bulk.data[bulk_boundary_indices] -= dt * flux / thickness
+
+
+class DomainStitchingActor(ActorBase):
+    """actor that couples two domains at a common boundary"""

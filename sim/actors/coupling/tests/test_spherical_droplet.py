@@ -346,8 +346,8 @@ def test_coarsening(dim):
     coupling.evolve((droplets, field), 0, 0.1)
     assert field.total_amount + droplets.total_amount == total_amount
 
-    assert droplets.data[0].radius < 0.1
-    assert droplets.data[1].radius > 0.2
+    assert droplets.data[0]["radius"] < 0.1
+    assert droplets.data[1]["radius"] > 0.2
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])

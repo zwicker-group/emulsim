@@ -20,7 +20,7 @@ class PointsElement(ElementBase):
 
     parameters_default = [
         Parameter(
-            "representative_radius",
+            "plot_radius",
             1,
             float,
             "Radius used for representing the point when plotting",
@@ -97,7 +97,7 @@ class PointsElement(ElementBase):
             raise RuntimeError(f"Cannot plot points with dimension {self.dim}")
 
         # create the patches
-        radius = self.parameters["representative_radius"]
+        radius = self.parameters["plot_radius"]
         patches = [mpl.patches.Circle(pos, radius) for pos in positions]
 
         # add all patches as a collection
@@ -135,16 +135,6 @@ class PointsElement(ElementBase):
 class ArrowsElement(PointsElement):
     """an element that represents a collection of points with direction"""
 
-    #
-    # parameters_default = [
-    #     Parameter(
-    #         "representative_radius",
-    #         1,
-    #         float,
-    #         "Radius used for representing the point when plotting",
-    #     )
-    # ]
-
     def __init__(self, data: np.recarray, parameters: Dict[str, Any] = None):
         """
         Args:
@@ -159,14 +149,6 @@ class ArrowsElement(PointsElement):
         """
         # initialize parameters
         super().__init__(data, parameters)
-        #
-        # if not isinstance(self.data, np.recarray) or self.data.ndim != 1:
-        #     raise ValueError(
-        #         "`data` must be a record array with fields `position` and `direction` "
-        #         "specifying these for all points."
-        #     )
-        # dtype = self.data.dtype
-        # self.dim = dtype["position"].shape[0]
         assert self.data.dtype["direction"].shape == (self.dim,)
 
     @classmethod
@@ -234,15 +216,6 @@ class ArrowsElement(PointsElement):
     def __len__(self) -> int:
         return len(self.data)
 
-    #
-    # @property
-    # def positions(self) -> np.ndarray:
-    #     return self.data.position  # type: ignore
-    #
-    # @positions.setter
-    # def positions(self, value: np.ndarray) -> None:
-    #     self.data.position = value
-
     @property
     def directions(self) -> np.ndarray:
         return self.data["direction"]  # type: ignore
@@ -251,58 +224,35 @@ class ArrowsElement(PointsElement):
     def directions(self, value: np.ndarray) -> None:
         self.data["direction"] = value
 
-    #
-    # @plot_on_axes()
-    # def plot(self, ax, color="red", **kwargs):
-    #     """plot all points of this element
-    #
-    #     Args:
-    #         color (matplotlib color):
-    #             The color with which the points are shown
-    #         {PLOT_ARGS}
-    #     """
-    #     import matplotlib as mpl
-    #
-    #     if self.dim == 1:
-    #         positions = np.c_[np.zeros(len(self)), self.positions]
-    #     elif self.dim == 2:
-    #         positions = self.positions
-    #     else:
-    #         raise RuntimeError(f"Cannot plot points with dimension {self.dim}")
-    #
-    #     # create the patches
-    #     radius = self.parameters["representative_radius"]
-    #     patches = [mpl.patches.Circle(pos, radius) for pos in positions]
-    #
-    #     # add all patches as a collection
-    #     # TODO represent data by arrows
-    #     coll = mpl.collections.PatchCollection(patches, facecolors=(color,))
-    #     ax.add_collection(coll)
-    #
-    #     # determine bounding box
-    #     xmin, ymin = positions.min(axis=0) - radius
-    #     xmax, ymax = positions.max(axis=0) + radius
-    #     ax.set_xlim(xmin, xmax)
-    #     ax.set_ylim(ymin, ymax)
-    #
-    # def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
-    #     """returns data for plotting on a single napari layer
-    #
-    #     Args:
-    #         size (float):
-    #             The size of the points
-    #         **kwargs:
-    #             Additional arguments returned in the result, which affect how the layer
-    #             is shown.
-    #
-    #     Returns:
-    #         dict: all the information necessary to plot the points
-    #     """
-    #     result = kwargs
-    #
-    #     # TODO represent data by arrows
-    #     result.setdefault("size", 1)
-    #     result["type"] = "points"
-    #     result["data"] = self.positions
-    #
-    #     return result
+    @plot_on_axes()
+    def plot(self, ax, color="red", **kwargs):
+        """plot all points of this element
+
+        Args:
+            color (matplotlib color):
+                The color with which the points are shown
+            {PLOT_ARGS}
+        """
+        import matplotlib as mpl
+
+        if self.dim == 1:
+            positions = np.c_[np.zeros(len(self)), self.positions]
+        elif self.dim == 2:
+            positions = self.positions
+        else:
+            raise RuntimeError(f"Cannot plot points with dimension {self.dim}")
+
+        # create the patches
+        radius = self.parameters["plot_radius"]
+        patches = [mpl.patches.Circle(pos, radius) for pos in positions]
+
+        # add all patches as a collection
+        # TODO represent data by arrows
+        coll = mpl.collections.PatchCollection(patches, facecolors=(color,))
+        ax.add_collection(coll)
+
+        # determine bounding box
+        xmin, ymin = positions.min(axis=0) - radius
+        xmax, ymax = positions.max(axis=0) + radius
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
