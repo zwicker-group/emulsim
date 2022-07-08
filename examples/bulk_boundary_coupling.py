@@ -32,4 +32,4 @@ simulation.add_actor(("cytosol", "membrane"), boundary_coupling)
 
 # run the simulation
 result = simulation.run(t_range=100)
-result.plot()
+result.plot(vmin=-0.2, vmax=0.2)

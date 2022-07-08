@@ -765,7 +765,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         parameters["grid"] = domain.grid.get_subgrid(indices)
         parameters["axis"] = axis
         if upper is None:
-            parameters["axis_position"] = np.nan
+            parameters["axis_position"] = math.nan
         elif upper is True:
             parameters["axis_position"] = domain.grid.axes_bounds[axis][1]
         elif upper is False:
