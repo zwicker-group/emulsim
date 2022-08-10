@@ -116,7 +116,7 @@ class Simulation:
                 raise ValueError(f'No element "{element_name}" in state')
 
         # check whether the number of elements agrees with what the actor expects
-        if len(elements) != actor.num_elements:
+        if actor.num_elements > 0 and len(elements) != actor.num_elements:
             raise ValueError(
                 f"Actor {actor.__class__.__name__} expects {actor.num_elements} "
                 f"elements, but {len(elements)} were given."
@@ -136,31 +136,10 @@ class Simulation:
                 else:
                     raise ValueError(f"Unknown argument check='{check}'")
 
-            # check whether all elements have the expected type
-            for element_name, element_class in zip(elements, actor.element_classes):
-                element = self.state.elements[element_name]
-
-                # check whether the actor declares the element as matching
-                mismatch_cls = None
-                if hasattr(element_class, "__iter__"):
-                    # actor supports multiple classes for this element
-                    if not any(isinstance(element, cls) for cls in element_class):  # type: ignore
-                        mismatch_cls = ", ".join(cls.__name__ for cls in element_class)  # type: ignore
-                else:
-                    # actor supports a single class for this element
-                    if not isinstance(element, element_class):
-                        mismatch_cls = element_class.__name__  # type: ignore
-
-                if mismatch_cls is not None:
-                    # the actor did not accept the element
-
-                    # check whether the element declares the actor as compatible
-                    if actor.__class__ not in element._compatible_actors:
-                        show_msg(
-                            f"Element '{element_name}' is a "
-                            f"`{element.__class__.__name__}`, but actor type "
-                            f"`{actor.__class__.__name__}` expects `{mismatch_cls}`."
-                        )
+            if len(actor.element_classes) > 0:
+                element_objects = [self.state.elements[name] for name in elements]
+                if not actor.supports_elements(*element_objects):
+                    show_msg(f"Unsupported elements for `{actor.__class__.__name__}`")
 
             # check whether the same actor has already been added earlier
             for elements2, actor2 in self.actors:

@@ -28,7 +28,7 @@ def test_simulation():
         simulation.add_actor("nonsense", sim.DiffusionActor())
     with pytest.raises(ValueError):
         simulation.add_actor(("background", "background"), sim.DiffusionActor())
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TypeError):
         simulation.add_actor(("droplets",), sim.DiffusionActor(), check="raise")
     with pytest.raises(RuntimeError):
         simulation.add_actor(
