@@ -1,7 +1,7 @@
 matplotlib
 numpy
-numba
+numba>=0.55
 scipy
 sympy
-py-pde>=0.16.0
-py-droplets>=0.9.0
+py-pde>=0.20
+py-droplets>=0.10

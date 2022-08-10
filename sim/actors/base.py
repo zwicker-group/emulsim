@@ -10,7 +10,7 @@ import inspect
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
 
 import numpy as np
 
@@ -32,8 +32,6 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
 
-    _subclasses: Dict[str, Type[ActorBase]] = {}  # all classes inheriting from this
-
     def __init__(self, parameters: Dict[str, Any] = None):
         """
         Args:
@@ -44,12 +42,6 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
-
-    def __init_subclass__(cls, **kwargs):  # @NoSelf
-        """register all subclassess to reconstruct them later"""
-        super().__init_subclass__(**kwargs)
-        if cls is not ActorBase:
-            cls._subclasses[cls.__name__] = cls
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -106,21 +98,20 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 if not issubclass(given_cls, expected):
                     mismatch_cls = expected.__name__  # type: ignore
 
-            if mismatch_cls is not None:
+            if mismatch_cls:
                 # the actor did not accept the element
-
                 # check whether the element declares the actor as compatible
-                if cls not in given_cls._compatible_actors:
-                    if silent:
-                        mismatch_cls = True
-                    else:
-                        raise TypeError(
-                            f"Element is a `{given_cls.__name__}`, but actor type "
-                            f"`{cls.__name__}` expects `{mismatch_cls}`."
-                        )
+                if cls in given_cls._compatible_actors:
+                    mismatch_cls = None
 
             if mismatch_cls:
-                return False
+                if silent:
+                    return False
+                else:
+                    raise TypeError(
+                        f"Element is a `{given_cls.__name__}`, but actor type "
+                        f"`{cls.__name__}` expects `{mismatch_cls}`."
+                    )
         return True
 
     @property
@@ -201,7 +192,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 def find_actors(
     *elements: Union[ElementBase, Type[ElementBase]], unordered: bool = False
-) -> List[ActorBase]:
+) -> List[Type[ActorBase]]:
     """finds actors compatible with the given elements
 
     Args:
@@ -212,7 +203,7 @@ def find_actors(
             arrangement of the elements.
 
     Returns:
-        list of :class:`ActorBase`: A list of all compatible actors
+        list of :class:`ActorBase`: A list of all compatible actor classes
     """
     # determine all tested permutations of the elements
     if unordered:
@@ -221,12 +212,13 @@ def find_actors(
         elements_list = [elements]
 
     # check all actors
-    result = set()
+    result: Set[Type[ActorBase]] = set()
     for actor in ActorBase._subclasses.values():
-        for elements in elements_list:
-            if actor.supports_elements(*elements, silent=True):
-                result.add(actor)
-                break
+        if issubclass(actor, ActorBase):
+            for elements in elements_list:
+                if actor.supports_elements(*elements, silent=True):
+                    result.add(actor)
+                    break
 
-    # return a sorted list of actors
+    # return a sorted list of actor classes
     return sorted(result, key=lambda cls: cls.__name__)

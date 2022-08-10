@@ -693,11 +693,10 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 on which this field is defined.
         """
         # set temporary data first and overwrite it later
-        super().__init__(None, parameters)
+        super().__init__(None, parameters)  # type: ignore
 
-        axis = self.parameters["axis"]
-        if not 0 <= axis <= self.grid.dim:
-            raise ValueError(f"`axis={axis}` is out of bounds")
+        if not 0 <= self.axis <= self.grid.num_axes:
+            raise ValueError(f"`axis={self.axis}` is out of bounds")
 
         if not isinstance(self.grid, CartesianGridBase):
             raise NotImplementedError(
@@ -716,7 +715,10 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
     @property
     def axis(self) -> int:
         """int: the axis of the full domain that this boundary is associated with"""
-        return self.parameters["axis"]
+        axis = int(self.parameters["axis"])
+        if axis < 0:
+            axis += self.grid.dim
+        return axis
 
     @classmethod
     def from_field(cls, field: ScalarField) -> ScalarBoundaryFieldElement:
@@ -761,7 +763,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             if key in parameters:
                 raise ValueError(f"`{key}` parameter not accepted by `from_domain`")
 
-        indices = tuple(i for i in range(domain.dim) if i != axis)
+        if axis < 0:
+            axis += domain.grid.num_axes
+        indices = tuple(i for i in range(domain.grid.num_axes) if i != axis)
         parameters["grid"] = domain.grid.get_subgrid(indices)
         parameters["axis"] = axis
         if upper is None:
@@ -876,7 +880,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         def insert(data: np.ndarray, point: np.ndarray, amount: NumberOrArray) -> None:
             inserter(data, point, amount / thickness)
 
-        return insert
+        return insert  # type: ignore
 
     def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
         raise NotImplementedError
