@@ -178,7 +178,7 @@ class PointDropletActor(ActorBase):
 
             if self._cache["dim"] == 3:
                 # flux for 3d droplet without reaction
-                return 4 * np.pi * D * radius * (cEqOut - c_back)
+                return 4 * np.pi * D * radius * (cEqOut - c_back)  # type: ignore
 
             else:
                 raise NotImplementedError(

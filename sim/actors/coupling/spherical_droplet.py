@@ -1386,8 +1386,8 @@ class SphericalDropletActor(ActorBase):
                 add_amount(field_update, pos, -amount_per_shell_out[i])
 
             # adjust the droplet position
-            if drift_enabled and droplet_data.radius > 0:
-                factor = float(dim) / cEqIn / surface(droplet_data.radius)
+            if drift_enabled and droplet_data.radius > 0:  # type: ignore
+                factor = float(dim) / cEqIn / surface(droplet_data.radius)  # type: ignore
                 for i in range(len(shell_vectors)):
                     for j in range(dim):
                         droplet_data.position[j] += (

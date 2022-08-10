@@ -95,7 +95,7 @@ class BoxActor(ActorBase):
 
         # figure out which axes need to be considered for flipping direction
         if "direction" in points_element.data.dtype.fields:
-            flip_ax = np.flatnonzero(np.logical_not(self._grid.periodic))
+            flip_ax: np.ndarray = np.flatnonzero(np.logical_not(self._grid.periodic))
         else:
             flip_ax = np.empty((0,))
         test_for_flipping = flip_ax.size > 0

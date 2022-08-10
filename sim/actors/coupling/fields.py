@@ -5,7 +5,7 @@ Provides an actor coupling two or more fields
 """
 
 import functools
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -175,16 +175,16 @@ class FieldBoundaryCouplingActor(ActorBase):
                 The state of the individual fields
         """
         bulk, boundary = fields
-        assert isinstance(bulk.grid, CartesianGrid)
+        assert isinstance(bulk.grid, CartesianGrid)  # type: ignore
 
         assert bulk.dim == boundary.dim
         axis = boundary.parameters["axis"]
         axis_position = boundary.parameters["axis_position"]
 
         # check whether the boundary is at the upper part of the boundary
-        if np.isclose(bulk.grid.axes_bounds[axis][0], axis_position):
+        if np.isclose(bulk.grid.axes_bounds[axis][0], axis_position):  # type: ignore
             upper = False
-        elif np.isclose(bulk.grid.axes_bounds[axis][1], axis_position):
+        elif np.isclose(bulk.grid.axes_bounds[axis][1], axis_position):  # type: ignore
             upper = True
         else:
             raise ValueError(f"Position ({axis_position}) is not close to boundary")
@@ -195,18 +195,18 @@ class FieldBoundaryCouplingActor(ActorBase):
             assert cell_volume.size == 1
             return float(np.squeeze(cell_volume))
 
-        self._cache["bulk_volume"] = get_cell_volume(bulk.grid)
-        self._cache["boundary_area"] = get_cell_volume(boundary.grid)
+        self._cache["bulk_volume"] = get_cell_volume(bulk.grid)  # type: ignore
+        self._cache["boundary_area"] = get_cell_volume(boundary.grid)  # type: ignore
 
         # determine the indices to access the bulk concentration close to boundary
-        indicies = []
-        for i in range(bulk.dim):
+        indicies: List[Union[int, slice]] = []
+        for i in range(bulk.dim):  # type: ignore
             if i != axis:
-                indicies.append(...)
+                indicies.append(slice(None, None))  # use the full axis (i.e., use `:`)
             elif upper:
-                indicies.append(-1)
+                indicies.append(-1)  # use last item
             else:
-                indicies.append(0)
+                indicies.append(0)  # use first item
         self._cache["bulk_boundary_indices"] = tuple(indicies)
 
         # prepare exchange flux
@@ -253,7 +253,7 @@ class FieldBoundaryCouplingActor(ActorBase):
             bulk_data[bulk_boundary_indices] -= dt * flux / thickness
 
         # compile the recursive chain
-        return evolver
+        return evolver  # type: ignore
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
         """evolve the state from time `t` to `t + dt`

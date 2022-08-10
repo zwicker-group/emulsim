@@ -7,9 +7,14 @@ Test generic elements functionality
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, UnitGrid
+from pde import CartesianGrid, ScalarField, UnitGrid
 
-from .. import MeanfieldElement, ReservoirElement, ScalarFieldElement
+from .. import (
+    MeanfieldElement,
+    ReservoirElement,
+    ScalarBoundaryFieldElement,
+    ScalarFieldElement,
+)
 
 
 def generate_field_elements():
@@ -113,3 +118,15 @@ def test_scalarfield():
     assert element.grid == grid
     np.testing.assert_array_equal(element.data, 1)
     assert element.degrees_of_freedom == 10
+
+
+def test_boundaryfield():
+    """test basic methods of the simple boundary field element"""
+    grid = UnitGrid([10, 8])
+    field = ScalarField(grid)
+    element = ScalarBoundaryFieldElement.from_domain(field, axis=-1, data=1)
+
+    assert element.grid == grid.get_subgrid((0,))
+    np.testing.assert_array_equal(element.data, 1)
+    assert element.degrees_of_freedom == 10
+    assert element.axis == 1
