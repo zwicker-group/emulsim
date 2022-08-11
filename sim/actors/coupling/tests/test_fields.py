@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 
-from pde import ScalarField, UnitGrid
+from pde import CartesianGrid, ScalarField, UnitGrid
 
 from .... import Simulation, State
 from ....elements import (
@@ -70,12 +70,18 @@ def test_fields_2(dim):
     assert np.allclose(e2.data, element2.data)
 
 
-def test_fields_boundary_coupling():
+@pytest.mark.parametrize("resolution", [4, 2, 1])
+def test_field_boundary_coupling(resolution):
     """simple test of the boundary coupling"""
-
     # set up state
     grid = UnitGrid([4, 4], periodic=True)
-    bulk = ScalarFieldElement.from_field(ScalarField(grid, 0.001))
+    if resolution == 1:
+        bulk = MeanfieldElement.from_field(ScalarField(grid, 0.001))
+    elif resolution == 4:
+        bulk = ScalarFieldElement.from_field(ScalarField(grid, 0.001))
+    else:
+        gri_bulk = CartesianGrid(grid.axes_bounds, [resolution, 4], periodic=True)
+        bulk = ScalarFieldElement.from_field(ScalarField(gri_bulk, 0.001))
     data = np.random.randn(4)
     bndry = ScalarBoundaryFieldElement.from_bulk_grid(
         grid, axis=1, upper=True, data=data
@@ -85,12 +91,14 @@ def test_fields_boundary_coupling():
 
     # set up simulation
     simulation = Simulation(state)
-    simulation.add_actor("bulk", DiffusionActor())
-    boundary_coupling = FieldBoundaryExchangeActor({"exchange_flux": "bulk - boundary"})
+    if resolution > 1:
+        simulation.add_actor("bulk", DiffusionActor())
+    flux = "0.1 * (bulk - boundary)"
+    boundary_coupling = FieldBoundaryExchangeActor({"exchange_flux": flux})
     simulation.add_actor(("bulk", "bndry"), boundary_coupling)
 
-    res1 = simulation.run(t_range=1, backend="numpy", tracker=None)
-    res2 = simulation.run(t_range=1, backend="numba", tracker=None)
+    res1 = simulation.run(t_range=1, dt=0.01, backend="numpy", tracker=None)
+    res2 = simulation.run(t_range=1, dt=0.01, backend="numba", tracker=None)
 
     np.testing.assert_allclose(res1["bulk"].data, res2["bulk"].data)
     np.testing.assert_allclose(res1["bndry"].data, res2["bndry"].data)

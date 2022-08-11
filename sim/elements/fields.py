@@ -25,6 +25,7 @@ from numba.extending import register_jitable
 from pde.fields import FieldCollection, ScalarField
 from pde.grids import CartesianGrid
 from pde.grids.cartesian import CartesianGridBase, GridBase
+from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
@@ -151,7 +152,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
 
-    @property
+    @cached_property()
     def grid(self) -> CartesianGrid:
         """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
         return CartesianGrid(self.bounds, 1)
@@ -658,7 +659,15 @@ class FieldCollectionElement(ElementBase):
 
 
 class ScalarBoundaryFieldElement(ScalarFieldElement):
-    """the state associated with a spatially resolved boundary"""
+    """the state associated with a spatially resolved boundary
+
+    Note:
+        The data described by this element are volume concentrations with units
+        `length**-dim`, where `dim` is the dimension of the bulk (so the boundary has
+        dimensions `dim - 1`). To convert the concentration in a particular cell into a
+        total amount it has to be multiplied by the cell volume and the thickness of the
+        boundary.
+    """
 
     parameters_default = [
         Parameter(
@@ -792,6 +801,14 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         else:
             raise TypeError
         return cls(data, parameters)
+
+    @cached_property()
+    def bulk_coordinates(self) -> np.ndarray:
+        """:class:`~numpy.ndarray` all boundary points in the bulk coordinate system"""
+        axis_position = self.parameters["axis_position"]
+        if np.isnan(axis_position):
+            raise RuntimeError("Axis position was not specified")
+        return np.insert(self.grid.cell_coords, self.axis, axis_position, axis=-1)
 
     @plot_on_axes()
     def plot(self, ax=None, colorbar: bool = False, **kwargs):

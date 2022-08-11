@@ -126,12 +126,19 @@ def test_scalarfield():
     assert element.degrees_of_freedom == 10
 
 
-def test_boundaryfield():
+@pytest.mark.parametrize("axis", [1, -1])
+def test_boundaryfield(axis):
     """test basic methods of the simple boundary field element"""
     grid = UnitGrid([10, 8])
-    element = ScalarBoundaryFieldElement.from_bulk_grid(grid, axis=-1, data=1)
+    element = ScalarBoundaryFieldElement.from_bulk_grid(
+        grid, axis=axis, upper=True, data=1
+    )
 
     assert element.grid == grid.get_subgrid((0,))
     np.testing.assert_array_equal(element.data, 1)
     assert element.degrees_of_freedom == 10
     assert element.axis == 1
+
+    bulk_coords = element.bulk_coordinates
+    np.testing.assert_allclose(bulk_coords[:, 0], grid.cell_coords[:, 0, 0])
+    np.testing.assert_allclose(bulk_coords[:, 1], 8)
