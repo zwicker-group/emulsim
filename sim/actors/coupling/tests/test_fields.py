@@ -77,7 +77,9 @@ def test_fields_boundary_coupling():
     grid = UnitGrid([4, 4], periodic=True)
     bulk = ScalarFieldElement.from_field(ScalarField(grid, 0.001))
     data = np.random.randn(4)
-    bndry = ScalarBoundaryFieldElement.from_domain(bulk, axis=1, upper=True, data=data)
+    bndry = ScalarBoundaryFieldElement.from_bulk_grid(
+        grid, axis=1, upper=True, data=data
+    )
     state = State({"bulk": bulk, "bndry": bndry})
     total_amount = state.get_total_quantity("total_amount")
 

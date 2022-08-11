@@ -100,9 +100,15 @@ def test_reservoir():
     assert np.array_equal(element2.data, element.data)
 
 
-def test_meanfield_basic():
+@pytest.mark.parametrize(
+    "element",
+    [
+        MeanfieldElement(1, {"bounds": [[0, 3]]}),
+        MeanfieldElement.from_field(ScalarField(UnitGrid([3]), 1)),
+    ],
+)
+def test_meanfield_basic(element):
     """test basic methods of the simple mean field element"""
-    element = MeanfieldElement(1, {"bounds": [[0, 3]]})
     assert element.concentration == 1
     element.concentration = 2
     assert element.concentration == 2
@@ -123,8 +129,7 @@ def test_scalarfield():
 def test_boundaryfield():
     """test basic methods of the simple boundary field element"""
     grid = UnitGrid([10, 8])
-    field = ScalarField(grid)
-    element = ScalarBoundaryFieldElement.from_domain(field, axis=-1, data=1)
+    element = ScalarBoundaryFieldElement.from_bulk_grid(grid, axis=-1, data=1)
 
     assert element.grid == grid.get_subgrid((0,))
     np.testing.assert_array_equal(element.data, 1)
