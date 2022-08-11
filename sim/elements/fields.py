@@ -859,16 +859,6 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         else:
             raise NotImplementedError(f"Plotting dim={self.dim} not implemented")
 
-    def get_concentration(self, points: np.ndarray):
-        """determine concentration at the given points
-
-        Args:
-            points (:class:`~numpy.ndarray`):
-                The coordinates of the single point or the list of points at
-                which the concentration is returned
-        """
-        return self._field.interpolate(points)
-
     def add_amount(self, point: np.ndarray, amount: float):
         """add the given amount to the field
 
@@ -879,23 +869,6 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 The total amount added to the field
         """
         self._field.insert(point, amount / self.parameters["thickness"])
-
-    def make_get_concentration_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
-
-        Returns:
-            callable: a function with signature (data: :class:`~numpy.ndarray`,
-            point: :class:`~numpy.ndarray`), which determines the concentration
-            at point `point` given the field state `data`.
-        """
-        interpolate = self._field.make_interpolator(backend="numba")
-
-        @register_jitable
-        def get_concentration(data: np.ndarray, point: np.ndarray):
-            """helper function swapping the argument order"""
-            return interpolate(point, data)
-
-        return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
