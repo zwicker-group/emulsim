@@ -290,7 +290,7 @@ class Simulation:
             try:
                 dt = actor.estimate_dt(state[elements])
             except NotImplementedError:
-                self._logger.warning(f'Unknown time step for actor "{actor}"')
+                self._logger.info(f'Unknown time step for actor "{actor}"')
             else:
                 dts.append(dt)
 

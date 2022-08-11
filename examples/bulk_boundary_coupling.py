@@ -25,7 +25,7 @@ simulation = sim.Simulation(state)
 simulation.add_actor("cytosol", sim.DiffusionActor())
 simulation.add_actor("membrane", sim.ScalarPDEActor(pde.CahnHilliardPDE()))
 # couple both domains using an exchange flux
-boundary_coupling = sim.FieldBoundaryCouplingActor(
+boundary_coupling = sim.FieldBoundaryExchangeActor(
     {"exchange_flux": "0.1 * (bulk - boundary)"}
 )
 simulation.add_actor(("cytosol", "membrane"), boundary_coupling)

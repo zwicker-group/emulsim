@@ -151,8 +151,24 @@ class FieldCouplingActor(ActorBase):
             fields[field_id].data[...] += dt * rhs(*field_data, t)
 
 
-class FieldBoundaryCouplingActor(ActorBase):
-    """actor that couples a field with its boundary by local interactions"""
+class FieldBoundaryExchangeActor(ActorBase):
+    """actor that exchanges material between a field and its boundary
+
+    This actor does move material between support points in the boundary field and the
+    adjacent support points in the bulk field. This is an approximation, which might
+    lead to unphysical situations since material is injected half a discretization size
+    away from the boundary (at the first support point) instead of directly at the
+    boundary via a flux boundary conditions. However, the advantage of this method is
+    that it is suitable for arbitrary PDEs describing the bulk and always ensures
+    material conservation.
+
+    Note:
+        The expression of the exchange flux may depend on the concentrations in the bulk
+        and the boundary, which are available as the variables :code:`bulk` and
+        :code:`boundary` in the respective expression parameter. In contrast, the names
+        of the actual elements in the entire simulation (e.g., `cytosol` and `membrane`)
+        cannot be used to refer to these concentrations.
+    """
 
     parameters_default = [
         Parameter(
@@ -176,9 +192,8 @@ class FieldBoundaryCouplingActor(ActorBase):
         """
         bulk, boundary = fields
         assert isinstance(bulk.grid, CartesianGrid)  # type: ignore
-
         assert bulk.dim == boundary.dim
-        axis = boundary.parameters["axis"]
+        axis = boundary.axis  # type: ignore
         axis_position = boundary.parameters["axis_position"]
 
         # check whether the boundary is at the upper part of the boundary
@@ -252,7 +267,6 @@ class FieldBoundaryCouplingActor(ActorBase):
             boundary_data += dt * flux * volume_factor
             bulk_data[bulk_boundary_indices] -= dt * flux / thickness
 
-        # compile the recursive chain
         return evolver  # type: ignore
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:

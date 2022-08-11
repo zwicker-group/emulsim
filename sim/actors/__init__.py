@@ -41,13 +41,13 @@ elements.
    :nosignatures:
 
    ~coupling.fields.FieldCouplingActor
-   ~coupling.fields.FieldBoundaryCouplingActor
+   ~coupling.fields.FieldBoundaryExchangeActor
    ~coupling.point_droplet.PointDropletActor
    ~coupling.spherical_droplet.SphericalDropletActor
-   
+
+
 Use :func:`~base.find_actors` to discover actors that are compatible with a given list
 of elements.
-   
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """

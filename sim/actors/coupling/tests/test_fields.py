@@ -15,7 +15,7 @@ from ....elements import (
     ScalarFieldElement,
 )
 from ...autonomous import DiffusionActor
-from ..fields import FieldBoundaryCouplingActor, FieldCouplingActor
+from ..fields import FieldBoundaryExchangeActor, FieldCouplingActor
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
@@ -84,7 +84,7 @@ def test_fields_boundary_coupling():
     # set up simulation
     simulation = Simulation(state)
     simulation.add_actor("bulk", DiffusionActor())
-    boundary_coupling = FieldBoundaryCouplingActor({"exchange_flux": "bulk - boundary"})
+    boundary_coupling = FieldBoundaryExchangeActor({"exchange_flux": "bulk - boundary"})
     simulation.add_actor(("bulk", "bndry"), boundary_coupling)
 
     res1 = simulation.run(t_range=1, backend="numpy", tracker=None)

@@ -742,11 +742,11 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         data: NumberOrArray = 0,
         parameters: Dict[str, Any] = None,
     ) -> ScalarBoundaryFieldElement:
-        """create a scalar boundary element using a full domain
+        """create a scalar boundary element using a scalar field describing full domain
 
         Args:
             domain (:class:`ScalarField`):
-                The full domain
+                The scalar field describing the full domain
             axis (int):
                 The axis along which the boundary is initialized
             upper (bool):
