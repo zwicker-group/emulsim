@@ -25,6 +25,7 @@ from numba.extending import register_jitable
 from pde.fields import FieldCollection, ScalarField
 from pde.grids import CartesianGrid
 from pde.grids.cartesian import CartesianGridBase, GridBase
+from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
@@ -151,7 +152,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
 
-    @property
+    @cached_property()
     def grid(self) -> CartesianGrid:
         """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
         return CartesianGrid(self.bounds, 1)
@@ -259,6 +260,21 @@ class MeanfieldElement(FieldElementBase):
             raise ValueError("`bounds` need to be specified in parameters")
         else:
             self.set_bounds(self.parameters["bounds"])
+
+    @classmethod
+    def from_field(cls, field: ScalarField) -> MeanfieldElement:
+        """create a mean field element from a scalar field
+
+        Args:
+            field (:class:`~pde.fields.scalar.ScalarField`):
+                The scalar field that initializes the element
+
+        Returns:
+            :class:`MeanfieldElement`: The initialized instance
+        """
+        assert isinstance(field, ScalarField)
+        data = float(field.average)  # type: ignore
+        return cls(data, {"bounds": field.grid.axes_bounds})
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -643,7 +659,15 @@ class FieldCollectionElement(ElementBase):
 
 
 class ScalarBoundaryFieldElement(ScalarFieldElement):
-    """the state associated with a spatially resolved boundary"""
+    """the state associated with a spatially resolved boundary
+
+    Note:
+        The data described by this element are volume concentrations with units
+        `length**-dim`, where `dim` is the dimension of the bulk (so the boundary has
+        dimensions `dim - 1`). To convert the concentration in a particular cell into a
+        total amount it has to be multiplied by the cell volume and the thickness of the
+        boundary.
+    """
 
     parameters_default = [
         Parameter(
@@ -734,19 +758,19 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         raise NotImplementedError  # overwrite inherited method
 
     @classmethod
-    def from_domain(
+    def from_bulk_grid(
         cls,
-        domain: ScalarField,
+        grid: CartesianGrid,
         axis: int,
         upper: bool = None,
         data: NumberOrArray = 0,
         parameters: Dict[str, Any] = None,
     ) -> ScalarBoundaryFieldElement:
-        """create a scalar boundary element using a full domain
+        """create a scalar boundary element using a grid describing the full domain
 
         Args:
-            domain (:class:`ScalarField`):
-                The full domain
+            grid (:class:`~pde.grids.CartesianGrid`):
+                The scalar field describing the full domain
             axis (int):
                 The axis along which the boundary is initialized
             upper (bool):
@@ -761,22 +785,30 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             parameters = {}
         for key in ["grid", "axis", "axis_position"]:
             if key in parameters:
-                raise ValueError(f"`{key}` parameter not accepted by `from_domain`")
+                raise ValueError(f"`{key}` parameter not accepted by `from_bulk_grid`")
 
         if axis < 0:
-            axis += domain.grid.num_axes
-        indices = tuple(i for i in range(domain.grid.num_axes) if i != axis)
-        parameters["grid"] = domain.grid.get_subgrid(indices)
+            axis += grid.num_axes
+        indices = tuple(i for i in range(grid.num_axes) if i != axis)
+        parameters["grid"] = grid.get_subgrid(indices)
         parameters["axis"] = axis
         if upper is None:
             parameters["axis_position"] = math.nan
         elif upper is True:
-            parameters["axis_position"] = domain.grid.axes_bounds[axis][1]
+            parameters["axis_position"] = grid.axes_bounds[axis][1]
         elif upper is False:
-            parameters["axis_position"] = domain.grid.axes_bounds[axis][0]
+            parameters["axis_position"] = grid.axes_bounds[axis][0]
         else:
             raise TypeError
         return cls(data, parameters)
+
+    @cached_property()
+    def bulk_coordinates(self) -> np.ndarray:
+        """:class:`~numpy.ndarray` all boundary points in the bulk coordinate system"""
+        axis_position = self.parameters["axis_position"]
+        if np.isnan(axis_position):
+            raise RuntimeError("Axis position was not specified")
+        return np.insert(self.grid.cell_coords, self.axis, axis_position, axis=-1)
 
     @plot_on_axes()
     def plot(self, ax=None, colorbar: bool = False, **kwargs):
