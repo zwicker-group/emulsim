@@ -374,7 +374,9 @@ class PointDropletActor(ActorBase):
             """evolve all droplets explicitly"""
             droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):
-                droplet_update(droplet_data, droplet_id, field_data, t, dt)
+                # skip droplets that have disappeared
+                if droplet_data.radius > 0:
+                    droplet_update(droplet_data, droplet_id, field_data, t, dt)
 
         return evolver  # type: ignore
 
@@ -394,6 +396,9 @@ class PointDropletActor(ActorBase):
         calc_cEqOut = self._cache["cEqOut"]
 
         for droplet_id, droplet in enumerate(droplets.droplets):
+            if droplet.radius == 0:
+                continue  # skip droplets that have disappeared
+
             # obtain the material flux across the droplet surface
             cEqOut = calc_cEqOut(droplet.position, droplet.radius, droplet_id)
             if np.isinf(cEqOut):

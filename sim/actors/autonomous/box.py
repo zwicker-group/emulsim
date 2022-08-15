@@ -146,8 +146,10 @@ class BoxActor(ActorBase):
             dt (float):
                 The time step
         """
+        if not self.parameters["point_like"]:
+            raise NotImplementedError("numpy backend can only deal with point-objects")
+
         (points,) = elements  # extract single element
-        assert self.parameters["point_like"]
 
         if "direction" in points.data.dtype.fields:
             # flip direction if out of bound
