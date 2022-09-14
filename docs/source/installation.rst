@@ -1,7 +1,7 @@
 Installation
 ############
 
-This `py-sim` package is developed for python 3.7+ and should run on all
+This `py-sim` package is developed for python 3.8+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
 Since the code is not yet published on `pip`, it needs to be installed from

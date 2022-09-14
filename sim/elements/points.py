@@ -72,7 +72,7 @@ class PointsElement(ElementBase):
 
     @property
     def positions(self) -> np.ndarray:
-        return self.data["position"]  # type: ignore
+        return self.data["position"]
 
     @positions.setter
     def positions(self, value: np.ndarray) -> None:
@@ -218,7 +218,7 @@ class ArrowsElement(PointsElement):
 
     @property
     def directions(self) -> np.ndarray:
-        return self.data["direction"]  # type: ignore
+        return self.data["direction"]
 
     @directions.setter
     def directions(self, value: np.ndarray) -> None:

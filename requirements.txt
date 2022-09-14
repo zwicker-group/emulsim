@@ -3,5 +3,5 @@ numpy
 numba>=0.55
 scipy
 sympy
-py-pde>=0.20
+py-pde>=0.22
 py-droplets>=0.10

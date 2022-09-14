@@ -38,7 +38,11 @@ class FieldTracker(TrackerBase):
         """
         self.element_name = element_name
         self.tracker = tracker
-        self.interval = tracker.interval
+        try:
+            self.interrupt = tracker.interrupt
+        except AttributeError:
+            # fall-back to deprecated attribute (remove on 2023-03-15)
+            self.interval = tracker.interval  # type: ignore
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(  # type: ignore

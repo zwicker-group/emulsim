@@ -134,7 +134,11 @@ def test_boundaryfield(axis):
         grid, axis=axis, upper=True, data=1
     )
 
-    assert element.grid == grid.get_subgrid((0,))
+    try:
+        assert element.grid == grid.slice((0,))
+    except AttributeError:
+        # fall-back for deprecated method (remove on 2023-03-15)
+        assert element.grid == grid.get_subgrid((0,))
     np.testing.assert_array_equal(element.data, 1)
     assert element.degrees_of_freedom == 10
     assert element.axis == 1

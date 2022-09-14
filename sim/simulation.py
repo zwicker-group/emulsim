@@ -58,7 +58,8 @@ class Simulation:
             profile (bool):
                 Flag indicating whether the simulation should be profiled. If True, the
                 accumulated duration of each actor is recorded during a simulation. The
-                result is available via the `timing` property of :class:`Simulation`.
+                result is available via the `timing` property of :class:`Simulation`,
+                which contains the runtime of all actors in seconds.
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -296,6 +297,65 @@ class Simulation:
 
         return min(dts)
 
+    def _make_evolve_state(
+        self, actor_id: int, state: State = None
+    ) -> Callable[[Tuple[np.ndarray, ...], float, float], Union[float, None]]:
+        """factory function creating a function to evolve a single actor
+
+        Args:
+            actor_id (int):
+                The id of the actor that needs to be evolved
+            state (:class:`~sim.state.State`):
+                A state defining the degrees of freedom of the simulation.
+
+        Returns:
+            callable: a function that
+        """
+        # Programmer's note: We separated out this part of creating the inner evolvers
+        # because of python's variable scoping. If the `evolve_state` functions were to
+        # be defined in the inner loop in the the `make_evolver_numba` function the
+        # variables used in `evolve_state` would always refer to the values at the last
+        # loop (unless the whole function is compiled by numba). This leads to
+        # unexpected behavior, so we now properly close the variables using this factory
+        # function
+        if state is None:
+            state = self.state
+
+        state_data_type = nb.typeof(state.data)
+
+        elements, actor = self.actors[actor_id]
+        actor_evolver = actor.make_evolver_numba(state[elements])
+        element_indices = tuple(state.get_index(name) for name in elements)
+        get_element_states = make_get_element_states(element_indices)
+
+        if self.profile:
+            # add profiler information to the actor evolve function
+
+            @jit(nb.float64(state_data_type, nb.float64, nb.float64))
+            def evolve_state(
+                state_data: Tuple[np.ndarray, ...], t: float, dt: float
+            ) -> float:
+                """evolve the states affected by this actor and record runtime"""
+                with nb.objmode(time_start="f8"):
+                    time_start = time.perf_counter()
+                actor_evolver(get_element_states(state_data), t, dt)
+                with nb.objmode(runtime="f8"):
+                    runtime = time.perf_counter() - time_start
+                return runtime
+
+        else:
+
+            @jit(nb.none(state_data_type, nb.float64, nb.float64))
+            def evolve_state(
+                state_data: Tuple[np.ndarray, ...], t: float, dt: float
+            ) -> None:
+                """evolve the states affected by this actor"""
+                states = get_element_states(state_data)
+                actor_evolver(states, t, dt)
+
+        # return the evolver for this actor, which now will be properly closed
+        return evolve_state  # type: ignore
+
     def make_evolver_numba(self, state: State = None) -> EvolverType:
         """return a function evolving the state from time `t` to `t + dt`
 
@@ -310,47 +370,10 @@ class Simulation:
         if state is None:
             state = self.state
 
-        state_data_type = nb.typeof(state.data)
-
-        evolvers: List[Callable] = []
-        for elements, actor in self.actors:
-
-            # create the evolver for this actor
-            actor_evolver = actor.make_evolver_numba(state[elements])
-            element_indices = tuple(state.get_index(name) for name in elements)
-            get_element_states = make_get_element_states(element_indices)
-
-            if self.profile:
-                # add profiler information to the actor evolve function
-
-                @jit(nb.float64(state_data_type, nb.float64, nb.float64))
-                def evolve_state(
-                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
-                ) -> float:
-                    """evolve the states affected by this actor and record runtime"""
-                    with nb.objmode(time_start="f8"):
-                        time_start = time.perf_counter()
-                    actor_evolver(get_element_states(state_data), t, dt)
-                    with nb.objmode(runtime="f8"):
-                        runtime = time.perf_counter() - time_start
-                    return runtime
-
-            else:
-
-                @jit(nb.none(state_data_type, nb.float64, nb.float64))
-                def evolve_state(
-                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
-                ):
-                    """evolve the states affected by this actor"""
-                    states = get_element_states(state_data)
-                    actor_evolver(states, t, dt)
-
-            # store data for this actor
-            evolvers.append(evolve_state)
-
         def chain(actor_id: int, inner: Callable = None) -> Callable:
-            """recursive helper function for running all actors"""
-            actor_evolver = evolvers[actor_id]  # consider this particular evolver
+            """recursive factory function for running all actors"""
+            # get the evolver function
+            actor_evolver = self._make_evolve_state(actor_id, state=state)
 
             if self.profile:
 
@@ -375,7 +398,7 @@ class Simulation:
                         inner(state_data, t, dt)
                     actor_evolver(state_data, t, dt)
 
-            if actor_id < len(evolvers) - 1:
+            if actor_id < len(self.actors) - 1:
                 # there are more items in the chain
                 return chain(actor_id + 1, inner=wrap)
             else:

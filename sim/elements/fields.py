@@ -790,7 +790,11 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         if axis < 0:
             axis += grid.num_axes
         indices = tuple(i for i in range(grid.num_axes) if i != axis)
-        parameters["grid"] = grid.get_subgrid(indices)
+        try:
+            parameters["grid"] = grid.slice(indices)
+        except AttributeError:
+            # fall-back for deprecated method (remove on 2023-03-15)
+            parameters["grid"] = grid.get_subgrid(indices)  # type: ignore
         parameters["axis"] = axis
         if upper is None:
             parameters["axis_position"] = math.nan
