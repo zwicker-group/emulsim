@@ -112,7 +112,7 @@ class SphericalDropletsElement(ElementBase):
     def total_amount(self) -> float:
         """float: total amount in the droplets"""
         total_volume = sum(droplet.volume for droplet in self.droplets)
-        return float(self.parameters["droplet_concentration"]) * total_volume
+        return float(self.parameters["droplet_concentration"]) * total_volume  # type: ignore
 
     def plot(self, ax=None, *args, **kwargs):
         """plot all droplets of this element

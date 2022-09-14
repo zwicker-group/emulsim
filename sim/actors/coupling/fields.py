@@ -220,7 +220,11 @@ class FieldBoundaryExchangeActor(ActorBase):
 
         # determine whether the grids are directly compatible
         indices = tuple(i for i in range(bulk_grid.num_axes) if i != axis)
-        sub_grid = bulk_grid.get_subgrid(indices)
+        try:
+            sub_grid = bulk_grid.slice(indices)
+        except AttributeError:
+            # fall-back for deprecated method (remove on 2023-03-15)
+            sub_grid = bulk_grid.get_subgrid(indices)  # type: ignore
         if not np.allclose(boundary_grid.axes_bounds, sub_grid.axes_bounds):
             self._logger.warning("Field extents are incompatible")
 

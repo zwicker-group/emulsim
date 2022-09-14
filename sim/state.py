@@ -270,7 +270,7 @@ class State(Parameterized):
             value for each element is returned in a dictionary. Note that elements that
             do not define the quantity are not included.
         """
-        return sum(self.get_quantities(property_name).values())
+        return sum(self.get_quantities(property_name).values())  # type: ignore
 
     def get_quantity(self, property_name: str, total: bool = True):
         """returns quantities obtained from the elements
