@@ -45,7 +45,7 @@ class SphericalDropletsElement(ElementBase):
                 :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
                 for details.
         """
-        if isinstance(data, Emulsion) or isinstance(data[0], SphericalDroplet):
+        if isinstance(data, Emulsion) or isinstance(data[0], self.droplet_class):
             raise TypeError(
                 "`data` should be a numpy array. To initialize "
                 f"`{self.__class__.__name__}` with an emulsions use "
@@ -90,7 +90,7 @@ class SphericalDropletsElement(ElementBase):
         for droplet in obj.droplets:
             if not isinstance(droplet, obj.droplet_class):
                 cls_name = droplet.__class__.__name__
-                raise ValueError(f"DropletAgentsElement does not support `{cls_name}`")
+                raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
 
         obj._data = obj.droplets.get_linked_data()  # type: ignore
         obj.dim = obj.droplets.dim

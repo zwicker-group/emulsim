@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
 
-from pde.grids.cartesian import CartesianGrid, CartesianGridBase
+from pde.grids.cartesian import CartesianGrid
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
@@ -47,11 +47,11 @@ class BoxActor(ActorBase):
         self._grid = CartesianGrid(self.parameters["bounds"], 1, periodic)
 
     @classmethod
-    def from_grid(cls, grid: CartesianGridBase):
+    def from_grid(cls, grid: CartesianGrid):
         """create BoxActor from a Cartesian grid
 
         Args:
-            grid (:class:`pde.grids.cartesian.CartesianGridBase`):
+            grid (:class:`pde.grids.cartesian.CartesianGrid`):
                 The Cartesian grid that defines the box
         """
         return cls({"bounds": grid.axes_bounds, "periodic": grid.periodic})
