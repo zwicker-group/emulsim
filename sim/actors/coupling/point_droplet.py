@@ -322,8 +322,8 @@ class PointDropletActor(ActorBase):
             cEqIn = cBaseIn
             cInf = get_concentration(field_data, droplet_data.position)
 
-            # Calculate the integrated fluxes at the droplet surface. The sign
-            # of the fluxes is such that positive values indicate outward fluxes
+            # Calculate the integrated fluxes exchanged between the droplet and the
+            # background. The sign is such that positive values indicate outward fluxes
             flux_out = calc_flux(R, cInf, cEqOut)
 
             # amount taken up from the outside per sector
@@ -343,7 +343,7 @@ class PointDropletActor(ActorBase):
             else:
                 droplet_data.radius = radius(V + dV)
 
-            # update the scalar field at the droplet surface
+            # update the scalar field at the droplet position
             add_amount(field_data, droplet_data.position, -amount_out)
 
         return droplet_update  # type: ignore
@@ -406,8 +406,8 @@ class PointDropletActor(ActorBase):
             cEqIn = droplets.parameters["droplet_concentration"]
             cInf = field.get_concentration(droplet.position)
 
-            # Calculate the integrated fluxes at the droplet surface. The sign
-            # of the fluxes is such that positive values indicate outward fluxes
+            # Calculate the integrated fluxes exchanged between the droplet and the
+            # background. The sign is such that positive values indicate outward fluxes
             flux_out = self.get_flux_outside(droplet.radius, cInf, cEqOut)
             # amount taken up from the outside per shell
             amount_out = -dt * flux_out
@@ -424,5 +424,5 @@ class PointDropletActor(ActorBase):
             else:
                 droplet.volume = droplet.volume + dV
 
-            # update the scalar field at the droplet boundary
+            # update the scalar field at the droplet position
             field.add_amount(droplet.position, -amount_out)

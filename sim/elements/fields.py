@@ -23,8 +23,7 @@ import numpy as np
 from numba.extending import register_jitable
 
 from pde.fields import FieldCollection, ScalarField
-from pde.grids import CartesianGrid
-from pde.grids.cartesian import CartesianGridBase, GridBase
+from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
 from pde.tools.numba import jit
@@ -443,7 +442,7 @@ class ScalarFieldElement(FieldElementBase):
         # set temporary data first and overwrite it later
         super().__init__(None, parameters)
 
-        if not isinstance(self.grid, CartesianGridBase):
+        if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
                 "The simulations are only been implemented for Cartesian grids and not "
                 f"for {self.grid.__class__.__name__}"
@@ -579,7 +578,7 @@ class FieldCollectionElement(ElementBase):
         """
         super().__init__(None, parameters)
 
-        if not isinstance(self.grid, CartesianGridBase):
+        if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
                 "The simulations are only been implemented for Cartesian grids and not "
                 f"for {self.grid.__class__.__name__}"
@@ -653,9 +652,80 @@ class FieldCollectionElement(ElementBase):
             self._field[0].plot(ax=ax, **kwargs)
 
     @property
+    def amounts(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: the total material amount in each field"""
+        return np.array(self._field.integrals)
+
+    @property
     def total_amount(self) -> float:
         """float: the total material amount in the field"""
         return np.sum(self._field.integrals).real  # type: ignore
+
+    def get_concentrations(self, points: np.ndarray):
+        """determine concentrations at the given points
+
+        Args:
+            points (:class:`~numpy.ndarray`):
+                The coordinates of the single point or the list of points at
+                which the concentrations are returned
+        """
+        return np.array([field.interpolate(points) for field in self._field])
+
+    def add_amounts(self, point: np.ndarray, amounts: np.ndarray):
+        """add the given amounts to the fields
+
+        Args:
+            point (:class:`~numpy.ndarray`):
+                Point where the amounts are added to the fields
+            amounts (:class:`~numpy.ndarray`):
+                The total amount added to each field
+        """
+        for field, amount in zip(self._field, amounts):
+            field.insert(point, amount)
+
+    def make_get_concentrations_compiled(self) -> Callable:
+        """get a compiled function for obtaining concentrations
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`), which determines the concentrations
+            at point `point` given the field state `data`.
+        """
+        # we just need one interpolator for all fields since they are assumed to be
+        # equivalent, e.g., lie on the same grid (and have the same rank)
+        interpolate = self._field[0].make_interpolator(backend="numba")
+        num_fields = self.num_fields
+
+        @register_jitable
+        def get_concentration(data: np.ndarray, point: np.ndarray) -> np.ndarray:
+            """helper function swapping the argument order"""
+            result = np.empty(num_fields)
+            for i in range(num_fields):
+                result[i] = interpolate(point, data[i])
+            return result
+
+        return get_concentration  # type: ignore
+
+    def make_add_amount_compiled(self) -> Callable:
+        """get a compiled function for adding amount to the field
+
+        Returns:
+            callable: a function with signature (data: :class:`~numpy.ndarray`,
+            point: :class:`~numpy.ndarray`, amounts: :class:`~numpy.ndarray`), which
+            adds `amounts` to the field state given by `data` at point `point`.
+        """
+        # we just need one inserter for all fields since they are assumed to be
+        # equivalent, e.g., lie on the same grid (and have the same rank)
+        inserter_single = self._field[0].grid.make_inserter_compiled()
+        num_fields = self.num_fields
+
+        @register_jitable
+        def inserter(data: np.ndarray, point: np.ndarray, amounts: np.ndarray) -> None:
+            """helper function inserting amounts"""
+            for i in range(num_fields):
+                inserter_single(data[i], point, amounts[i])
+
+        return inserter  # type: ignore
 
 
 class ScalarBoundaryFieldElement(ScalarFieldElement):
@@ -722,7 +792,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         if not 0 <= self.axis <= self.grid.num_axes:
             raise ValueError(f"`axis={self.axis}` is out of bounds")
 
-        if not isinstance(self.grid, CartesianGridBase):
+        if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
                 "The simulations are only been implemented for Cartesian grids and not "
                 f"for {self.grid.__class__.__name__}"

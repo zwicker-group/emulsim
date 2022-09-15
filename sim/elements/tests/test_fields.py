@@ -7,9 +7,10 @@ Test generic elements functionality
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, ScalarField, UnitGrid
+from pde import CartesianGrid, FieldCollection, ScalarField, UnitGrid
 
 from .. import (
+    FieldCollectionElement,
     MeanfieldElement,
     ReservoirElement,
     ScalarBoundaryFieldElement,
@@ -146,3 +147,34 @@ def test_boundaryfield(axis):
     bulk_coords = element.bulk_coordinates
     np.testing.assert_allclose(bulk_coords[:, 0], grid.cell_coords[:, 0, 0])
     np.testing.assert_allclose(bulk_coords[:, 1], 8)
+
+
+@pytest.mark.parametrize("dim", [1, 2])
+@pytest.mark.parametrize("num_fields", [1, 2])
+def test_field_collection(dim, num_fields):
+    """test basic methods of the FieldCollection"""
+    grid = UnitGrid([5] * dim)
+    fc = FieldCollection.scalar_random_uniform(num_fields, grid)
+    element = FieldCollectionElement.from_field(fc)
+
+    assert element.dim == dim
+    assert element.num_fields == num_fields
+    np.testing.assert_allclose(element.amounts, fc.integrals)
+
+    # test numpy functions
+    element.data[...] = 0
+    assert element.total_amount == 0
+    amounts = np.arange(num_fields) + 1.5
+    element.add_amounts([1] * dim, amounts)
+    np.testing.assert_allclose(element.amounts, amounts)
+    conc = element.get_concentrations([3] * dim)
+    np.testing.assert_allclose(conc, 0)
+
+    # test numba functions
+    element.data[...] = 0
+    assert element.total_amount == 0
+    adder = element.make_add_amount_compiled()
+    adder(element.data, np.ones(dim), amounts)
+    np.testing.assert_allclose(element.amounts, amounts)
+    getter = element.make_get_concentrations_compiled()
+    np.testing.assert_allclose(getter(element.data, np.full(dim, 3)), 0)
