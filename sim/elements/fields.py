@@ -706,7 +706,7 @@ class FieldCollectionElement(ElementBase):
 
         return get_concentration  # type: ignore
 
-    def make_add_amount_compiled(self) -> Callable:
+    def make_add_amounts_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
 
         Returns:

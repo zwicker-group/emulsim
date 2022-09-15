@@ -173,7 +173,7 @@ def test_field_collection(dim, num_fields):
     # test numba functions
     element.data[...] = 0
     assert element.total_amount == 0
-    adder = element.make_add_amount_compiled()
+    adder = element.make_add_amounts_compiled()
     adder(element.data, np.ones(dim), amounts)
     np.testing.assert_allclose(element.amounts, amounts)
     getter = element.make_get_concentrations_compiled()
