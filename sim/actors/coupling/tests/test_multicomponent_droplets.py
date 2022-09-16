@@ -48,8 +48,8 @@ def test_multicomponent_droplet_actor(dim, num_comps):
     )
     simulation.add_actor(("droplets", "bulk"), exchange_actor)
 
-    res1 = simulation.run(t_range=10, backend="numpy", dt=1e-2)
-    res2 = simulation.run(t_range=10, backend="numba", dt=1e-2)
+    res1 = simulation.run(t_range=10, backend="numpy", dt=1e-2, tracker=None)
+    res2 = simulation.run(t_range=10, backend="numba", dt=1e-2, tracker=None)
 
     np.testing.assert_allclose(s2u(res1["droplets"].data), s2u(res2["droplets"].data))
     np.testing.assert_allclose(res1["bulk"].data, res2["bulk"].data)
