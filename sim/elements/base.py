@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import math
 from abc import ABCMeta
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 
@@ -266,7 +267,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         if arr.dtype.fields:
             # array is a structured array or record array with fields
             itemsize = sum(
-                np.product(fields[0].shape) for fields in arr.dtype.fields.values()
+                math.prod(fields[0].shape) for fields in arr.dtype.fields.values()
             )
         else:
             # array is a simple array

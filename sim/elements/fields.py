@@ -658,8 +658,8 @@ class FieldCollectionElement(ElementBase):
 
     @property
     def total_amount(self) -> float:
-        """float: the total material amount in the field"""
-        return np.sum(self._field.integrals).real  # type: ignore
+        """float: the total material amount in all fields combined"""
+        return self.amounts.sum()  # type: ignore
 
     def get_concentrations(self, points: np.ndarray):
         """determine concentrations at the given points
