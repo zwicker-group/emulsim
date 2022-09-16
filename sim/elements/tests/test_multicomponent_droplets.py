@@ -8,7 +8,7 @@ import pytest
 from .. import MulticomponentDroplet, MulticomponentDropletsElement
 
 
-@pytest.mark.parametrize("dim", [1, 3])
+@pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("num_comps", [1, 2])
 def test_multicomponent_droplets(dim, num_comps):
     """test basic multicomponent droplets functions"""
@@ -21,3 +21,7 @@ def test_multicomponent_droplets(dim, num_comps):
     assert element.num_comps == num_comps
     assert element.degrees_of_freedom == 2 * (dim + num_comps + 1)
     np.testing.assert_allclose(element.amounts, np.full(num_comps, 3))
+
+    # generic plot test
+    if dim == 2:
+        element.plot()

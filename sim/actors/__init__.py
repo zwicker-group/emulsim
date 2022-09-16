@@ -44,6 +44,7 @@ elements.
    ~coupling.fields.FieldBoundaryExchangeActor
    ~coupling.point_droplet.PointDropletActor
    ~coupling.spherical_droplet.SphericalDropletActor
+   ~coupling.multicomponent_droplet.MulticomponentDropletActor
 
 
 Use :func:`~base.find_actors` to discover actors that are compatible with a given list

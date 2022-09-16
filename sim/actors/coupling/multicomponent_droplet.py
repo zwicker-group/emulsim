@@ -12,6 +12,7 @@ from droplets.tools import spherical
 from pde import ScalarField
 from pde.fields.base import FieldBase
 from pde.grids.base import DimensionError
+from pde.tools.expressions import TensorExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
@@ -53,6 +54,12 @@ class MulticomponentDropletActor(ActorBase):
             0,
             np.array,
             "Interaction parameters between described components and the solvent",
+        ),
+        Parameter(
+            "reactions",
+            None,
+            object,
+            "Function or expression to specify reactions in the system",
         ),
         Parameter(
             "mobility",
@@ -166,6 +173,26 @@ class MulticomponentDropletActor(ActorBase):
         self._cache["dim"] = droplets.dim
         self._cache["calc_state_vars"] = self._make_calc_state_vars(droplets)
 
+        # check reactions
+        if self.parameters["reactions"] is None:
+            # no reactions
+            def noop(phis: np.ndarray, mus: np.ndarray) -> np.ndarray:
+                return np.zeros_like(phis)
+
+            self._cache["has_reaction"] = False
+            self._cache["reaction_flux"] = noop
+
+        elif callable(self.parameters["reactions"]):
+            # callable function is given
+            self._cache["has_reaction"] = False
+            self._cache["reaction_flux"] = jit(self.parameters["reactions"])
+
+        else:
+            # assume an expression is given
+            expr = TensorExpression(self.parameters["reactions"], ["phi", "mu", "t"])
+            self._cache["has_reaction"] = False
+            self._cache["reaction_flux"] = expr.get_compiled_array(single_arg=False)
+
     def get_thermodynamic_quantity(
         self,
         droplets: MulticomponentDropletsElement,
@@ -225,14 +252,15 @@ class MulticomponentDropletActor(ActorBase):
                 dt: float), evolving `droplets_data` and `field_data`
         """
         self._check_cache(elements)
+        droplets, fields = elements
 
         # obtain constants that need to be used
-        droplets, fields = elements
         num_comps = droplets.num_comps
         dim = self._cache["dim"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
+        has_reaction = self._cache["has_reaction"]
 
         # obtain functions that need to be used
         calc_state_vars = self._cache["calc_state_vars"]
@@ -240,6 +268,7 @@ class MulticomponentDropletActor(ActorBase):
         volume = spherical.make_volume_from_radius_compiled(self._cache["dim"])
         get_concentrations = fields.make_get_concentrations_compiled()
         add_amounts = fields.make_add_amounts_compiled()
+        reaction_flux = self._cache["reaction_flux"]
 
         @jit
         def evolver(
@@ -280,6 +309,9 @@ class MulticomponentDropletActor(ActorBase):
                     ΔV = rate * (p_in - p_out)
                     Δamount = rate * (mu_out - mu_in)
 
+                    if has_reaction:
+                        Δamount += V * reaction_flux(phi_in, mu_in, t)
+
                     for i in range(num_comps):
                         Δamount[i] = max(Δamount[i], -amounts[i])
 
@@ -313,20 +345,28 @@ class MulticomponentDropletActor(ActorBase):
         """
         self._check_cache(elements)
         droplets, fields = elements
+
+        # extract constants
         dim = self._cache["dim"]
-        calc_state_vars = self._cache["calc_state_vars"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
+        has_reaction = self._cache["has_reaction"]
+
+        # get functions
+        calc_state_vars = self._cache["calc_state_vars"]
+        reaction_flux = self._cache["reaction_flux"]
 
         for droplet in droplets.droplets:
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
+            V = droplet.volume
+
             # check whether the droplet has effectively been dissolved
             if droplet.amounts.sum() < amounts_min:
                 # remove the droplet completely
-                ΔV = -droplet.volume
+                ΔV = -V
 
             else:
                 # determine the compositions inside and outside
@@ -345,6 +385,9 @@ class MulticomponentDropletActor(ActorBase):
                 ΔV = rate * (p_in - p_out)
                 Δamount = rate * (mu_out - mu_in)
 
+                if has_reaction:
+                    Δamount += V * reaction_flux(phi_in, mu_in, t)
+
                 # cannot loose more than there is present in the droplets
                 np.clip(Δamount, -droplet.amounts, np.inf, out=Δamount)
 
@@ -356,7 +399,7 @@ class MulticomponentDropletActor(ActorBase):
                 droplet.amounts = 0
             else:
                 # change droplet volume and composition
-                droplet.volume = droplet.volume + ΔV  # update volume
+                droplet.volume = V + ΔV  # update volume
                 droplet.amounts += Δamount  # update amounts in droplet
 
             # update the scalar fields at the droplet position
