@@ -19,7 +19,10 @@ def test_coalescence(backend):
 
     from ....elements import SphericalDropletsElement
 
-    droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
+    droplets = [
+        SphericalDroplet(np.random.uniform(0, 1, 2), np.random.uniform(1, 2))
+        for _ in range(10)
+    ]
     element = SphericalDropletsElement.from_droplets(droplets)
     state = State({"droplets": element})
 
@@ -29,5 +32,5 @@ def test_coalescence(backend):
 
     result = simulation.run(10, 1, backend=backend)
 
-    assert result["droplets"].droplet_count < element.droplet_count
+    assert result["droplets"].droplet_count == 1
     assert result["droplets"].total_amount == pytest.approx(element.total_amount)

@@ -72,13 +72,24 @@ class MulticomponentDropletActor(ActorBase):
             "surface_tension",
             0.0,
             float,
-            "Surface tension determining the Laplace pressure",
+            "Surface tension that determines the Laplace pressure, e.g., the additional "
+            "pressure inside the droplets.",
+        ),
+        Parameter(
+            "dissolve_radius",
+            0.5,
+            float,
+            "Minimal radius before a droplet is considered dissolved. This cutoff is "
+            "necessary since very small droplets can lead to numerical instabilities "
+            "where the composition is no longer within [0, 1].",
         ),
         Parameter(
             "dissolve_amount",
             1e-6,
             float,
-            "Minimal total amount in a droplet before it is considered dissolved",
+            "Minimal total amount in a droplet before it is considered dissolved. This "
+            "threshold ensures that large droplets that have the same composition as "
+            "the background are removed.",
         ),
     ]
 
@@ -130,7 +141,7 @@ class MulticomponentDropletActor(ActorBase):
             """calculates thermodynamic state variables from composition"""
             phi_sol = 1 - phis.sum()
             if phi_sol < 0:
-                raise SolventFractionError("Solvent has negative concentration")
+                raise SolventFractionError("Negative solvent concentration in droplet")
 
             log_phi_sol = np.log(phi_sol)
             f = phi_sol * log_phi_sol  # entropy of solvent
@@ -260,6 +271,7 @@ class MulticomponentDropletActor(ActorBase):
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
+        radius_min = self.parameters["dissolve_radius"]
         has_reaction = self._cache["has_reaction"]
 
         # obtain functions that need to be used
@@ -287,7 +299,7 @@ class MulticomponentDropletActor(ActorBase):
                 amounts = droplet_data.amounts
 
                 # check whether the droplet has effectively been dissolved
-                if amounts.sum() < amounts_min:
+                if R < radius_min or amounts.sum() < amounts_min:
                     # remove the droplet completely
                     ΔV = -V
 
@@ -304,16 +316,20 @@ class MulticomponentDropletActor(ActorBase):
                     # add surface tension effects
                     p_in = (dim - 1) * surface_tension / R
 
-                    # dynamics according to Eq. S4 in SI of Zwicker & Laan, PNAS (2022)
+                    # dynamics fluxes as linear functions of the respective forces
                     diff_step = dt * 4 * np.pi * droplet_data.radius * mobility
-                    ΔV = diff_step * (p_in - p_out)
+                    ΔV = 10 * diff_step * (p_in - p_out)
                     Δamount = diff_step * (mu_out - mu_in)
 
                     if has_reaction:
-                        Δamount += V * reaction_flux(phi_in, mu_in, t)
+                        Sin = V * reaction_flux(phi_in, mu_in, t)
+                        Sout = V * reaction_flux(phi_out, mu_in, t)
 
-                    for i in range(num_comps):
-                        Δamount[i] = max(Δamount[i], -amounts[i])
+                        for i in range(num_comps):
+                            Δamount[i] = max(Δamount[i], -amounts[i] - Sin[i])
+                    else:
+                        for i in range(num_comps):
+                            Δamount[i] = max(Δamount[i], -amounts[i])
 
                 # update the droplet volume
                 if V + ΔV <= 0:
@@ -325,10 +341,16 @@ class MulticomponentDropletActor(ActorBase):
                     # change droplet volume and composition
                     droplet_data.radius = radius(V + ΔV)  # update volume
                     for i in range(num_comps):
-                        droplet_data.amounts[i] = amounts[i] + Δamount[i]
+                        if has_reaction:
+                            droplet_data.amounts[i] = amounts[i] + Δamount[i] + Sin[i]
+                        else:
+                            droplet_data.amounts[i] = amounts[i] + Δamount[i]
 
                 # update the scalar fields at the droplet position
-                add_amounts(fields_data, droplet_data.position, -Δamount)
+                if has_reaction:
+                    add_amounts(fields_data, droplet_data.position, -Δamount - Sout)
+                else:
+                    add_amounts(fields_data, droplet_data.position, -Δamount)
 
         return evolver  # type: ignore
 
@@ -344,52 +366,63 @@ class MulticomponentDropletActor(ActorBase):
                 The time step
         """
         self._check_cache(elements)
-        droplets, fields = elements
+        drops_el, fields_el = elements
 
         # extract constants
         dim = self._cache["dim"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
+        radius_min = self.parameters["dissolve_radius"]
         has_reaction = self._cache["has_reaction"]
 
         # get functions
         calc_state_vars = self._cache["calc_state_vars"]
         reaction_flux = self._cache["reaction_flux"]
 
-        for droplet in droplets.droplets:
+        for drop_id, droplet in enumerate(drops_el.droplets):
             if droplet.radius == 0:
                 continue  # skip droplets that have disappeared
 
             V = droplet.volume
 
             # check whether the droplet has effectively been dissolved
-            if droplet.amounts.sum() < amounts_min:
+            if droplet.radius < radius_min or droplet.amounts.sum() < amounts_min:
                 # remove the droplet completely
                 ΔV = -V
+                # possible reactions in the background are then correct!
+                Sin, Sout = 0.0, 0.0
 
             else:
                 # determine the compositions inside and outside
-                phi_out = fields.get_concentrations(droplet.position)
+                phi_out = fields_el.get_concentrations(droplet.position)
                 phi_in = droplet.phis + phi_out  # raise above background
 
                 # obtain the material flux across the droplet surface
-                _, mu_in, p_in = calc_state_vars(phi_in)
+                try:
+                    _, mu_in, p_in = calc_state_vars(phi_in)
+                except SolventFractionError:
+                    print(f"{drop_id=}, {phi_in=}, {V=}")
+                    raise
                 _, mu_out, p_out = calc_state_vars(phi_out)
 
                 # add surface tension effects
                 p_in = (dim - 1) * surface_tension / droplet.radius
 
-                # dynamics according to Eq. S4 in SI of Zwicker & Laan, PNAS (2022)
+                # dynamics fluxes as linear functions of the respective forces
                 diff_step = dt * 4 * np.pi * droplet.radius * mobility
-                ΔV = diff_step * (p_in - p_out)
+                ΔV = 10 * diff_step * (p_in - p_out)
                 Δamount = diff_step * (mu_out - mu_in)
 
+                # determine material production in droplets
                 if has_reaction:
-                    Δamount += V * reaction_flux(phi_in, mu_in, t)
+                    Sin = V * reaction_flux(phi_in, mu_in, t)
+                    Sout = V * reaction_flux(phi_out, mu_in, t)
+                else:
+                    Sin, Sout = 0.0, 0.0
 
                 # cannot loose more than there is present in the droplets
-                np.clip(Δamount, -droplet.amounts, np.inf, out=Δamount)
+                np.clip(Δamount, -droplet.amounts - Sin, np.inf, out=Δamount)
 
             # update the droplet volume
             if droplet.volume + ΔV <= 0:
@@ -400,7 +433,38 @@ class MulticomponentDropletActor(ActorBase):
             else:
                 # change droplet volume and composition
                 droplet.volume = V + ΔV  # update volume
-                droplet.amounts += Δamount  # update amounts in droplet
+                droplet.amounts += Δamount + Sin  # update amounts in droplet
 
-            # update the scalar fields at the droplet position
-            fields.add_amounts(droplet.position, -Δamount)
+            # update the scalar fields at the droplet position and remove chemical
+            # reactions that have been run in the background field although this region
+            # is occupied by a droplet
+            fields_el.add_amounts(droplet.position, -Δamount - Sout)
+
+
+def make_linear_reactions(
+    rates: np.ndarray, production: np.ndarray = None
+) -> Callable[[np.ndarray, np.ndarray, float], np.ndarray]:
+    """create functions suitable to describe linear reactions
+
+    Args:
+        rates (:class:`~numpy.ndarray):
+            The rate matrix describing the conversion of all components
+        production (:class:`~numpy.ndarray):
+            The zeroth-order production flux of all components
+
+    Returns:
+        callable: a function that determines the reaction rates
+    """
+    rate_matrix = np.asarray(rates)
+    if rate_matrix.ndim == 1:
+        rate_matrix = np.diag(rate_matrix)
+
+    if production is None:
+        production_rate = 0
+    else:
+        production_rate = np.broadcast_to(production, (len(rate_matrix),))  # type: ignore
+
+    def droplet_reactions(phis: np.ndarray, mus: np.ndarray, t: float) -> np.ndarray:
+        return rate_matrix @ phis + production_rate  # type: ignore
+
+    return droplet_reactions

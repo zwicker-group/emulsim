@@ -51,10 +51,11 @@ class CoalescenceDropletActor(ActorBase):
                 # compare this droplet to all larger droplets
                 for i2 in indices[progress + 1 :]:
                     dist = np.linalg.norm(data[i1].position - data[i2].position)
-                    if dist < radii[i1] + radii[i2]:  # overlapping droplets
+                    if dist < radii[i1] + radii[i2]:
+                        # overlapping droplets -> remove smaller droplet
                         merge_data(data[i1], data[i2], out=data[i2])
                         data[i1].radius = 0
-                        break
+                        break  # droplet with index i1 has been removed -> continue
 
         return evolver  # type: ignore
 
@@ -69,10 +70,10 @@ class CoalescenceDropletActor(ActorBase):
             dt (float):
                 The time step
         """
-        droplets = elements[0].droplets  # type: ignore
-        droplet_class = elements[0].droplet_class  # type: ignore
-        positions = droplets.data["position"]
-        radii = droplets.data["radius"]
+        drop_el: MulticomponentDropletsElement = elements[0]  # type: ignore
+        droplets = drop_el.droplets
+        positions = droplets.data["position"]  # type: ignore
+        radii = droplets.data["radius"]  # type: ignore
 
         # sort all droplets by radius
         indices = np.argsort(radii)
@@ -88,6 +89,6 @@ class CoalescenceDropletActor(ActorBase):
                 if dist < radii[i1] + radii[i2]:
                     # overlapping droplets -> remove smaller droplet
                     drop1, drop2 = droplets[i1], droplets[i2]
-                    droplet_class._merge_data(drop1.data, drop2.data, out=drop2.data)
-                    drop1.radius = 0
-                    break
+                    drop2._merge_data(drop1.data, drop2.data, out=drop2.data)
+                    drop1.data.fill(0)
+                    break  # droplet with index i1 has been removed -> continue
