@@ -5,6 +5,8 @@
 import numpy as np
 import pytest
 
+from pde.tools.numba import jit
+
 from .. import MulticomponentDroplet, MulticomponentDropletsElement
 
 
@@ -29,3 +31,13 @@ def test_multicomponent_droplets(dim, num_comps):
     # test merging
     emulsion[0].merge(emulsion[1], inplace=True)
     np.testing.assert_allclose(emulsion[0].amounts, np.full(num_comps, 3))
+
+    # test merging using numba
+    d1 = MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps)
+    d2 = MulticomponentDroplet([2] * dim, 1, amounts=[2] * num_comps)
+    d3 = d1.copy()
+
+    merge_data = jit(MulticomponentDroplet._make_merge_data())
+    merge_data(d1.data, d2.data, out=d3.data)
+    np.testing.assert_allclose(d3.position, [1] * dim)
+    np.testing.assert_allclose(d3.amounts, [3] * num_comps)

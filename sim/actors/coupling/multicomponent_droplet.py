@@ -305,9 +305,9 @@ class MulticomponentDropletActor(ActorBase):
                     p_in = (dim - 1) * surface_tension / R
 
                     # dynamics according to Eq. S4 in SI of Zwicker & Laan, PNAS (2022)
-                    rate = dt * 4 * np.pi * droplet_data.radius * mobility
-                    ΔV = rate * (p_in - p_out)
-                    Δamount = rate * (mu_out - mu_in)
+                    diff_step = dt * 4 * np.pi * droplet_data.radius * mobility
+                    ΔV = diff_step * (p_in - p_out)
+                    Δamount = diff_step * (mu_out - mu_in)
 
                     if has_reaction:
                         Δamount += V * reaction_flux(phi_in, mu_in, t)
@@ -381,9 +381,9 @@ class MulticomponentDropletActor(ActorBase):
                 p_in = (dim - 1) * surface_tension / droplet.radius
 
                 # dynamics according to Eq. S4 in SI of Zwicker & Laan, PNAS (2022)
-                rate = dt * 4 * np.pi * droplet.radius * mobility
-                ΔV = rate * (p_in - p_out)
-                Δamount = rate * (mu_out - mu_in)
+                diff_step = dt * 4 * np.pi * droplet.radius * mobility
+                ΔV = diff_step * (p_in - p_out)
+                Δamount = diff_step * (mu_out - mu_in)
 
                 if has_reaction:
                     Δamount += V * reaction_flux(phi_in, mu_in, t)
@@ -404,5 +404,3 @@ class MulticomponentDropletActor(ActorBase):
 
             # update the scalar fields at the droplet position
             fields.add_amounts(droplet.position, -Δamount)
-
-        # check for coalescence

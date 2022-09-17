@@ -136,7 +136,7 @@ class MulticomponentDroplet(SphericalDroplet):
         def merge_data(drop1: np.ndarray, drop2: np.ndarray, out: np.ndarray) -> None:
             """merge the data of two droplets"""
             parent_merge(drop1, drop2, out)
-            out.amounts = drop1.amounts + drop2.amounts  # type: ignore
+            out.amounts[...] = drop1.amounts + drop2.amounts  # type: ignore
 
         return merge_data  # type: ignore
 
