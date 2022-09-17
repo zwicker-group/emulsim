@@ -18,7 +18,7 @@ def test_multicomponent_droplets(dim, num_comps):
         MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps),
         MulticomponentDroplet([1] * dim, 2, amounts=[2] * num_comps),
     ]
-    element = MulticomponentDropletsElement.from_droplets(emulsion)
+    element = MulticomponentDropletsElement.from_droplets(emulsion, copy=True)
     assert element.dim == dim
     assert element.num_comps == num_comps
     assert element.degrees_of_freedom == 2 * (dim + num_comps + 1)
