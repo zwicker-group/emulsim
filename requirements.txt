@@ -1,6 +1,6 @@
 matplotlib
 numpy
-numba>=0.55
+numba>=0.56
 scipy
 sympy
 py-pde>=0.22
