@@ -25,3 +25,7 @@ def test_multicomponent_droplets(dim, num_comps):
     # generic plot test
     if dim == 2:
         element.plot()
+
+    # test merging
+    emulsion[0].merge(emulsion[1], inplace=True)
+    np.testing.assert_allclose(emulsion[0].amounts, np.full(num_comps, 3))

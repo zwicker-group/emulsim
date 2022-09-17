@@ -12,7 +12,8 @@ from .. import CoalescenceDropletActor
 
 
 @skipUnlessModule("droplets")
-def test_coalescence():
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_coalescence(backend):
     """simple test of droplet coalescence"""
     from droplets import SphericalDroplet
 
@@ -22,12 +23,11 @@ def test_coalescence():
     element = SphericalDropletsElement.from_droplets(droplets)
     state = State({"droplets": element})
 
-    for backend in ["numpy", "numba"]:
-        simulation = Simulation(state)
-        simulation.add_actor("droplets", CoalescenceDropletActor())
-        assert simulation.estimate_dt() > 0
+    simulation = Simulation(state)
+    simulation.add_actor("droplets", CoalescenceDropletActor())
+    assert simulation.estimate_dt() > 0
 
-        result = simulation.run(10, 1, backend=backend)
+    result = simulation.run(10, 1, backend=backend)
 
-        assert result["droplets"].droplet_count < element.droplet_count
-        assert result["droplets"].total_amount == pytest.approx(element.total_amount)
+    assert result["droplets"].droplet_count < element.droplet_count
+    assert result["droplets"].total_amount == pytest.approx(element.total_amount)

@@ -6,9 +6,10 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
+from numba.extending import register_jitable
 
 from droplets import Emulsion, SphericalDroplet
 from droplets.tools.spherical import volume_from_radius
@@ -125,6 +126,19 @@ class MulticomponentDroplet(SphericalDroplet):
     def phi_solvent(self) -> float:
         """float: solvent fraction"""
         return float(1 - self.phis.sum())
+
+    @classmethod
+    def _make_merge_data(cls) -> Callable[[np.ndarray, np.ndarray, np.ndarray], None]:
+        """factory for a function that merges the data of two droplets"""
+        parent_merge = super()._make_merge_data()
+
+        @register_jitable
+        def merge_data(drop1: np.ndarray, drop2: np.ndarray, out: np.ndarray) -> None:
+            """merge the data of two droplets"""
+            parent_merge(drop1, drop2, out)
+            out.amounts = drop1.amounts + drop2.amounts  # type: ignore
+
+        return merge_data  # type: ignore
 
     def _get_phase_field(self, grid: GridBase, dtype=np.double) -> np.ndarray:
         """Creates a normalized image of the droplet on the `grid`
