@@ -89,6 +89,8 @@ class CoalescenceDropletActor(ActorBase):
                 if dist < radii[i1] + radii[i2]:
                     # overlapping droplets -> remove smaller droplet
                     drop1, drop2 = droplets[i1], droplets[i2]
+                    print(f"{drop1=}, {drop2=}")
+                    print(f"{drop1.data=}, {drop2.data=}")
                     drop2._merge_data(drop1.data, drop2.data, out=drop2.data)
                     drop1.data.fill(0)
                     break  # droplet with index i1 has been removed -> continue
