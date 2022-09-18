@@ -58,8 +58,9 @@ class MulticomponentDroplet(SphericalDroplet):
             phis (:class:`~numpy.ndarray`):
                 The composition of the droplet
         """
+        # TODO: Add optional field that is used to subtract background
         dim = len(position)
-        amounts = phis * volume_from_radius(radius, dim)
+        amounts = np.asarray(phis) * volume_from_radius(radius, dim)
         return cls(position, radius, amounts)
 
     @classmethod

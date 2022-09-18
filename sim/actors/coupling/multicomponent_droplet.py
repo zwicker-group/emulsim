@@ -4,7 +4,7 @@ Provides an actor coupling point-like droplets to a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 
@@ -135,22 +135,20 @@ class MulticomponentDropletActor(ActorBase):
         assert chis_red.shape == (num_comps, num_comps)
 
         @jit
-        def calc_state_vars(
-            phis: np.ndarray,
-        ) -> Tuple[float, np.ndarray, float]:
+        def calc_state_vars(phis: np.ndarray) -> Tuple[float, np.ndarray, float]:
             """calculates thermodynamic state variables from composition"""
-            phi_sol = 1 - phis.sum()
-            if phi_sol < 0:
+            phi_sol = 1.0 - phis.sum()
+            if phi_sol <= 0:
                 raise SolventFractionError("Negative solvent concentration in droplet")
 
             log_phi_sol = np.log(phi_sol)
             f = phi_sol * log_phi_sol  # entropy of solvent
-            mu = np.empty(num_comps)  # chemical potentials
-            p = 0  # pressure
+            mu = np.full(num_comps, -log_phi_sol)  # chemical potentials
+            p = 0.0  # pressure
             for i in range(num_comps):  # iterate components
                 f += phis[i] * np.log(phis[i])  # entropy of component i
-                f += chis_sol[i] * phis[i]
-                mu[i] = np.log(phis[i]) - log_phi_sol + chis_sol[i]
+                f += chis_sol[i] * phis[i]  # captures part of interaction with solvent
+                mu[i] += np.log(phis[i]) + chis_sol[i]
                 for j in range(num_comps):
                     f += 0.5 * chis_red[i, j] * phis[i] * phis[j]
                     mu[i] += chis_red[i, j] * phis[j]
@@ -181,6 +179,9 @@ class MulticomponentDropletActor(ActorBase):
                 f"({droplets.num_comps} > {fields.num_fields})"
             )
 
+        # TODO: add a check whether the fractions inside the droplet + the outside
+        # add up
+
         self._cache["dim"] = droplets.dim
         self._cache["calc_state_vars"] = self._make_calc_state_vars(droplets)
 
@@ -195,13 +196,13 @@ class MulticomponentDropletActor(ActorBase):
 
         elif callable(self.parameters["reactions"]):
             # callable function is given
-            self._cache["has_reaction"] = False
+            self._cache["has_reaction"] = True
             self._cache["reaction_flux"] = jit(self.parameters["reactions"])
 
         else:
             # assume an expression is given
             expr = TensorExpression(self.parameters["reactions"], ["phi", "mu", "t"])
-            self._cache["has_reaction"] = False
+            self._cache["has_reaction"] = True
             self._cache["reaction_flux"] = expr.get_compiled_array(single_arg=False)
 
     def get_thermodynamic_quantity(
@@ -302,6 +303,8 @@ class MulticomponentDropletActor(ActorBase):
                 if R < radius_min or amounts.sum() < amounts_min:
                     # remove the droplet completely
                     ΔV = -V
+                    # possible reactions in the background are then correct!
+                    Sback = np.zeros(num_comps)
 
                 else:
                     # determine the compositions inside and outside
@@ -314,7 +317,7 @@ class MulticomponentDropletActor(ActorBase):
                     _, mu_out, p_out = calc_state_vars(phi_out)
 
                     # add surface tension effects
-                    p_in = (dim - 1) * surface_tension / R
+                    p_in += (dim - 1) * surface_tension / R
 
                     # dynamics fluxes as linear functions of the respective forces
                     diff_step = dt * 4 * np.pi * droplet_data.radius * mobility
@@ -322,12 +325,18 @@ class MulticomponentDropletActor(ActorBase):
                     Δamount = diff_step * (mu_out - mu_in)
 
                     if has_reaction:
+                        # determine reaction fluxes inside droplet and in the
+                        # corresponding background zone
                         Sin = V * reaction_flux(phi_in, mu_in, t)
-                        Sout = V * reaction_flux(phi_out, mu_in, t)
-
+                        Sback = V * reaction_flux(phi_out, mu_out, t)
+                        # limit the amount of material that can be removed from droplet
                         for i in range(num_comps):
                             Δamount[i] = max(Δamount[i], -amounts[i] - Sin[i])
+
                     else:
+                        # there are no reactions
+                        Sback = np.zeros(num_comps)
+                        # limit the amount of material that can be removed from droplet
                         for i in range(num_comps):
                             Δamount[i] = max(Δamount[i], -amounts[i])
 
@@ -348,7 +357,7 @@ class MulticomponentDropletActor(ActorBase):
 
                 # update the scalar fields at the droplet position
                 if has_reaction:
-                    add_amounts(fields_data, droplet_data.position, -Δamount - Sout)
+                    add_amounts(fields_data, droplet_data.position, -Δamount - Sback)
                 else:
                     add_amounts(fields_data, droplet_data.position, -Δamount)
 
@@ -391,12 +400,17 @@ class MulticomponentDropletActor(ActorBase):
                 # remove the droplet completely
                 ΔV = -V
                 # possible reactions in the background are then correct!
-                Sin, Sout = 0.0, 0.0
+                Sin, Sback = 0.0, 0.0
 
             else:
                 # determine the compositions inside and outside
                 phi_out = fields_el.get_concentrations(droplet.position)
                 phi_in = droplet.phis + phi_out  # raise above background
+
+                # artificial limit to avoid problems
+                # TODO: Fix material balance when limiting, look at py-phasesep
+                np.clip(phi_out, 1e-8, 1 - 1e-8, out=phi_out)
+                np.clip(phi_in, 1e-8, 1 - 1e-8, out=phi_in)
 
                 # obtain the material flux across the droplet surface
                 try:
@@ -407,21 +421,22 @@ class MulticomponentDropletActor(ActorBase):
                 _, mu_out, p_out = calc_state_vars(phi_out)
 
                 # add surface tension effects
-                p_in = (dim - 1) * surface_tension / droplet.radius
+                p_in += (dim - 1) * surface_tension / droplet.radius
 
                 # dynamics fluxes as linear functions of the respective forces
                 diff_step = dt * 4 * np.pi * droplet.radius * mobility
-                ΔV = 10 * diff_step * (p_in - p_out)
+                ΔV = diff_step * (p_in - p_out)
                 Δamount = diff_step * (mu_out - mu_in)
 
-                # determine material production in droplets
+                # determine reaction fluxes inside droplet and in the corresponding
+                # background zone
                 if has_reaction:
                     Sin = V * reaction_flux(phi_in, mu_in, t)
-                    Sout = V * reaction_flux(phi_out, mu_in, t)
+                    Sback = V * reaction_flux(phi_out, mu_in, t)
                 else:
-                    Sin, Sout = 0.0, 0.0
+                    Sin, Sback = 0.0, 0.0
 
-                # cannot loose more than there is present in the droplets
+                # limit the amount of material that can be removed from droplet
                 np.clip(Δamount, -droplet.amounts - Sin, np.inf, out=Δamount)
 
             # update the droplet volume
@@ -433,27 +448,38 @@ class MulticomponentDropletActor(ActorBase):
             else:
                 # change droplet volume and composition
                 droplet.volume = V + ΔV  # update volume
+                # cannot add more than there is space inside the droplet
+                amount_cur_tot = droplet.amounts.sum()
+                amount_add_tot = (Δamount + Sin).sum()
+                amount_max = (1 - 1e-8) * droplet.volume
+                if amount_cur_tot + amount_add_tot > amount_max:
+                    # limit transfered amount so that phi_tot does not exceed 1
+                    factor = (amount_max - amount_cur_tot) / amount_add_tot
+                    Δamount *= factor
+                    Sin *= factor
+
                 droplet.amounts += Δamount + Sin  # update amounts in droplet
 
             # update the scalar fields at the droplet position and remove chemical
             # reactions that have been run in the background field although this region
             # is occupied by a droplet
-            fields_el.add_amounts(droplet.position, -Δamount - Sout)
+            fields_el.add_amounts(droplet.position, -Δamount - Sback)
 
 
 def make_linear_reactions(
     rates: np.ndarray, production: np.ndarray = None
-) -> Callable[[np.ndarray, np.ndarray, float], np.ndarray]:
+) -> Optional[Callable[[np.ndarray, np.ndarray, float], np.ndarray]]:
     """create functions suitable to describe linear reactions
 
     Args:
-        rates (:class:`~numpy.ndarray):
+        rates (:class:`~numpy.ndarray`):
             The rate matrix describing the conversion of all components
-        production (:class:`~numpy.ndarray):
+        production (:class:`~numpy.ndarray`, optional):
             The zeroth-order production flux of all components
 
     Returns:
-        callable: a function that determines the reaction rates
+        callable: a function that determines the reaction rates or `None` if no
+        reactions are present (i.e., all inputs are zero)
     """
     rate_matrix = np.asarray(rates)
     if rate_matrix.ndim == 1:
@@ -464,7 +490,14 @@ def make_linear_reactions(
     else:
         production_rate = np.broadcast_to(production, (len(rate_matrix),))  # type: ignore
 
-    def droplet_reactions(phis: np.ndarray, mus: np.ndarray, t: float) -> np.ndarray:
-        return rate_matrix @ phis + production_rate  # type: ignore
+    if np.allclose(rate_matrix, 0) and np.allclose(production_rate, 0):
+        return None
 
-    return droplet_reactions
+    else:
+
+        def droplet_reactions(
+            phis: np.ndarray, mus: np.ndarray, t: float
+        ) -> np.ndarray:
+            return rate_matrix @ phis + production_rate  # type: ignore
+
+        return droplet_reactions
