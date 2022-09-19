@@ -41,6 +41,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
+        self.diagnostics: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):

@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Tuple, Optional
 
 import numpy as np
 from numba.extending import register_jitable
@@ -190,6 +190,7 @@ class MulticomponentDropletsElement(ElementBase):
     """an element representing many droplets"""
 
     _data: np.recarray
+    dim: Optional[int]
 
     droplet_class = MulticomponentDroplet
 
@@ -205,10 +206,20 @@ class MulticomponentDropletsElement(ElementBase):
                 :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
                 for details.
         """
-        if isinstance(data, Emulsion) or isinstance(data[0], self.droplet_class):
+        if isinstance(data, Emulsion):
             raise TypeError(
-                "`data` should be a numpy array. To initialize "
+                "`data` should be a numpy array, not `Emulsion`. To initialize "
                 f"`{self.__class__.__name__}` with an emulsions use "
+                "the `from_droplets` classmethod."
+            )
+        if (
+            hasattr(data, "__iter__")
+            and len(data) > 0
+            and isinstance(data[0], self.droplet_class)
+        ):
+            raise TypeError(
+                "`data` should only contain the droplet data, no objects. To "
+                f"initialize `{self.__class__.__name__}` with an emulsions use "
                 "the `from_droplets` classmethod."
             )
 
@@ -216,14 +227,11 @@ class MulticomponentDropletsElement(ElementBase):
         super().__init__(None, parameters)
         droplets = [self.droplet_class.from_data(data_row) for data_row in data]
         self.droplets = Emulsion(droplets)  # type: ignore
-        if len(self.droplets) == 0:
-            raise ValueError(
-                "At least a single droplet needs to be defined to determine the "
-                "dimensionality of the element."
-            )
-
         self._data = self.droplets.get_linked_data()  # type: ignore
-        self.dim = self.droplets.dim
+        if len(self.droplets) == 0:
+            self.dim = None
+        else:
+            self.dim = self.droplets.dim
 
     @classmethod
     def from_droplets(
@@ -269,9 +277,12 @@ class MulticomponentDropletsElement(ElementBase):
         return sum(droplet.radius > 0 for droplet in self.droplets)
 
     @property
-    def num_comps(self) -> int:
+    def num_comps(self) -> Optional[int]:
         """int: the number of components inside each droplet"""
-        return int(self.droplets[0].num_comps)
+        if len(self) > 0:
+            return int(self.droplets[0].num_comps)
+        else:
+            return None
 
     @property
     def amounts(self) -> np.ndarray:

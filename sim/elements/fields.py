@@ -589,9 +589,9 @@ class FieldCollectionElement(ElementBase):
             fields = [ScalarField(self.grid, data)]
         else:
             fields = [ScalarField(self.grid, field_data) for field_data in data]
-        self._field = FieldCollection(fields, label=self.parameters["label"])
+        self._fields = FieldCollection(fields, label=self.parameters["label"])
 
-        self._data = self._field.data
+        self._data = self.fields.data
 
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
@@ -603,10 +603,10 @@ class FieldCollectionElement(ElementBase):
     @property
     def num_fields(self) -> int:
         """int: the number of fields described by this collection"""
-        return len(self._field)
+        return len(self._fields)
 
     @classmethod
-    def from_field(cls, field: FieldCollection) -> FieldCollectionElement:
+    def from_fields(cls, fields: FieldCollection) -> FieldCollectionElement:
         """create a scalar field element from a scalar field
 
         Args:
@@ -616,11 +616,11 @@ class FieldCollectionElement(ElementBase):
         Returns:
             :class:`FieldCollectionElement`: The initialized instance
         """
-        for f in field:
+        for f in fields:
             assert isinstance(f, ScalarField)
         return cls(
-            data=field.data,
-            parameters={"grid": field.grid, "label": field.label},
+            data=fields.data,
+            parameters={"grid": fields.grid, "label": fields.label},
         )
 
     @property
@@ -629,9 +629,9 @@ class FieldCollectionElement(ElementBase):
         return self.parameters["grid"]  # type: ignore
 
     @property
-    def field(self) -> FieldCollection:
+    def fields(self) -> FieldCollection:
         """:class:`~pde.fields.scalar.ScalarField`: the scalar field"""
-        return self._field
+        return self._fields
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -646,15 +646,15 @@ class FieldCollectionElement(ElementBase):
         arguments are forwarded.
         """
         if self.dim == 1:
-            for field in self._field:
+            for field in self.fields:
                 field.plot(ax=ax, **kwargs)
         else:
-            self._field[0].plot(ax=ax, **kwargs)
+            self.fields[0].plot(ax=ax, **kwargs)
 
     @property
     def amounts(self) -> np.ndarray:
         """:class:`~numpy.ndarray`: the total material amount in each field"""
-        return np.array(self._field.integrals)
+        return np.array(self.fields.integrals)
 
     @property
     def total_amount(self) -> float:
@@ -669,7 +669,7 @@ class FieldCollectionElement(ElementBase):
                 The coordinates of the single point or the list of points at
                 which the concentrations are returned
         """
-        return np.array([field.interpolate(points) for field in self._field])
+        return np.array([field.interpolate(points) for field in self.fields])
 
     def add_amounts(self, point: np.ndarray, amounts: np.ndarray):
         """add the given amounts to the fields
@@ -680,7 +680,7 @@ class FieldCollectionElement(ElementBase):
             amounts (:class:`~numpy.ndarray`):
                 The total amount added to each field
         """
-        for field, amount in zip(self._field, amounts):
+        for field, amount in zip(self.fields, amounts):
             field.insert(point, amount)
 
     def make_get_concentrations_compiled(self) -> Callable:
@@ -693,18 +693,7 @@ class FieldCollectionElement(ElementBase):
         """
         # we just need one interpolator for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        interpolate = self._field[0].make_interpolator(backend="numba")
-        num_fields = self.num_fields
-
-        @register_jitable
-        def get_concentration(data: np.ndarray, point: np.ndarray) -> np.ndarray:
-            """helper function swapping the argument order"""
-            result = np.empty(num_fields)
-            for i in range(num_fields):
-                result[i] = interpolate(point, data[i])
-            return result
-
-        return get_concentration  # type: ignore
+        return self.fields[0].make_interpolator(backend="numba")
 
     def make_add_amounts_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
@@ -716,7 +705,7 @@ class FieldCollectionElement(ElementBase):
         """
         # we just need one inserter for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        inserter_single = self._field[0].grid.make_inserter_compiled()
+        inserter_single = self.fields[0].grid.make_inserter_compiled()
         num_fields = self.num_fields
 
         @register_jitable
