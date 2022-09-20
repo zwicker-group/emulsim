@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Tuple, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
@@ -227,10 +227,12 @@ class MulticomponentDropletsElement(ElementBase):
         super().__init__(None, parameters)
         droplets = [self.droplet_class.from_data(data_row) for data_row in data]
         self.droplets = Emulsion(droplets)  # type: ignore
-        self._data = self.droplets.get_linked_data()  # type: ignore
+
         if len(self.droplets) == 0:
+            self._data = data.copy()
             self.dim = None
         else:
+            self._data = self.droplets.get_linked_data()  # type: ignore
             self.dim = self.droplets.dim
 
     @classmethod
