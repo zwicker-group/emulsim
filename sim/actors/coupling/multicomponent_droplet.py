@@ -383,7 +383,7 @@ class MulticomponentDropletActor(ActorBase):
         Rmin = self.parameters["dissolve_radius"]
         self._cache["volume_min"] = spherical.volume_from_radius(Rmin, dim)
         self._cache["calc_state_vars"] = self._make_calc_state_vars(droplets_el)
-        self._cache["interpolate_field"] = fields_el.grid._make_interpolator_compiled()
+        self._cache["interpolate_fields"] = fields_el.make_get_concentrations_compiled()
         self._cache["regularize"] = _make_regularizer(num_comps)
 
         # check reactions
@@ -484,7 +484,7 @@ class MulticomponentDropletActor(ActorBase):
 
         # obtain functions that need to be used
         regularize = self._cache["regularize"]
-        interpolate_field = self._cache["interpolate_field"]
+        interpolate_fields = self._cache["interpolate_fields"]
         bcs = self.parameters["boundary_conditions"]
         laplace = fields_el.grid.make_operator("laplace", bcs)
         calc_state_vars = self._cache["calc_state_vars"]
@@ -528,7 +528,7 @@ class MulticomponentDropletActor(ActorBase):
                 amounts = droplet_data.amounts
 
                 # determine the compositions inside and outside
-                phi_out = interpolate_field(fields_data, droplet_data.position)
+                phi_out = interpolate_fields(fields_data, droplet_data.position)
                 phi_in = amounts / V + phi_out
                 amount_corrections += V * (regularize(phi_out) + regularize(phi_in))
 
@@ -549,7 +549,7 @@ class MulticomponentDropletActor(ActorBase):
                     # determine reaction fluxes inside droplet and in the
                     # corresponding background zone
                     Sin = dt * V * reaction_flux(phi_in, mu_in, t)
-                    Sback = dt * V * interpolate_field(s_back, droplet_data.position)
+                    Sback = dt * V * interpolate_fields(s_back, droplet_data.position)
                     # limit the amount of material that can be removed from droplet
                     for i in range(num_comps):
                         Δamount[i] = max(Δamount[i], -amounts[i] - Sin[i])
@@ -626,7 +626,7 @@ class MulticomponentDropletActor(ActorBase):
         regularize = self._cache["regularize"]
         calc_state_vars = self._cache["calc_state_vars"]
         reaction_flux = self._cache["reaction_flux"]
-        interpolate_field = self._cache["interpolate_field"]
+        interpolate_fields = self._cache["interpolate_fields"]
 
         # determine diffusive flux in the background
         bc = self.parameters["boundary_conditions"]
@@ -658,10 +658,7 @@ class MulticomponentDropletActor(ActorBase):
             amount_corrections += V * (regularize(phi_out) + regularize(phi_in))
 
             # obtain thermodynamic quantities inside and at the droplet
-            try:
-                _, mu_in, p_in = calc_state_vars(phi_in)
-            except SolventFractionError:
-                raise
+            _, mu_in, p_in = calc_state_vars(phi_in)
             _, mu_out, p_out = calc_state_vars(phi_out)
 
             # add Laplace pressure to the internal pressure
@@ -676,9 +673,14 @@ class MulticomponentDropletActor(ActorBase):
             # determine reaction fluxes in the droplet region
             if has_reaction:
                 Sin = dt * V * reaction_flux(phi_in, mu_in, t)
-                Sback = dt * V * interpolate_field(s_back, droplet.position)
+                Sback = dt * V * interpolate_fields(s_back, droplet.position)
             else:
                 Sin, Sback = 0.0, 0.0
+
+            print(f"{ΔV=}")
+            print(f"{Δamount=}")
+            print(f"{Sin=}")
+            print(f"{Sback=}")
 
             # check whether the updated droplet vanishes
             volume_vanishes = V + ΔV < volume_min

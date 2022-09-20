@@ -693,7 +693,18 @@ class FieldCollectionElement(ElementBase):
         """
         # we just need one interpolator for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        return self.fields[0].make_interpolator(backend="numba")
+        interpolate = self._fields[0].make_interpolator(backend="numba")
+        num_fields = self.num_fields
+
+        @register_jitable
+        def get_concentration(data: np.ndarray, point: np.ndarray) -> np.ndarray:
+            """helper function swapping the argument order"""
+            result = np.empty(num_fields)
+            for i in range(num_fields):
+                result[i] = interpolate(point, data[i])
+            return result
+
+        return get_concentration  # type: ignore
 
     def make_add_amounts_compiled(self) -> Callable:
         """get a compiled function for adding amount to the field
