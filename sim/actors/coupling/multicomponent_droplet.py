@@ -4,7 +4,9 @@ Provides an actor coupling multicomponent droplets to background fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Optional, Tuple, Dict, Any
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, Tuple
 
 import numba as nb
 import numpy as np
@@ -13,10 +15,10 @@ from droplets.tools import spherical
 from pde import ScalarField
 from pde.fields.base import FieldBase
 from pde.grids.base import DimensionError
+from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import TensorExpression
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
-from pde.tools.docstrings import get_text_block
 
 from ...elements import FieldCollectionElement, MulticomponentDropletsElement
 from ..base import ActorBase
@@ -115,7 +117,7 @@ def _make_regularizer(
 
                 return correction
 
-        return regularize_impl
+        return regularize_impl  # type: ignore
 
     if nb.config.DISABLE_JIT:
         # jitting is disabled => return generic python function
@@ -137,7 +139,7 @@ class MulticomponentDropletActor(ActorBase):
     For simplicity, these droplets interact with the field only at one point (their
     position) using a simple linear exchange flux model. This model can be derived in
     the simple case of a Cahn-Hilliard equation with a mobility that scales with the
-    fraction. The model assumes that droplets live in a three-dimensional world.
+    fraction. The model is currently restricted to 1D and 3D systems.
 
     The system describes :math:`N` interacting components that are embedded in a
     solvent. The solvent is not described explicitly, but rather derived from the
@@ -221,9 +223,7 @@ class MulticomponentDropletActor(ActorBase):
         parameters: Dict[str, Any],
         rates: np.ndarray,
         production: np.ndarray = None,
-    ) -> Optional[
-        Callable[[np.ndarray, np.ndarray, float, Optional[np.ndarray]], np.ndarray]
-    ]:
+    ) -> MulticomponentDropletActor:
         """create functions suitable to describe linear reactions
 
         Args:
@@ -240,7 +240,7 @@ class MulticomponentDropletActor(ActorBase):
             reactions are present (i.e., all inputs are zero)
         """
         if "reactions" in parameters:
-            raise ValueError("Cannot use parameter `reactions` and explicit reactions.")
+            raise ValueError("Cannot use parameter `reactions` and explicit reactions")
 
         rate_matrix = np.asarray(rates)
         if rate_matrix.ndim == 1:
@@ -250,7 +250,7 @@ class MulticomponentDropletActor(ActorBase):
         if production is None:
             production_rate = np.zeros(num_comps)
         else:
-            production_rate = np.broadcast_to(production, (num_comps,))  # type: ignore
+            production_rate = np.broadcast_to(production, (num_comps,))
 
         if np.allclose(rate_matrix, 0) and np.allclose(production_rate, 0):
             parameters["reactions"] = None
@@ -260,6 +260,7 @@ class MulticomponentDropletActor(ActorBase):
             def droplet_reactions(
                 phis: np.ndarray, mus: np.ndarray, t: float, out: np.ndarray = None
             ) -> np.ndarray:
+                """function implementing the linear reactions"""
                 if out is None:
                     out = np.empty_like(phis)
                 for i in range(num_comps):
@@ -479,9 +480,6 @@ class MulticomponentDropletActor(ActorBase):
         chis_solvent = self._chis_solvent
         chis_reduced = self._chis_reduced
 
-        if dim != 3:
-            raise NotImplementedError("Only implemented for dim==3")
-
         # obtain functions that need to be used
         regularize = self._cache["regularize"]
         interpolate_fields = self._cache["interpolate_fields"]
@@ -524,7 +522,8 @@ class MulticomponentDropletActor(ActorBase):
                     continue  # skip droplets that have disappeared
 
                 # read basic properties of the droplet
-                V = volume(droplet_data.radius)
+                R = droplet_data.radius
+                V = volume(R)
                 amounts = droplet_data.amounts
 
                 # determine the compositions inside and outside
@@ -537,12 +536,18 @@ class MulticomponentDropletActor(ActorBase):
                 _, mu_out, p_out = calc_state_vars(phi_out)
 
                 # add surface tension effects
-                p_in += (dim - 1) * surface_tension / droplet_data.radius
+                p_in += (dim - 1) * surface_tension / R
 
                 # dynamics fluxes as linear functions of the respective forces
-                vol_step = dt * 4 * np.pi * droplet_data.radius * mobility
+                if dim == 1:
+                    vol_step = dt * mobility
+                    diff_step = dt * mobility * phi_out
+                elif dim == 3:
+                    vol_step = dt * 4 * np.pi * R * mobility
+                    diff_step = dt * 4 * np.pi * R * mobility * phi_out
+                else:
+                    NotImplementedError("Only implemented for dim ∈ [1, 3]")
                 ΔV = vol_step * (p_in - p_out)
-                diff_step = dt * 4 * np.pi * droplet_data.radius * mobility * phi_out
                 Δamount = diff_step * (mu_out - mu_in)
 
                 if has_reaction:
@@ -556,7 +561,7 @@ class MulticomponentDropletActor(ActorBase):
 
                 else:
                     # there are no reactions
-                    Sback = np.zeros(num_comps)
+                    Sin = Sback = np.zeros(num_comps)
                     # limit the amount of material that can be removed from droplet
                     for i in range(num_comps):
                         Δamount[i] = max(Δamount[i], -amounts[i])
@@ -619,9 +624,6 @@ class MulticomponentDropletActor(ActorBase):
         volume_min = self._cache["volume_min"]
         has_reaction = self._cache["has_reaction"]
 
-        if dim != 3:
-            raise NotImplementedError("Only implemented for dim==3")
-
         # get functions
         regularize = self._cache["regularize"]
         calc_state_vars = self._cache["calc_state_vars"]
@@ -630,7 +632,7 @@ class MulticomponentDropletActor(ActorBase):
 
         # determine diffusive flux in the background
         bc = self.parameters["boundary_conditions"]
-        j_back = [mobility * field.laplace(bc).data for field in fields_el.fields]
+        j_back = [mobility * field.laplace(bc).data for field in fields_el.fields]  # type: ignore
 
         self.diagnostics.setdefault("amount_corrections", np.zeros(num_comps))
 
@@ -665,9 +667,15 @@ class MulticomponentDropletActor(ActorBase):
             p_in += (dim - 1) * surface_tension / droplet.radius
 
             # get fluxes as linear functions of the respective forces
-            vol_step = dt * 4 * np.pi * droplet.radius * mobility
+            if dim == 1:
+                vol_step = dt * mobility
+                diff_step = dt * mobility * phi_out
+            elif dim == 3:
+                vol_step = dt * 4 * np.pi * droplet.radius * mobility
+                diff_step = dt * 4 * np.pi * droplet.radius * mobility * phi_out
+            else:
+                NotImplementedError("Only implemented for dim ∈ [1, 3]")
             ΔV = vol_step * (p_in - p_out)
-            diff_step = dt * 4 * np.pi * droplet.radius * mobility * phi_out
             Δamount = diff_step * (mu_out - mu_in)
 
             # determine reaction fluxes in the droplet region
@@ -676,11 +684,6 @@ class MulticomponentDropletActor(ActorBase):
                 Sback = dt * V * interpolate_fields(s_back, droplet.position)
             else:
                 Sin, Sback = 0.0, 0.0
-
-            print(f"{ΔV=}")
-            print(f"{Δamount=}")
-            print(f"{Sin=}")
-            print(f"{Sback=}")
 
             # check whether the updated droplet vanishes
             volume_vanishes = V + ΔV < volume_min

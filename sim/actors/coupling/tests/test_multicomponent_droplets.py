@@ -57,7 +57,7 @@ def test_make_regularizer(do_jit):
 def test_multicomponent_droplet_actor(dim, num_comps):
     """test basic multicomponent droplets simulations"""
     # create the background field
-    grid = pde.CartesianGrid([[0, 32], [0, 32]], 1, periodic=True)
+    grid = pde.CartesianGrid([[0, 32]] * dim, 1, periodic=True)
     fc = pde.FieldCollection.scalar_random_uniform(num_comps, grid, 0, 0.1 / num_comps)
     bulk = FieldCollectionElement.from_fields(fc)
 
@@ -97,11 +97,11 @@ def test_multicomponent_droplet_actor(dim, num_comps):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coexistence(backend):
     """test equilibrium in multicomponent system"""
-    grid = pde.CartesianGrid([[0, 32], [0, 32]], 1, periodic=True)
+    grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
 
     bulk = FieldCollectionElement.from_fields(fc)
-    drop_list = [MulticomponentDroplet.from_composition([16, 16], 1, [0.8])]
+    drop_list = [MulticomponentDroplet.from_composition([16] * 3, 1, [0.8])]
     droplets_element = MulticomponentDropletsElement.from_droplets(drop_list)
     state = State({"bulk": bulk, "droplets": droplets_element})
     amount = state.get_total_quantity("amounts")[0]
@@ -111,9 +111,11 @@ def test_multicomponent_coexistence(backend):
     exchange_actor = MulticomponentDropletActor({"chis": [[0]], "chis_solvent": chi})
     simulation.add_actor(("droplets", "bulk"), exchange_actor)
 
-    result = simulation.run(t_range=100, backend=backend, dt=0.01, tracker=None)
+    result = simulation.run(t_range=1000, backend=backend, dt=0.1, tracker=None)
     phiOut = result["bulk"].data[0].item()
     phiIn = result["droplets"].droplets[0].phis[0] + phiOut
     assert result.get_total_quantity("amounts")[0] == pytest.approx(amount)
-    assert np.log(phiIn / (1 - phiIn)) / (2 * phiIn - 1) == pytest.approx(chi)
-    assert np.log(phiOut / (1 - phiOut)) / (2 * phiOut - 1) == pytest.approx(chi)
+    chiIn_equivalent = np.log(phiIn / (1 - phiIn)) / (2 * phiIn - 1)
+    assert chiIn_equivalent == pytest.approx(chi, rel=0.1)
+    chiOut_equivalent = np.log(phiOut / (1 - phiOut)) / (2 * phiOut - 1)
+    assert chiOut_equivalent == pytest.approx(chi, rel=0.1)
