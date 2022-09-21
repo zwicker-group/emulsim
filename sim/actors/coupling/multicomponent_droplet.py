@@ -176,11 +176,21 @@ class MulticomponentDropletActor(ActorBase):
         Parameter(
             "mobility",
             1.0,
-            object,
-            "Mobility outside the droplet. This factor determines the diffusivity of "
+            float,
+            "Diffusive transport coefficient. This factor determines the diffusivity of "
             "molecules in the dilute phase and thus how fast droplets change size. The "
             "corresponding Onsager coefficient is the product of this mobility and the "
             "fraction of the field.",
+        ),
+        Parameter(
+            "impedance",
+            1,
+            float,
+            "Volume transport coefficient. This coefficient "
+            "determines how quickly the radius of a droplet responds to the pressure "
+            "difference across its interface. Typical physical systems have low "
+            "impendence, but numerical stability of our algorithm requires larger "
+            "values.",
         ),
         Parameter(
             "boundary_conditions",
@@ -299,13 +309,13 @@ class MulticomponentDropletActor(ActorBase):
         return chis - chis_sol - chis_sol.reshape(-1, 1)  # type: ignore
 
     def _make_calc_state_vars(
-        self, droplets: MulticomponentDropletsElement
+        self,
     ) -> Callable[[np.ndarray], Tuple[float, np.ndarray, float]]:
         """create function calculating the state variables
 
-        Args:
-            droplets (:class:`MulticomponentDropletsElement`):
-                The element describing all the droplets
+        Returns:
+            A function that calculates free energy, chemical potentials and pressure for
+            a given composition
         """
         num_comps = len(self.parameters["chis"])
         chis_sol = self._chis_solvent
@@ -383,7 +393,7 @@ class MulticomponentDropletActor(ActorBase):
         self._cache["num_comps"] = num_comps
         Rmin = self.parameters["dissolve_radius"]
         self._cache["volume_min"] = spherical.volume_from_radius(Rmin, dim)
-        self._cache["calc_state_vars"] = self._make_calc_state_vars(droplets_el)
+        self._cache["calc_state_vars"] = self._make_calc_state_vars()
         self._cache["interpolate_fields"] = fields_el.make_get_concentrations_compiled()
         self._cache["regularize"] = _make_regularizer(num_comps)
 
@@ -430,7 +440,7 @@ class MulticomponentDropletActor(ActorBase):
         """
         data_kinds = {"free energy": 0, "chemical potential": 1, "pressure": 2}
         data_id = data_kinds[kind.lower()]
-        calc_state_vars = self._make_calc_state_vars(droplets)
+        calc_state_vars = self._make_calc_state_vars()
 
         # determine data in all droplets
         data_droplets = []
@@ -450,6 +460,26 @@ class MulticomponentDropletActor(ActorBase):
             data_field.data[idx] = calc_state_vars(fields.data[idx])[data_id]
 
         return np.array(data_droplets), data_field
+
+    def get_droplet_fractions(self, elements: ActorElementType) -> np.ndarray:
+        """calculates the fractions outside and inside of all droplets
+
+        Args:
+            elements (tuple):
+                The state of all the droplets and of the field
+
+        Returns:
+            :class:`~numpy.ndarray`: the fractions outside and inside of all droplets
+            for all components. This array has shape (num_drops, 2, num_comps), where
+            the second axis distinguishes outside and inside.
+        """
+        droplets_el, fields_el = elements
+        result = []
+        for droplet in droplets_el.droplets:
+            phi_out = fields_el.get_concentrations(droplet.position)
+            phi_in = droplet.phis + phi_out  # raise above background
+            result.append([phi_out, phi_in])
+        return np.array(result)
 
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
@@ -471,6 +501,7 @@ class MulticomponentDropletActor(ActorBase):
         # obtain constants that need to be used
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
+        impedance = self.parameters["impedance"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
@@ -535,36 +566,40 @@ class MulticomponentDropletActor(ActorBase):
                 _, mu_in, p_in = calc_state_vars(phi_in)
                 _, mu_out, p_out = calc_state_vars(phi_out)
 
-                # add surface tension effects
-                p_in += (dim - 1) * surface_tension / R
-
-                # dynamics fluxes as linear functions of the respective forces
-                if dim == 1:
-                    vol_step = dt * mobility
-                    diff_step = dt * mobility * phi_out
-                elif dim == 3:
-                    vol_step = dt * 4 * np.pi * R * mobility
-                    diff_step = dt * 4 * np.pi * R * mobility * phi_out
-                else:
-                    NotImplementedError("Only implemented for dim ∈ [1, 3]")
-                ΔV = vol_step * (p_in - p_out)
-                Δamount = diff_step * (mu_out - mu_in)
-
                 if has_reaction:
                     # determine reaction fluxes inside droplet and in the
                     # corresponding background zone
-                    Sin = dt * V * reaction_flux(phi_in, mu_in, t)
+                    s_in = reaction_flux(phi_in, mu_in, t)
+                    Sin = dt * V * s_in
                     Sback = dt * V * interpolate_fields(s_back, droplet_data.position)
-                    # limit the amount of material that can be removed from droplet
-                    for i in range(num_comps):
-                        Δamount[i] = max(Δamount[i], -amounts[i] - Sin[i])
+                    # correct phi inside droplet using the calculated reaction rate
+                    phi_int = phi_in - R**2 * s_in / 15
+                    amount_corrections += V * regularize(phi_int)
+                    _, mu_int, p_int = calc_state_vars(phi_int)
 
                 else:
                     # there are no reactions
                     Sin = Sback = np.zeros(num_comps)
-                    # limit the amount of material that can be removed from droplet
-                    for i in range(num_comps):
-                        Δamount[i] = max(Δamount[i], -amounts[i])
+                    mu_int, p_int = mu_in, p_in
+
+                # add surface tension effects
+                p_int += (dim - 1) * surface_tension / R
+
+                # dynamics fluxes as linear functions of the respective forces
+                if dim == 1:
+                    vol_step = dt * 2 * impedance
+                    diff_step = dt * mobility * phi_out
+                elif dim == 3:
+                    vol_step = dt * 4 * np.pi * R**2 * impedance
+                    diff_step = dt * 4 * np.pi * R * mobility * phi_out
+                else:
+                    NotImplementedError("Only implemented for dim ∈ [1, 3]")
+                ΔV = vol_step * (p_int - p_out)
+                Δamount = diff_step * (mu_out - mu_int)
+
+                # limit the amount of material that can be removed from droplet
+                for i in range(num_comps):
+                    Δamount[i] = max(Δamount[i], -amounts[i] - Sin[i])
 
                 # check whether the updated droplet vanishes
                 volume_vanishes = V + ΔV < volume_min
@@ -617,6 +652,7 @@ class MulticomponentDropletActor(ActorBase):
         # extract constants
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
+        impedance = self.parameters["impedance"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
@@ -663,27 +699,33 @@ class MulticomponentDropletActor(ActorBase):
             _, mu_in, p_in = calc_state_vars(phi_in)
             _, mu_out, p_out = calc_state_vars(phi_out)
 
+            # determine reaction fluxes in the droplet region
+            if has_reaction:
+                s_in = reaction_flux(phi_in, mu_in, t)
+                Sin = dt * V * s_in
+                Sback = dt * V * interpolate_fields(s_back, droplet.position)
+                # correct phi inside droplet using the calculated reaction rate
+                phi_int = phi_in - droplet.radius**2 * s_in / 15
+                amount_corrections += V * regularize(phi_int)
+                _, mu_int, p_int = calc_state_vars(phi_int)
+            else:
+                Sin, Sback = 0.0, 0.0
+                mu_int, p_int = mu_in, p_in
+
             # add Laplace pressure to the internal pressure
-            p_in += (dim - 1) * surface_tension / droplet.radius
+            p_int += (dim - 1) * surface_tension / droplet.radius
 
             # get fluxes as linear functions of the respective forces
             if dim == 1:
-                vol_step = dt * mobility
+                vol_step = dt * 2 * impedance
                 diff_step = dt * mobility * phi_out
             elif dim == 3:
-                vol_step = dt * 4 * np.pi * droplet.radius * mobility
+                vol_step = dt * 4 * np.pi * droplet.radius**2 * impedance
                 diff_step = dt * 4 * np.pi * droplet.radius * mobility * phi_out
             else:
                 NotImplementedError("Only implemented for dim ∈ [1, 3]")
-            ΔV = vol_step * (p_in - p_out)
-            Δamount = diff_step * (mu_out - mu_in)
-
-            # determine reaction fluxes in the droplet region
-            if has_reaction:
-                Sin = dt * V * reaction_flux(phi_in, mu_in, t)
-                Sback = dt * V * interpolate_fields(s_back, droplet.position)
-            else:
-                Sin, Sback = 0.0, 0.0
+            ΔV = vol_step * (p_int - p_out)
+            Δamount = diff_step * (mu_out - mu_int)
 
             # check whether the updated droplet vanishes
             volume_vanishes = V + ΔV < volume_min

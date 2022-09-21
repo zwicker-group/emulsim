@@ -8,6 +8,7 @@ from numpy.lib.recfunctions import structured_to_unstructured as s2u
 
 import pde
 from pde.tools.numba import jit
+from pde.tools.misc import skipUnlessModule
 
 from .... import Simulation, State
 from ....elements import (
@@ -52,6 +53,26 @@ def test_make_regularizer(do_jit):
     np.testing.assert_allclose(phis, np.array([[0.1, 0.1, 0.45], [0.5, 0.8, 0.45]]))
 
 
+@skipUnlessModule("phasesep")
+def test_multicomponent_thermodynamics():
+    """test the implementation of the thermodynamics"""
+    from phasesep import FloryHuggins2Components
+
+    chi = 3
+    droplet_actor = MulticomponentDropletActor({"chis": [[0]], "chis_solvent": chi})
+    fFH = FloryHuggins2Components(chi=chi)
+
+    cs = np.linspace(0, 1, 128)[1:-1]
+    calc_state = droplet_actor._make_calc_state_vars()
+    fs = np.ravel([calc_state(c)[0] for c in cs.reshape(-1, 1)])
+    mus = np.ravel([calc_state(c)[1] for c in cs.reshape(-1, 1)])
+    ps = np.ravel([calc_state(c)[2] for c in cs.reshape(-1, 1)])
+
+    np.testing.assert_allclose(fs, fFH(cs))
+    np.testing.assert_allclose(mus, fFH.chemical_potential(cs))
+    np.testing.assert_allclose(ps, fFH.pressure(cs))
+
+
 @pytest.mark.parametrize("dim", [1, 3])
 @pytest.mark.parametrize("num_comps", [1, 2])
 def test_multicomponent_droplet_actor(dim, num_comps):
@@ -78,10 +99,10 @@ def test_multicomponent_droplet_actor(dim, num_comps):
 
     # create the dynamics
     simulation = Simulation(state)
-    exchange_actor = MulticomponentDropletActor(
+    droplet_actor = MulticomponentDropletActor(
         {"chis": np.full(num_comps, 1), "chis_solvent": 3}
     )
-    simulation.add_actor(("droplets", "bulk"), exchange_actor)
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
     res1 = simulation.run(t_range=10, backend="numpy", dt=1e-2, tracker=None)
     res2 = simulation.run(t_range=10, backend="numba", dt=1e-2, tracker=None)
@@ -116,10 +137,10 @@ def test_multicomponent_no_droplets(dim, num_comps):
 
     # create the dynamics
     simulation = Simulation(state)
-    exchange_actor = MulticomponentDropletActor(
+    droplet_actor = MulticomponentDropletActor(
         {"chis": np.full(num_comps, 1), "chis_solvent": 3}
     )
-    simulation.add_actor(("droplets", "bulk"), exchange_actor)
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
     res1 = simulation.run(t_range=1, backend="numpy", dt=1e-2, tracker=None)
     res2 = simulation.run(t_range=1, backend="numba", dt=1e-2, tracker=None)
@@ -144,14 +165,69 @@ def test_multicomponent_coexistence(backend):
 
     simulation = Simulation(state)
     chi = 3.0
-    exchange_actor = MulticomponentDropletActor({"chis": [[0]], "chis_solvent": chi})
-    simulation.add_actor(("droplets", "bulk"), exchange_actor)
+    droplet_actor = MulticomponentDropletActor({"chis": [[0]], "chis_solvent": chi})
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
     result = simulation.run(t_range=1000, backend=backend, dt=0.1, tracker=None)
-    phiOut = result["bulk"].data[0].item()
-    phiIn = result["droplets"].droplets[0].phis[0] + phiOut
+    phis = droplet_actor.get_droplet_fractions((result["droplets"], result["bulk"]))
+    phiOut, phiIn = phis[0, :, 0]
     assert result.get_total_quantity("amounts")[0] == pytest.approx(amount)
     chiIn_equivalent = np.log(phiIn / (1 - phiIn)) / (2 * phiIn - 1)
     assert chiIn_equivalent == pytest.approx(chi, rel=0.1)
     chiOut_equivalent = np.log(phiOut / (1 - phiOut)) / (2 * phiOut - 1)
     assert chiOut_equivalent == pytest.approx(chi, rel=0.1)
+
+
+@skipUnlessModule(["droplets", "phasesep"])
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_multicomponent_active_droplet(backend):
+    """test active droplet simulation"""
+    import droplets
+    import phasesep
+
+    chi, mobility, kf, kb, t_range = 3.0, 1, 0.002, 0.01, 1000
+
+    # run py-sim simulation
+    grid = pde.CartesianGrid([[-64, 64]] * 3, 1, periodic=True)
+    fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
+
+    bulk = FieldCollectionElement.from_fields(fc)
+    drop_list = [MulticomponentDroplet.from_composition([16] * 3, 1, [0.8])]
+    droplets_element = MulticomponentDropletsElement.from_droplets(drop_list)
+    state = State({"bulk": bulk, "droplets": droplets_element})
+
+    simulation = Simulation(state)
+    droplet_actor = MulticomponentDropletActor.from_linear_reactions(
+        parameters={"chis": [[0]], "chis_solvent": chi, "mobility": mobility},
+        rates=[-kb],
+        production=kf,
+    )
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
+
+    result = simulation.run(t_range=t_range, backend=backend, dt=0.1, tracker=None)
+
+    # run py-phasesep simulation
+    grid_sph = pde.SphericalSymGrid(80, 100)
+    drop_sph = droplets.DiffuseDroplet([0, 0, 0], 4, 1)
+    field_sph = drop_sph.get_phase_field(grid_sph, vmin=0.1, vmax=0.9)
+
+    eq = phasesep.CahnHilliardExtendedPDE(
+        {
+            "free_energy": phasesep.FloryHuggins2Components(chi=chi),
+            "reaction_flux": f"{kf} - {kb} * c",
+            "mobility": f"{mobility} * c * (1 - c)",
+        }
+    )
+    res_sph = eq.solve(
+        field_sph, t_range=t_range, dt=0.0001, adaptive=True, tracker=None
+    )
+    drop_sph = droplets.locate_droplets(res_sph, refine=True)
+
+    # comparison
+    drop1 = result["droplets"].droplets[0]
+    phis = droplet_actor.get_droplet_fractions((result["droplets"], result["bulk"]))
+    phi1_out, phi1_in = phis[0, :, 0]
+
+    assert drop1.radius == pytest.approx(drop_sph.radius, rel=0.2)
+    assert phi1_out == pytest.approx(res_sph.data[-1], rel=0.01)
+    assert phi1_in == pytest.approx(res_sph.data[0], rel=0.1)
