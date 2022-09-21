@@ -7,8 +7,8 @@ import pytest
 from numpy.lib.recfunctions import structured_to_unstructured as s2u
 
 import pde
-from pde.tools.numba import jit
 from pde.tools.misc import skipUnlessModule
+from pde.tools.numba import jit
 
 from .... import Simulation, State
 from ....elements import (
@@ -182,8 +182,9 @@ def test_multicomponent_coexistence(backend):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
     """test active droplet simulation"""
-    import droplets
     import phasesep
+
+    import droplets
 
     chi, mobility, kf, kb, t_range = 3.0, 1, 0.002, 0.01, 1000
 

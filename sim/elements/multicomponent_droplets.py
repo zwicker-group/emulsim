@@ -229,7 +229,7 @@ class MulticomponentDropletsElement(ElementBase):
         self.droplets = Emulsion(droplets)  # type: ignore
 
         if len(self.droplets) == 0:
-            self._data = data.copy()
+            self._data = data.copy().view(np.recarray)
             self.dim = None
         else:
             self._data = self.droplets.get_linked_data()  # type: ignore

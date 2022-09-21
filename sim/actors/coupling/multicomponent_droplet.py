@@ -6,7 +6,7 @@ Provides an actor coupling multicomponent droplets to background fields
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numba as nb
 import numpy as np
@@ -183,14 +183,14 @@ class MulticomponentDropletActor(ActorBase):
             "fraction of the field.",
         ),
         Parameter(
-            "impedance",
+            "volume_relaxation_factor",
             1,
             float,
-            "Volume transport coefficient. This coefficient "
-            "determines how quickly the radius of a droplet responds to the pressure "
-            "difference across its interface. Typical physical systems have low "
-            "impendence, but numerical stability of our algorithm requires larger "
-            "values.",
+            "This factor affects the relaxation of the volume as a response to "
+            "pressure gradients. Since volume relaxation is dominated by solvent "
+            "exchange, this factor can be interpreted as the ratio of the solvent "
+            "mobility to the mobility of all other components. However, large values "
+            "can lead to numerical instabilities.",
         ),
         Parameter(
             "boundary_conditions",
@@ -474,11 +474,14 @@ class MulticomponentDropletActor(ActorBase):
             the second axis distinguishes outside and inside.
         """
         droplets_el, fields_el = elements
-        result = []
+        result: List[Union[List[np.ndarray], np.ndarray]] = []
         for droplet in droplets_el.droplets:
-            phi_out = fields_el.get_concentrations(droplet.position)
-            phi_in = droplet.phis + phi_out  # raise above background
-            result.append([phi_out, phi_in])
+            if droplet.radius > 0:
+                phi_out = fields_el.get_concentrations(droplet.position)
+                phi_in = droplet.phis + phi_out  # raise above background
+                result.append([phi_out, phi_in])
+            else:
+                result.append(np.full((2, droplet.num_comps), np.nan))
         return np.array(result)
 
     def make_evolver_numba(  # type: ignore
@@ -501,7 +504,7 @@ class MulticomponentDropletActor(ActorBase):
         # obtain constants that need to be used
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
-        impedance = self.parameters["impedance"]
+        volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
@@ -528,7 +531,7 @@ class MulticomponentDropletActor(ActorBase):
         def evolver(
             elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
-            """evolve all droplets explicitly"""
+            """evolve all droplets and the fields explicitly"""
             droplets_data, fields_data = elements_data
 
             # determine diffusive flux in the background
@@ -587,10 +590,10 @@ class MulticomponentDropletActor(ActorBase):
 
                 # dynamics fluxes as linear functions of the respective forces
                 if dim == 1:
-                    vol_step = dt * 2 * impedance
+                    vol_step = dt * mobility * volume_relaxation_factor
                     diff_step = dt * mobility * phi_out
                 elif dim == 3:
-                    vol_step = dt * 4 * np.pi * R**2 * impedance
+                    vol_step = dt * 4 * np.pi * R * mobility * volume_relaxation_factor
                     diff_step = dt * 4 * np.pi * R * mobility * phi_out
                 else:
                     NotImplementedError("Only implemented for dim ∈ [1, 3]")
@@ -654,7 +657,7 @@ class MulticomponentDropletActor(ActorBase):
         # extract constants
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
-        impedance = self.parameters["impedance"]
+        volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
         amounts_min = self.parameters["dissolve_amount"]
@@ -719,11 +722,12 @@ class MulticomponentDropletActor(ActorBase):
 
             # get fluxes as linear functions of the respective forces
             if dim == 1:
-                vol_step = dt * 2 * impedance
+                vol_step = dt * mobility * volume_relaxation_factor
                 diff_step = dt * mobility * phi_out
             elif dim == 3:
-                vol_step = dt * 4 * np.pi * droplet.radius**2 * impedance
-                diff_step = dt * 4 * np.pi * droplet.radius * mobility * phi_out
+                factor = dt * 4 * np.pi * droplet.radius * mobility
+                vol_step = factor * volume_relaxation_factor
+                diff_step = factor * phi_out
             else:
                 NotImplementedError("Only implemented for dim ∈ [1, 3]")
             # droplet volume increases as response to pressure difference
