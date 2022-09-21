@@ -228,6 +228,6 @@ def test_multicomponent_active_droplet(backend):
     phis = droplet_actor.get_droplet_fractions((result["droplets"], result["bulk"]))
     phi1_out, phi1_in = phis[0, :, 0]
 
-    assert drop1.radius == pytest.approx(drop_sph.radius, rel=0.2)
+    assert drop1.radius == pytest.approx(drop_sph[0].radius, rel=0.2)
     assert phi1_out == pytest.approx(res_sph.data[-1], rel=0.01)
     assert phi1_in == pytest.approx(res_sph.data[0], rel=0.1)

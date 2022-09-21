@@ -89,6 +89,12 @@ class CoalescenceDropletActor(ActorBase):
                 if dist < radii[i1] + radii[i2]:
                     # overlapping droplets -> remove smaller droplet
                     drop1, drop2 = droplets[i1], droplets[i2]
-                    drop2._merge_data(drop1.data, drop2.data, out=drop2.data)
+                    # we explicitly convert to recarrays since some versions of numpy
+                    # apparently return normal arrays here
+                    drop2._merge_data(
+                        drop1.data.view(type=np.recarray),
+                        drop2.data.view(type=np.recarray),
+                        out=drop2.data.view(type=np.recarray),
+                    )
                     drop1.data.fill(0)
                     break  # droplet with index i1 has been removed -> continue

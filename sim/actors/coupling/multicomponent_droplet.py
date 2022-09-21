@@ -534,7 +534,7 @@ class MulticomponentDropletActor(ActorBase):
             # determine diffusive flux in the background
             j_back = np.empty_like(fields_data)
             for i in range(num_comps):
-                j_back[i] = mobility * laplace(fields_data[i])
+                j_back[i] = -mobility * laplace(fields_data[i])
 
             # determine reaction flux in the background
             if has_reaction:
@@ -594,7 +594,9 @@ class MulticomponentDropletActor(ActorBase):
                     diff_step = dt * 4 * np.pi * R * mobility * phi_out
                 else:
                     NotImplementedError("Only implemented for dim ∈ [1, 3]")
+                # droplet volume increases as response to pressure difference
                 ΔV = vol_step * (p_int - p_out)
+                # amount transfered from outside to inside (= -J)
                 Δamount = diff_step * (mu_out - mu_int)
 
                 # limit the amount of material that can be removed from droplet
@@ -626,7 +628,7 @@ class MulticomponentDropletActor(ActorBase):
                     add_amounts(fields_data, droplet_data.position, -Δamount)
 
             # update the background field
-            fields_data += dt * j_back
+            fields_data -= dt * j_back
             if has_reaction:
                 fields_data += dt * s_back
 
@@ -668,7 +670,7 @@ class MulticomponentDropletActor(ActorBase):
 
         # determine diffusive flux in the background
         bc = self.parameters["boundary_conditions"]
-        j_back = [mobility * field.laplace(bc).data for field in fields_el.fields]  # type: ignore
+        j_back = [-mobility * field.laplace(bc).data for field in fields_el.fields]  # type: ignore
 
         self.diagnostics.setdefault("amount_corrections", np.zeros(num_comps))
 
@@ -724,7 +726,9 @@ class MulticomponentDropletActor(ActorBase):
                 diff_step = dt * 4 * np.pi * droplet.radius * mobility * phi_out
             else:
                 NotImplementedError("Only implemented for dim ∈ [1, 3]")
+            # droplet volume increases as response to pressure difference
             ΔV = vol_step * (p_int - p_out)
+            # amount transfered from outside to inside (= -J)
             Δamount = diff_step * (mu_out - mu_int)
 
             # check whether the updated droplet vanishes
@@ -763,7 +767,7 @@ class MulticomponentDropletActor(ActorBase):
 
         # update the background field
         for i, field in enumerate(fields_el.fields):
-            field.data += dt * j_back[i]
+            field.data -= dt * j_back[i]
             if has_reaction:
                 field.data += dt * s_back[i]
 
