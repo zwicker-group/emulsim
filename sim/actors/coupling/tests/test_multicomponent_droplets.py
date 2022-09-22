@@ -151,6 +151,40 @@ def test_multicomponent_no_droplets(dim, num_comps):
         np.testing.assert_allclose(res.get_total_quantity("amounts"), amounts)
 
 
+def test_multicomponent_equilibrium():
+    """test equilibrium in multicomponent system"""
+    grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
+    fc = pde.FieldCollection.from_scalar_expressions(grid, [0.05, 0.15])
+
+    bulk = FieldCollectionElement.from_fields(fc)
+    drop_list = [MulticomponentDroplet.from_composition([16] * 3, 2, [0.3, 0.5])]
+    droplets_element = MulticomponentDropletsElement.from_droplets(drop_list)
+    state = State({"bulk": bulk, "droplets": droplets_element})
+    amounts = state.get_total_quantity("amounts")
+
+    simulation = Simulation(state)
+    droplet_actor = MulticomponentDropletActor(
+        {"chis": [[0, 1], [1, 0]], "chis_solvent": 3}
+    )
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
+
+    result = simulation.run(t_range=1e4, dt=0.1, tracker=None)
+
+    # compare between elements
+    np.testing.assert_allclose(result.get_total_quantity("amounts"), amounts)
+
+    mu_d, mu_f = droplet_actor.get_thermodynamic_quantity(
+        result["droplets"], result["bulk"], kind="chemical potential"
+    )
+    assert mu_d[0][0] == pytest.approx(mu_f[0].average)
+    assert mu_d[0][1] == pytest.approx(mu_f[1].average)
+
+    p_d, p_f = droplet_actor.get_thermodynamic_quantity(
+        result["droplets"], result["bulk"], kind="pressure"
+    )
+    assert p_d[0] == pytest.approx(p_f.average)
+
+
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coexistence(backend):
     """test equilibrium in multicomponent system"""
@@ -169,6 +203,8 @@ def test_multicomponent_coexistence(backend):
     simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
     result = simulation.run(t_range=1000, backend=backend, dt=0.1, tracker=None)
+
+    # compare to theory
     phis = droplet_actor.get_droplet_fractions((result["droplets"], result["bulk"]))
     phiOut, phiIn = phis[0, :, 0]
     assert result.get_total_quantity("amounts")[0] == pytest.approx(amount)
