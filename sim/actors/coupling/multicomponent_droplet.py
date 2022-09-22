@@ -208,14 +208,6 @@ class MulticomponentDropletActor(ActorBase):
             "where the composition is no longer within [0, 1].",
         ),
         Parameter(
-            "dissolve_amount",
-            1e-6,
-            float,
-            "Minimal total amount in a droplet before it is considered dissolved. This "
-            "threshold ensures that large droplets that have the same composition as "
-            "the background are removed.",
-        ),
-        Parameter(
             "dissolve_fraction",
             1e-6,
             float,
@@ -519,9 +511,9 @@ class MulticomponentDropletActor(ActorBase):
         volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
-        amounts_min = self.parameters["dissolve_amount"]
         phi_min = self.parameters["dissolve_fraction"]
         volume_min = self._cache["volume_min"]
+        min_fraction = self.parameters["min_fraction"]
         has_reaction = self._cache["has_reaction"]
         chis_solvent = self._chis_solvent
         chis_reduced = self._chis_reduced
@@ -614,10 +606,8 @@ class MulticomponentDropletActor(ActorBase):
 
                 # check whether the updated droplet vanishes
                 volume_vanishes = V + ΔV < volume_min
-                amounts_new = amounts + Δamount + Sin
-                amount_vanishes = np.sum(amounts_new) < amounts_min
-                fraction_vanishes = np.sum(amounts_new) < V * phi_min
-                if volume_vanishes or amount_vanishes or fraction_vanishes:
+                fraction_vanishes = np.sum(amounts + Δamount + Sin) < V * phi_min
+                if volume_vanishes or fraction_vanishes:
                     # remove droplet & ensure all amount is dumped into the background
                     Δamount = -amounts  # loose all material
                     droplet_data.radius = 0  # remove droplet
@@ -625,8 +615,20 @@ class MulticomponentDropletActor(ActorBase):
                 else:
                     # change droplet volume and composition
                     droplet_data.radius = radius(V + ΔV)  # update volume
+
+                    # limit added material to the space inside the droplet
+                    amount_cur_tot = amounts.sum()
+                    amount_add_tot = (Δamount + Sin).sum()
+                    amount_max = (1 - min_fraction) * V
+                    if amount_cur_tot + amount_add_tot > amount_max:
+                        # limit transfered amount so that phi_tot does not exceed 1
+                        factor = (amount_max - amount_cur_tot) / amount_add_tot
+                        amount_corrections += (Δamount + Sin) * (1 - factor)
+                        Δamount *= factor
+                        Sin *= factor
+
                     for i in range(num_comps):
-                        droplet_data.amounts[i] = amounts_new[i]
+                        droplet_data.amounts[i] += Δamount[i] + Sin[i]
 
                 # update the scalar fields at the droplet position and remove chemical
                 # reactions that have been run in the background field although this
@@ -666,7 +668,6 @@ class MulticomponentDropletActor(ActorBase):
         volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
         mobility = self.parameters["mobility"]
         surface_tension = self.parameters["surface_tension"]
-        amounts_min = self.parameters["dissolve_amount"]
         phi_min = self.parameters["dissolve_fraction"]
         volume_min = self._cache["volume_min"]
         min_fraction = self.parameters["min_fraction"]
@@ -740,9 +741,8 @@ class MulticomponentDropletActor(ActorBase):
             # check whether the updated droplet vanishes
             volume_vanishes = V + ΔV < volume_min
             amounts_new = droplet.amounts + Δamount + Sin
-            amount_vanishes = np.sum(amounts_new) < amounts_min
             fraction_vanishes = np.sum(amounts_new) < V * phi_min
-            if volume_vanishes or amount_vanishes or fraction_vanishes:
+            if volume_vanishes or fraction_vanishes:
                 # remove droplet & ensure all amount is dumped into the background
                 Δamount = -droplet.amounts  # loose all material
                 droplet.radius = 0  # remove droplet

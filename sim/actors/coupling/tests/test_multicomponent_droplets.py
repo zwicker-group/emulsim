@@ -231,7 +231,7 @@ def test_multicomponent_coarsening(backend):
     fc = pde.FieldCollection.from_scalar_expressions(grid, [phiOut])
     bulk = FieldCollectionElement.from_fields(fc)
     state = State({"droplets": droplets_element, "bulk": bulk})
-    amount = state.get_quantity("total_amount")
+    amount = state.get_total_quantity("total_amount")
 
     simulation = Simulation(state)
     droplet_actor = MulticomponentDropletActor(
@@ -240,7 +240,7 @@ def test_multicomponent_coarsening(backend):
     simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
     result = simulation.run(t_range=1, backend=backend, dt=0.1, tracker=None)
-    assert result.get_quantity("total_amount") == pytest.approx(amount)
+    assert result.get_total_quantity("total_amount") == pytest.approx(amount)
     assert result["droplets"].data[0]["radius"] < 0.5
     assert result["droplets"].data[1]["radius"] > 1
 
