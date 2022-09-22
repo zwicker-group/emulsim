@@ -547,7 +547,7 @@ class MulticomponentDropletActor(ActorBase):
                     mu_back[i] = np.log(phi_back[i]) + chis_solvent[i]
                     for j in range(num_comps):
                         mu_back[i] += chis_reduced[i, j] * phi_back[j]
-                s_back = reaction_flux(phi_back, mu_back, t)
+                s_out = reaction_flux(phi_back, mu_back, t)
 
             # update all droplets
             amount_corrections = np.zeros(num_comps)
@@ -574,16 +574,10 @@ class MulticomponentDropletActor(ActorBase):
                     # corresponding background zone
                     s_in = reaction_flux(phi_in, mu_in, t)
                     Sin = dt * V * s_in
-                    Sback = dt * V * interpolate_fields(s_back, droplet_data.position)
-                    # correct phi inside droplet using the calculated reaction rate
-                    phi_int = phi_in - R**2 * s_in / 15
-                    amount_corrections += V * regularize(phi_int)
-                    _, mu_int, p_int = calc_state_vars(phi_int)
-
+                    Sout = dt * V * interpolate_fields(s_out, droplet_data.position)
                 else:
                     # there are no reactions
-                    Sin = Sback = np.zeros(num_comps)
-                    mu_int, p_int = mu_in, p_in
+                    Sin = Sout = np.zeros(num_comps)
 
                 # Laplace pressure is exerted onto the droplet
                 p_laplace = (dim - 1) * surface_tension / R
@@ -598,9 +592,9 @@ class MulticomponentDropletActor(ActorBase):
                 else:
                     NotImplementedError("Only implemented for dim ∈ [1, 3]")
                 # droplet volume increases as response to pressure difference
-                ΔV = vol_step * (p_int - p_out - p_laplace)
+                ΔV = vol_step * (p_in - p_out - p_laplace)
                 # amount transfered from outside to inside (= -J)
-                Δamount = diff_step * (mu_out - mu_int)
+                Δamount = diff_step * (mu_out - mu_in)
 
                 # limit the amount of material that can be removed from droplet
                 for i in range(num_comps):
@@ -626,14 +620,14 @@ class MulticomponentDropletActor(ActorBase):
                 # reactions that have been run in the background field although this
                 # region is occupied by a droplet
                 if has_reaction:
-                    add_amounts(fields_data, droplet_data.position, -Δamount - Sback)
+                    add_amounts(fields_data, droplet_data.position, -Δamount - Sout)
                 else:
                     add_amounts(fields_data, droplet_data.position, -Δamount)
 
             # update the background field
             fields_data -= dt * j_back
             if has_reaction:
-                fields_data += dt * s_back
+                fields_data += dt * s_out
 
             with nb.objmode:
                 self.diagnostics["amount_corrections"] += amount_corrections
@@ -685,7 +679,7 @@ class MulticomponentDropletActor(ActorBase):
                 + self._chis_solvent
                 + np.tensordot(self._chis_reduced, phi_back, axes=(1, 0))
             )
-            s_back = reaction_flux(phi_back, mu_back, t)
+            s_out = reaction_flux(phi_back, mu_back, t)
 
         # update all droplets
         amount_corrections = np.zeros(num_comps)
@@ -708,14 +702,9 @@ class MulticomponentDropletActor(ActorBase):
             if has_reaction:
                 s_in = reaction_flux(phi_in, mu_in, t)
                 Sin = dt * V * s_in
-                Sback = dt * V * interpolate_fields(s_back, droplet.position)
-                # correct phi inside droplet using the calculated reaction rate
-                phi_int = phi_in - droplet.radius**2 * s_in / 15
-                amount_corrections += V * regularize(phi_int)
-                _, mu_int, p_int = calc_state_vars(phi_int)
+                Sout = dt * V * interpolate_fields(s_out, droplet.position)
             else:
-                Sin, Sback = 0.0, 0.0
-                mu_int, p_int = mu_in, p_in
+                Sin, Sout = 0.0, 0.0
 
             # Laplace pressure is exerted onto the droplet
             p_laplace = (dim - 1) * surface_tension / droplet.radius
@@ -731,9 +720,9 @@ class MulticomponentDropletActor(ActorBase):
             else:
                 NotImplementedError("Only implemented for dim ∈ [1, 3]")
             # droplet volume increases as response to pressure difference
-            ΔV = vol_step * (p_int - p_out - p_laplace)
+            ΔV = vol_step * (p_in - p_out - p_laplace)
             # amount transfered from outside to inside (= -J)
-            Δamount = diff_step * (mu_out - mu_int)
+            Δamount = diff_step * (mu_out - mu_in)
 
             # check whether the updated droplet vanishes
             volume_vanishes = V + ΔV < volume_min
@@ -767,12 +756,12 @@ class MulticomponentDropletActor(ActorBase):
             # update the scalar fields at the droplet position and remove chemical
             # reactions that have been run in the background field although this region
             # is occupied by a droplet
-            fields_el.add_amounts(droplet.position, -Δamount - Sback)
+            fields_el.add_amounts(droplet.position, -Δamount - Sout)
 
         # update the background field
         for i, field in enumerate(fields_el.fields):
             field.data -= dt * j_back[i]
             if has_reaction:
-                field.data += dt * s_back[i]
+                field.data += dt * s_out[i]
 
         self.diagnostics["amount_corrections"] += amount_corrections
