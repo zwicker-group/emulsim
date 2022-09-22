@@ -55,6 +55,7 @@ class CoalescenceDropletActor(ActorBase):
                         # overlapping droplets -> remove smaller droplet
                         merge_data(data[i1], data[i2], out=data[i2])
                         data[i1].radius = 0
+                        # FIXME: We should set all attributes to zero
                         break  # droplet with index i1 has been removed -> continue
 
         return evolver  # type: ignore

@@ -267,6 +267,14 @@ class MulticomponentDropletsElement(ElementBase):
 
         return obj
 
+    @property
+    def num_comps(self) -> Optional[int]:
+        """int: the number of components inside each droplet"""
+        if len(self) > 0:
+            return int(self.droplets[0].num_comps)
+        else:
+            return None
+
     def __len__(self) -> int:
         return len(self.droplets)
 
@@ -279,17 +287,9 @@ class MulticomponentDropletsElement(ElementBase):
         return sum(droplet.radius > 0 for droplet in self.droplets)
 
     @property
-    def num_comps(self) -> Optional[int]:
-        """int: the number of components inside each droplet"""
-        if len(self) > 0:
-            return int(self.droplets[0].num_comps)
-        else:
-            return None
-
-    @property
     def amounts(self) -> np.ndarray:
         """:class:`~numpy.ndarray`: the amounts in all droplets"""
-        return sum(droplet.amounts for droplet in self.droplets)  # type: ignore
+        return sum(droplet.amounts for droplet in self.droplets if droplet.radius > 0)  # type: ignore
 
     @property
     def total_amount(self) -> float:

@@ -7,7 +7,6 @@ This example shows how to simulate droplets with a simple linear reaction. Note 
 simulation requires the optional `numba-scipy` package!
 """
 
-
 from droplets import SphericalDroplet
 from pde import ScalarField, UnitGrid
 
