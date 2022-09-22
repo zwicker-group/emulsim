@@ -223,6 +223,17 @@ class MulticomponentDropletActor(ActorBase):
             "This threshold ensures that large droplets that have the same composition "
             "as the background are removed.",
         ),
+        Parameter(
+            "min_fraction",
+            1e-8,
+            float,
+            "Minimal value fraction any fraction may attain. Fractions must not become "
+            "zero since otherwise the logarithms appearing in the entropic "
+            "contributions cannot be evaluated. The minimal fraction is strictly "
+            "enforced, which can potentially lead to mass loss during a simulation. To "
+            "control for this, we record the accumulated corrections applied to each "
+            "component in the array `diagnostics['amount_corrections']`",
+        ),
     ]
 
     element_classes = (MulticomponentDropletsElement, FieldCollectionElement)
@@ -395,7 +406,8 @@ class MulticomponentDropletActor(ActorBase):
         self._cache["volume_min"] = spherical.volume_from_radius(Rmin, dim)
         self._cache["calc_state_vars"] = self._make_calc_state_vars()
         self._cache["interpolate_fields"] = fields_el.make_get_concentrations_compiled()
-        self._cache["regularize"] = _make_regularizer(num_comps)
+        min_fraction = self.parameters["min_fraction"]
+        self._cache["regularize"] = _make_regularizer(num_comps, eps=min_fraction)
 
         # check reactions
         if self.parameters["reactions"] is None:
@@ -657,6 +669,7 @@ class MulticomponentDropletActor(ActorBase):
         amounts_min = self.parameters["dissolve_amount"]
         phi_min = self.parameters["dissolve_fraction"]
         volume_min = self._cache["volume_min"]
+        min_fraction = self.parameters["min_fraction"]
         has_reaction = self._cache["has_reaction"]
 
         # get functions
@@ -741,12 +754,11 @@ class MulticomponentDropletActor(ActorBase):
                 # limit added material to the space inside the droplet
                 amount_cur_tot = droplet.amounts.sum()
                 amount_add_tot = (Δamount + Sin).sum()
-                amount_max = (1 - 1e-8) * droplet.volume
+                amount_max = (1 - min_fraction) * droplet.volume
                 if amount_cur_tot + amount_add_tot > amount_max:
                     # limit transfered amount so that phi_tot does not exceed 1
                     factor = (amount_max - amount_cur_tot) / amount_add_tot
-                    amount_corr = (Δamount + Sin) * (1 - factor)
-                    self.diagnostics["amount_corrections"] += amount_corr
+                    amount_corrections += (Δamount + Sin) * (1 - factor)
                     Δamount *= factor
                     Sin *= factor
 
