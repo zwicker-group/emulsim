@@ -585,8 +585,8 @@ class MulticomponentDropletActor(ActorBase):
                     Sin = Sback = np.zeros(num_comps)
                     mu_int, p_int = mu_in, p_in
 
-                # add surface tension effects
-                p_int += (dim - 1) * surface_tension / R
+                # Laplace pressure is exerted onto the droplet
+                p_laplace = (dim - 1) * surface_tension / R
 
                 # dynamics fluxes as linear functions of the respective forces
                 if dim == 1:
@@ -598,7 +598,7 @@ class MulticomponentDropletActor(ActorBase):
                 else:
                     NotImplementedError("Only implemented for dim ∈ [1, 3]")
                 # droplet volume increases as response to pressure difference
-                ΔV = vol_step * (p_int - p_out)
+                ΔV = vol_step * (p_int - p_out - p_laplace)
                 # amount transfered from outside to inside (= -J)
                 Δamount = diff_step * (mu_out - mu_int)
 
@@ -623,8 +623,8 @@ class MulticomponentDropletActor(ActorBase):
                         droplet_data.amounts[i] = amounts_new[i]
 
                 # update the scalar fields at the droplet position and remove chemical
-                # reactions that have been run in the background field although this region
-                # is occupied by a droplet
+                # reactions that have been run in the background field although this
+                # region is occupied by a droplet
                 if has_reaction:
                     add_amounts(fields_data, droplet_data.position, -Δamount - Sback)
                 else:
@@ -717,8 +717,8 @@ class MulticomponentDropletActor(ActorBase):
                 Sin, Sback = 0.0, 0.0
                 mu_int, p_int = mu_in, p_in
 
-            # add Laplace pressure to the internal pressure
-            p_int += (dim - 1) * surface_tension / droplet.radius
+            # Laplace pressure is exerted onto the droplet
+            p_laplace = (dim - 1) * surface_tension / droplet.radius
 
             # get fluxes as linear functions of the respective forces
             if dim == 1:
@@ -731,7 +731,7 @@ class MulticomponentDropletActor(ActorBase):
             else:
                 NotImplementedError("Only implemented for dim ∈ [1, 3]")
             # droplet volume increases as response to pressure difference
-            ΔV = vol_step * (p_int - p_out)
+            ΔV = vol_step * (p_int - p_out - p_laplace)
             # amount transfered from outside to inside (= -J)
             Δamount = diff_step * (mu_out - mu_int)
 

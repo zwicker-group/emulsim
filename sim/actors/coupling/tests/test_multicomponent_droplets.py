@@ -178,6 +178,37 @@ def test_multicomponent_coexistence(backend):
     assert chiOut_equivalent == pytest.approx(chi, rel=0.1)
 
 
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_multicomponent_coarsening(backend):
+    """simple test of coarsening of multicomponent droplets"""
+    grid = pde.CartesianGrid([[-64, 64]] * 3, 2, periodic=True)
+
+    phiOut = 0.1
+    phiIn = 1 - phiOut
+    chi = np.log(phiOut / (1 - phiOut)) / (2 * phiOut - 1)
+
+    drop_list = [
+        MulticomponentDroplet.from_composition(grid.get_random_point(), 0.5, [phiIn]),
+        MulticomponentDroplet.from_composition(grid.get_random_point(), 1, [phiIn]),
+    ]
+    droplets_element = MulticomponentDropletsElement.from_droplets(drop_list)
+    fc = pde.FieldCollection.from_scalar_expressions(grid, [phiOut])
+    bulk = FieldCollectionElement.from_fields(fc)
+    state = State({"droplets": droplets_element, "bulk": bulk})
+    amount = state.get_quantity("total_amount")
+
+    simulation = Simulation(state)
+    droplet_actor = MulticomponentDropletActor(
+        parameters={"chis": [[0]], "chis_solvent": chi, "surface_tension": 0.1}
+    )
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
+
+    result = simulation.run(t_range=1, backend=backend, dt=0.1, tracker=None)
+    assert result.get_quantity("total_amount") == pytest.approx(amount)
+    assert result["droplets"].data[0]["radius"] < 0.5
+    assert result["droplets"].data[1]["radius"] > 1
+
+
 @skipUnlessModule(["droplets", "phasesep"])
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
