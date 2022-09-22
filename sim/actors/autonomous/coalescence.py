@@ -6,10 +6,34 @@ from typing import Callable, Tuple
 
 import numpy as np
 
+from numba import literal_unroll
+from numba.extending import overload
+
 from pde.tools.numba import jit
 
 from ...elements import MulticomponentDropletsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType
+
+
+def fill_with_zeros(recarr: np.recarray) -> None:
+    """fill a record array with zeros"""
+    recarr.fill(0)
+
+
+@overload(fill_with_zeros)
+def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
+    """create numba implementation to fill a record array with zeros"""
+    keys = tuple(recarr.dtype.fields.keys())
+
+    def fill_with_zeros_impl(recarr: np.recarray) -> None:
+        """numba implementation to fill a record array with zeros"""
+        for key in literal_unroll(keys):
+            if isinstance(recarr[key], (int, float)):
+                recarr[key] = 0
+            else:
+                recarr[key][:] = 0
+
+    return fill_with_zeros_impl
 
 
 class CoalescenceDropletActor(ActorBase):
@@ -54,8 +78,7 @@ class CoalescenceDropletActor(ActorBase):
                     if dist < radii[i1] + radii[i2]:
                         # overlapping droplets -> remove smaller droplet
                         merge_data(data[i1], data[i2], out=data[i2])
-                        data[i1].radius = 0
-                        # FIXME: We should set all attributes to zero
+                        fill_with_zeros(data[i1])
                         break  # droplet with index i1 has been removed -> continue
 
         return evolver  # type: ignore
@@ -97,5 +120,5 @@ class CoalescenceDropletActor(ActorBase):
                         drop2.data.view(type=np.recarray),
                         out=drop2.data.view(type=np.recarray),
                     )
-                    drop1.data.fill(0)
+                    fill_with_zeros(drop1.data)
                     break  # droplet with index i1 has been removed -> continue
