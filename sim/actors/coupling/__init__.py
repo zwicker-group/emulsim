@@ -8,10 +8,12 @@ Provides actors that affect multiple elements in a simulation.
    ~fields.FieldBoundaryExchangeActor
    ~point_droplet.PointDropletActor
    ~spherical_droplet.SphericalDropletActor
+   ~multicomponent_droplet.MulticomponentDropletActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
 from .fields import FieldBoundaryExchangeActor, FieldCouplingActor
+from .multicomponent_droplet import MulticomponentDropletActor
 from .point_droplet import PointDropletActor
 from .spherical_droplet import SphericalDropletActor

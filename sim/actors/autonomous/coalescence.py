@@ -6,17 +6,40 @@ from typing import Callable, Tuple
 
 import numpy as np
 
-from droplets.tools import spherical
+from numba import literal_unroll
+from numba.extending import overload
+
 from pde.tools.numba import jit
 
-from ...elements import SphericalDropletsElement
+from ...elements import MulticomponentDropletsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType
+
+
+def fill_with_zeros(recarr: np.recarray) -> None:
+    """fill a record array with zeros"""
+    recarr.fill(0)
+
+
+@overload(fill_with_zeros)
+def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
+    """create numba implementation to fill a record array with zeros"""
+    keys = tuple(recarr.dtype.fields.keys())
+
+    def fill_with_zeros_impl(recarr: np.recarray) -> None:
+        """numba implementation to fill a record array with zeros"""
+        for key in literal_unroll(keys):
+            if isinstance(recarr[key], (int, float)):
+                recarr[key] = 0
+            else:
+                recarr[key][:] = 0
+
+    return fill_with_zeros_impl
 
 
 class CoalescenceDropletActor(ActorBase):
     """represents actor that merges overlapping droplets"""
 
-    element_classes = (SphericalDropletsElement,)
+    element_classes = ([SphericalDropletsElement, MulticomponentDropletsElement],)
 
     def make_evolver_numba(
         self, elements: ElementsType
@@ -32,10 +55,8 @@ class CoalescenceDropletActor(ActorBase):
                 (field_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 evolving `field_data`
         """
-
-        dim = int(elements[0].dim)  # type: ignore
-        radius = spherical.make_radius_from_volume_compiled(dim)
-        volume = spherical.make_volume_from_radius_compiled(dim)
+        droplet_class = elements[0].droplet_class  # type: ignore
+        merge_data = droplet_class._make_merge_data()
 
         @jit
         def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
@@ -47,24 +68,18 @@ class CoalescenceDropletActor(ActorBase):
             indices = np.argsort(radii)
 
             # run through droplets from smallest to largest
-            for i, drop1 in enumerate(indices):
-                if radii[drop1] == 0:
+            for progress, i1 in enumerate(indices):
+                if radii[i1] == 0:
                     continue  # skip vanished droplets
 
                 # compare this droplet to all larger droplets
-                for drop2 in indices[i + 1 :]:
-                    dist = np.linalg.norm(data[drop1].position - data[drop2].position)
-                    if dist < radii[drop1] + radii[drop2]:  # overlapping droplets
-                        vol1 = volume(data[drop1].radius)
-                        vol2 = volume(data[drop2].radius)
-                        vol_tot = vol1 + vol2
-                        data[drop1].radius = 0
-                        data[drop2].radius = radius(vol_tot)
-                        # adjust droplet position
-                        pos1 = data[drop1].position
-                        pos2 = data[drop2].position
-                        data[drop2].position[:] = (vol1 * pos1 + vol2 * pos2) / vol_tot
-                        break
+                for i2 in indices[progress + 1 :]:
+                    dist = np.linalg.norm(data[i1].position - data[i2].position)
+                    if dist < radii[i1] + radii[i2]:
+                        # overlapping droplets -> remove smaller droplet
+                        merge_data(data[i1], data[i2], out=data[i2])
+                        fill_with_zeros(data[i1])
+                        break  # droplet with index i1 has been removed -> continue
 
         return evolver  # type: ignore
 
@@ -79,29 +94,31 @@ class CoalescenceDropletActor(ActorBase):
             dt (float):
                 The time step
         """
-        droplets = elements[0].droplets  # type: ignore
-        positions = droplets.data["position"]
-        radii = droplets.data["radius"]
+        drop_el: MulticomponentDropletsElement = elements[0]  # type: ignore
+        droplets = drop_el.droplets
+        positions = droplets.data["position"]  # type: ignore
+        radii = droplets.data["radius"]  # type: ignore
 
         # sort all droplets by radius
         indices = np.argsort(radii)
 
         # run through droplets from smallest to largest
-        for i, drop1 in enumerate(indices):
-            if radii[drop1] == 0:
+        for progress, i1 in enumerate(indices):
+            if radii[i1] == 0:
                 continue  # skip vanished droplets
 
             # compare this droplet to all larger droplets
-            for drop2 in indices[i + 1 :]:
-                dist = np.linalg.norm(positions[drop1] - positions[drop2])
-                if dist < radii[drop1] + radii[drop2]:  # overlapping droplets
-                    vol1 = droplets[drop1].volume
-                    vol2 = droplets[drop2].volume
-                    vol_tot = vol1 + vol2
-                    droplets[drop1].radius = 0  # remove first droplet
-                    droplets[drop2].volume = vol_tot
-                    # adjust droplet position
-                    pos1 = positions[drop1]
-                    pos2 = positions[drop2]
-                    droplets[drop2].position = (vol1 * pos1 + vol2 * pos2) / vol_tot
-                    break
+            for i2 in indices[progress + 1 :]:
+                dist = np.linalg.norm(positions[i1] - positions[i2])
+                if dist < radii[i1] + radii[i2]:
+                    # overlapping droplets -> remove smaller droplet
+                    drop1, drop2 = droplets[i1], droplets[i2]
+                    # we explicitly convert to recarrays since some versions of numpy
+                    # apparently return normal arrays here
+                    drop2._merge_data(
+                        drop1.data.view(type=np.recarray),
+                        drop2.data.view(type=np.recarray),
+                        out=drop2.data.view(type=np.recarray),
+                    )
+                    fill_with_zeros(drop1.data)
+                    break  # droplet with index i1 has been removed -> continue

@@ -155,7 +155,7 @@ def test_field_collection(dim, num_fields):
     """test basic methods of the FieldCollection"""
     grid = UnitGrid([5] * dim)
     fc = FieldCollection.scalar_random_uniform(num_fields, grid)
-    element = FieldCollectionElement.from_field(fc)
+    element = FieldCollectionElement.from_fields(fc)
 
     assert element.dim == dim
     assert element.num_fields == num_fields

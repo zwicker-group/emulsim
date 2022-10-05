@@ -353,7 +353,7 @@ class CollectionPDEActor(ActorBase):
                 scalar field.
             parameters (dict):
                 Parameters affecting the actor. Call
-                :meth:`~ScalarPDEActor.show_parameters` for details.
+                :meth:`~CollectionPDEActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
 
@@ -384,7 +384,7 @@ class CollectionPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde._make_pde_rhs_numba(element._field)  # type: ignore
+        pde_rhs = self.pde._make_pde_rhs_numba(element.fields)  # type: ignore
 
         @jit
         def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
@@ -406,5 +406,5 @@ class CollectionPDEActor(ActorBase):
                 The time step used to evolve the element
         """
         (element,) = elements  # extract single element
-        rate = self.pde.evolution_rate(element._field, t)  # type: ignore
-        element._field += dt * rate  # type: ignore
+        rate = self.pde.evolution_rate(element.fields, t)  # type: ignore
+        element.fields += dt * rate  # type: ignore

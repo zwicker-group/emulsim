@@ -20,7 +20,7 @@ from pde.tools.parameters import Parameterized
 from ..elements import ElementBase
 
 ElementsType = Tuple[ElementBase, ...]
-ElementsSpec = Union[Type[ElementBase], Tuple[Type[ElementBase], ...]]
+ElementsSpec = Union[Type[ElementBase], List[Type[ElementBase]]]
 EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
@@ -41,6 +41,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
+        self.diagnostics: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
@@ -95,7 +96,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                     mismatch_cls = ", ".join(cls.__name__ for cls in expected)  # type: ignore
             else:
                 # actor supports a single class for this element
-                if not issubclass(given_cls, expected):
+                if not issubclass(given_cls, expected):  # type: ignore
                     mismatch_cls = expected.__name__  # type: ignore
 
             if mismatch_cls:
