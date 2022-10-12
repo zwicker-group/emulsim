@@ -90,8 +90,7 @@ class FieldTracker(TrackerBase):
             field = state[self.element_name]._field
         else:
             self._logger.warning(
-                f"Element `{self.element_name}` does not seem "
-                "to contain a scalar field"
+                f"Element `{self.element_name}` does not seem to contain a scalar field"
             )
         self.tracker.handle(field, t)
 

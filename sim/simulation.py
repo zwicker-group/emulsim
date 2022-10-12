@@ -185,10 +185,13 @@ class Simulation:
 
         return graph
 
-    def plot_as_graph(self, **kwargs) -> None:
+    def plot_as_graph(self, layout: Union[str, Callable] = "auto", **kwargs) -> None:
         """represent the simulation in a graphical form
 
         Args:
+            layout (str):
+                Choose a method for determining the layout of the graph. Possible
+                arguments include the names of all `nx.*_layout` functions.
             **kwargs:
                 All arguments are passed to :func:`networkx.draw`
         """
@@ -197,11 +200,16 @@ class Simulation:
         graph = self.get_graph()
 
         # determine the layout of the graph
-        try:
-            pos = nx.nx_pydot.pydot_layout(graph)
-        except ImportError:
-            _logger.warning("Suboptimal graph layout since `pydot` is not available")
-            pos = nx.spring_layout(graph)
+        if callable(layout):
+            pos = layout(graph)
+        elif layout == "auto":
+            try:
+                pos = nx.nx_pydot.pydot_layout(graph)
+            except ImportError:
+                _logger.warning("Suboptimal graph layout since `pydot` is unavailable")
+                pos = nx.spring_layout(graph)
+        else:
+            pos = getattr(nx, layout + "_layout")(graph)
 
         # draw all nodes
         node_color = [
@@ -250,17 +258,40 @@ class Simulation:
 
         return graph
 
-    def plot_interacting_elements(self, label_edges: bool = True, **kwargs) -> None:
-        """plot all interacting elements as a graph"""
+    def plot_interacting_elements(
+        self,
+        layout: Union[str, Callable] = "auto",
+        *,
+        label_edges: bool = True,
+        **kwargs,
+    ) -> None:
+        """plot all interacting elements as a graph
+
+        Args:
+            layout (str):
+                Choose a method for determining the layout of the graph. Possible
+                arguments include the names of all `nx.*_layout` functions or a callable
+                function
+            label_edges (bool):
+                Flag determining whether the edges are labeled with the actors
+            **kwargs:
+                All arguments are passed to :func:`networkx.draw`
+        """
         import networkx as nx
 
         graph = self.get_interacting_elements(with_data=False)
 
         # determine the layout of the graph
-        try:
-            pos = nx.nx_pydot.pydot_layout(graph)
-        except ImportError:
-            pos = nx.spring_layout(graph)
+        if callable(layout):
+            pos = layout(graph)
+        elif layout == "auto":
+            try:
+                pos = nx.nx_pydot.pydot_layout(graph)
+            except ImportError:
+                _logger.warning("Suboptimal graph layout since `pydot` is unavailable")
+                pos = nx.spring_layout(graph)
+        else:
+            pos = getattr(nx, layout + "_layout")(graph)
 
         # draw all nodes
         kwargs.setdefault("with_labels", True)

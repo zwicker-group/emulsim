@@ -1,4 +1,5 @@
 matplotlib
+networkx>=2
 numpy
 numba>=0.56
 scipy
