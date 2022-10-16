@@ -2,6 +2,7 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import numpy as np
 import pytest
 
 from droplets import SphericalDroplet
@@ -45,7 +46,32 @@ def test_simulation():
         simulation.plot_interacting_elements()
 
     # run simulation
-    simulation.run(t_range=10)
+    simulation.run(t_range=10, tracker=None)
+
+
+def test_simulation_values():
+    """test some methods of the Simulation class"""
+    # set up state
+    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
+    element = sim.ScalarFieldElement.from_field(field)
+    state = sim.State({"field": element})
+
+    # set up simulation
+    simulation = sim.Simulation(state.copy())
+    eq = DiffusionPDE(diffusivity=0.1)
+    simulation.add_actor("field", sim.ScalarPDEActor(eq))
+
+    # run simulation using the numba backend
+    simulation.run(t_range=1, backend="numba", tracker=None)
+    result = simulation.state["field"].data
+
+    for adaptive in [True, False]:
+        # run simulation using the numpy backend
+        simulation = sim.Simulation(state.copy())
+        eq = DiffusionPDE(diffusivity=0.1)
+        simulation.add_actor("field", sim.ScalarPDEActor(eq))
+        simulation.run(t_range=1, backend="numpy", adaptive=adaptive, tracker=None)
+        np.testing.assert_allclose(result, simulation.state["field"].data)
 
 
 def test_simulation_timing():
@@ -61,13 +87,13 @@ def test_simulation_timing():
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
 
     # run simulation using the numpy backend
-    simulation.run(t_range=1, backend="numpy")
+    simulation.run(t_range=1, backend="numpy", tracker=None)
     timings = simulation.timings
     assert len(timings) == 1
     assert timings[0] > 0
 
     # run simulation using the numba backend
-    simulation.run(t_range=1, backend="numba")
+    simulation.run(t_range=1, backend="numba", tracker=None)
     timings = simulation.timings
     assert len(timings) == 1
     assert timings[0] > 0

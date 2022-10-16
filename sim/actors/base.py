@@ -28,7 +28,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     """represents a single actor, which affects one or more elements"""
 
     element_classes: Tuple[ElementsSpec, ...] = tuple()
-    """ tuple: defines the elements this actor handles and in what order they need to be
+    """tuple: defines the elements this actor handles and in what order they need to be
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
 

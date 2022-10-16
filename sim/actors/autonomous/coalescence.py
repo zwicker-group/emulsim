@@ -5,7 +5,6 @@
 from typing import Callable, Tuple
 
 import numpy as np
-
 from numba import literal_unroll
 from numba.extending import overload
 
