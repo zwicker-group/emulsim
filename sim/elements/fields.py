@@ -523,7 +523,7 @@ class ScalarFieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`), which determines the concentration
             at point `point` given the field state `data`.
         """
-        interpolate = self._field.make_interpolator(backend="numba")
+        interpolate = self._field.make_interpolator()
 
         @register_jitable
         def get_concentration(data: np.ndarray, point: np.ndarray):
@@ -693,7 +693,7 @@ class FieldCollectionElement(ElementBase):
         """
         # we just need one interpolator for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        interpolate = self._fields[0].make_interpolator(backend="numba")
+        interpolate = self._fields[0].make_interpolator()
         num_fields = self.num_fields
 
         @register_jitable

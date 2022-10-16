@@ -166,7 +166,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         the boundary. The expression of the exchange flux may depend on the
         concentrations in the bulk and the boundary, which are available as the
         variables :code:`bulk` and :code:`boundary` in the respective expression
-        parameter. In contrast, the names of the actual elements in the entire 
+        parameter. In contrast, the names of the actual elements in the entire
         simulation (e.g., `cytosol` and `membrane`) cannot be used to refer to these
         concentrations. The flux is an area flux, so that the total amount of material
         transfered between the two fields is proportional to the time step and the
