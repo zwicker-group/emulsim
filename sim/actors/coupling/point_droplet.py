@@ -37,13 +37,15 @@ class PointDropletActor(ActorBase):
             "equilibrium_concentration",
             "1e-5 / radius",
             object,
-            "Expression for the equilibrium concentration. This expression can contain "
-            "the variables `position`, `radius`, and `id` denoting the droplet radius, "
-            "its position vector, and its identity (the index in the list of droplets)"
-            ", respectively. Alternatively, the value can also be an instance defining "
-            "a __call__ method that returns the equilibrium concentration and a "
-            "`get_compiled` method that returns a numba compiled function for "
-            "calculating it. These functions must have the signature "
+            "Expression/function determining the equilibrium concentration. This can "
+            "be a mathematical expression as a string or a python function. The "
+            "expression can contain the variables `position`, `radius`, and `id` "
+            "denoting the droplet radius, its position vector, and its identity (the "
+            "index in the list of droplets), respectively. If the value is a function "
+            "it should have the signature (position, radius, i) and return the "
+            "equilibrium concentration. it can also be an instance defining a __call__ "
+            "method that returns the equilibrium concentration and a `get_compiled` "
+            "method that returns a numba compiled function for calculating it."
             "(position, radius, i).",
         ),
         Parameter(
