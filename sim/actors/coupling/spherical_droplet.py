@@ -920,9 +920,15 @@ class SphericalDropletActor(ActorBase):
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
                     A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
-                    ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
-                    term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
-                    final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
+                    if k > 0:
+                        # regular case where reaction sensitivities are stabilizing
+                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
+                        final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
+                    else:
+                        raise NotImplementedError(
+                            "Destabilizing reactions have not been implemented"
+                        )
 
             else:  # Reactions are OFF
 
@@ -956,13 +962,19 @@ class SphericalDropletActor(ActorBase):
                 else:  # k is a finite value
                     k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
                     A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
-                    ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
-                    r1, r2 = radius / ξ, (L + radius) / ξ
-                    term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * radius * (
-                        sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
-                    )
-                    term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
-                    final_expression = (2 * D * π * term1) / (k * ξ * term2)
+                    if k > 0:
+                        # regular case where reaction sensitivities are stabilizing
+                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                        r1, r2 = radius / ξ, (L + radius) / ξ
+                        term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * radius * (
+                            sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
+                        )
+                        term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                        final_expression = (2 * D * π * term1) / (k * ξ * term2)
+                    else:
+                        raise NotImplementedError(
+                            "Destabilizing reactions have not been implemented"
+                        )
 
             else:  # Reactions are OFF
                 term = 2 * D * π * (c_far - cEqOut)
@@ -972,17 +984,15 @@ class SphericalDropletActor(ActorBase):
 
         elif self._cache["dim"] == 3:
             # flux for 3d droplet
+            Δc = c_far - cEqOut
             sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
             sOut_c_far = calc_sOut(c_far, droplet_id)
 
             if sOut_cEqOut != 0 or sOut_c_far != 0:  # Reactions are ON
-                if (abs(cEqOut - c_far) < TOLERANCE) or (
-                    abs(sOut_cEqOut - sOut_c_far) < TOLERANCE
-                ):
+                if (abs(Δc) < TOLERANCE) or (abs(sOut_cEqOut - sOut_c_far) < TOLERANCE):
                     # If cEqOut ~ c_far, then sOut_cEqOut ~ sOut_c_far.
-                    # As k->0, we solve
-                    # the Reaction_Diffusion eq D ∇^2(phi) + A = 0, where
-                    # A = (sOut_cEqOut + sOut_c_far) / 2
+                    # As k->0, we thus solve the reaction-diffusion equation
+                    # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
 
                     # Approximate the reaction rate at the center of the shell sector.
                     A = (sOut_cEqOut + sOut_c_far) / 2
@@ -993,19 +1003,26 @@ class SphericalDropletActor(ActorBase):
                     )
                     final_expression = (-2 * π * radius * term) / (3 * L)
 
-                else:  # k is a finite value
-                    k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (-cEqOut + c_far)
-                    ξ = np.sqrt(D / k)
-                    term = -((A - k * cEqOut) * (ξ + radius / np.tanh(L / ξ))) + (
-                        A - k * c_far
-                    ) * (L + radius) / np.sinh(L / ξ)
-                    final_expression = (4 * D * π * radius * term) / (k * ξ)
+                else:
+                    # k is a finite value, so we solve the reaction-diffusion equation
+                    # D ∇^2(phi) + A = 0, where A = (sOut_cEqOut + sOut_c_far) / 2
+                    k = (sOut_cEqOut - sOut_c_far) / Δc
+                    A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / Δc
+                    if k > 0:
+                        # regular case where reaction sensitivities are stabilizing
+                        ξ = np.sqrt(D / k)
+                        t1 = -(A - k * cEqOut) * (ξ + radius / np.tanh(L / ξ))
+                        t2 = (A - k * c_far) * (L + radius) / np.sinh(L / ξ)
+                        final_expression = 4 * π * D * radius * (t1 + t2) / (k * ξ)
+                    else:
+                        # irregular case where reaction sensitivities are destabilizng
+                        ξ = np.sqrt(D / -k)
+                        t1 = (cEqOut * k - A) * (ξ + radius / np.tanh(L / ξ))
+                        t2 = (A - c_far * k) * (L + radius) / np.sinh(L / ξ)
+                        final_expression = 4 * π * D * radius * (t1 + t2) / (-k * ξ)
 
             else:  # Reactions are OFF
-                final_expression = (
-                    4 * (cEqOut - c_far) * D * π * radius * (L + radius)
-                ) / L
+                final_expression = -4 * π * Δc * D * radius * (L + radius) / L
 
             return final_expression  # type: ignore
 
@@ -1072,9 +1089,15 @@ class SphericalDropletActor(ActorBase):
                         A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
                             c_far - cEqOut
                         )
-                        ξ = np.sqrt(D / k)  # Reaction-diffusion length-scale
-                        term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
-                        final_expression = (-2 * D * term / np.sinh(L / ξ)) / (k * ξ)
+                        if k > 0:
+                            # regular case where reaction sensitivities are stabilizing
+                            ξ = np.sqrt(D / k)  # Reaction-diffusion length-scale
+                            term = -A + k * c_far + (A - k * cEqOut) * np.cosh(L / ξ)
+                            final_expression = -2 * D * term / np.sinh(L / ξ) / (k * ξ)
+                        else:
+                            raise NotImplementedError(
+                                "Destabilizing reactions have not been implemented"
+                            )
 
                     return final_expression
 
@@ -1124,13 +1147,19 @@ class SphericalDropletActor(ActorBase):
                         A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
                             -cEqOut + c_far
                         )
-                        ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
-                        r1, r2 = R / ξ, (L + R) / ξ
-                        term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * R * (
-                            sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
-                        )
-                        term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
-                        final_expression = (2 * D * π * term1) / (k * ξ * term2)
+                        if k > 0:
+                            # regular case where reaction sensitivities are stabilizing
+                            ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
+                            r1, r2 = R / ξ, (L + R) / ξ
+                            term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * R * (
+                                sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
+                            )
+                            term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                            final_expression = (2 * D * π * term1) / (k * ξ * term2)
+                        else:
+                            raise NotImplementedError(
+                                "Destabilizing reactions have not been implemented"
+                            )
 
                     return final_expression  # type: ignore
 
@@ -1167,17 +1196,24 @@ class SphericalDropletActor(ActorBase):
                             + 6 * c_far * D * (L + R)
                             + A * L * L * (L + 3 * R)
                         )
-                        final_expression = (-2 * π * R * term) / (3 * L)
+                        final_expression = -2 * π * R * term / (3 * L)
 
                     else:  # k is a finite value
-                        k = (sOut_c_far - sOut_cEqOut) / (cEqOut - c_far)
-                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / (
-                            -cEqOut + c_far
-                        )
-                        ξ = np.sqrt(D / k)
-                        term1 = -(A - k * cEqOut) * (ξ + R / np.tanh(L / ξ))
-                        term2 = (A - k * c_far) * (L + R) / np.sinh(L / ξ)
-                        final_expression = (4 * D * π * R * (term1 + term2)) / (k * ξ)
+                        Δc = c_far - cEqOut
+                        k = (sOut_cEqOut - sOut_c_far) / Δc
+                        A = (c_far * sOut_cEqOut - cEqOut * sOut_c_far) / Δc
+                        if k > 0:
+                            # regular case where reaction sensitivities are stabilizing
+                            ξ = np.sqrt(D / k)
+                            t1 = -(A - k * cEqOut) * (ξ + R / np.tanh(L / ξ))
+                            t2 = (A - k * c_far) * (L + R) / np.sinh(L / ξ)
+                            final_expression = 4 * π * D * R * (t1 + t2) / (k * ξ)
+                        else:
+                            # irregular case where reaction sensitivities are destabilizng
+                            ξ = np.sqrt(D / -k)
+                            t1 = (cEqOut * k - A) * (ξ + R / np.tanh(L / ξ))
+                            t2 = (A - c_far * k) * (L + R) / np.sinh(L / ξ)
+                            final_expression = 4 * π * D * R * (t1 + t2) / (-k * ξ)
 
                     return final_expression
 
