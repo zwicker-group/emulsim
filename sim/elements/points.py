@@ -5,7 +5,7 @@ Provides an element that represents a collection of points
 """
 
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class PointsElement(ElementBase):
         )
     ]
 
-    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
@@ -135,7 +135,7 @@ class PointsElement(ElementBase):
 class ArrowsElement(PointsElement):
     """an element that represents a collection of points with direction"""
 
-    def __init__(self, data: np.recarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.recarray, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (:class:`~numpy.recarray`):
@@ -156,7 +156,7 @@ class ArrowsElement(PointsElement):
         cls,
         positions: np.ndarray,
         directions: np.ndarray,
-        parameters: Dict[str, Any] = None,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> "ArrowsElement":
         """create element from separately specified positions and directions
 
@@ -184,7 +184,7 @@ class ArrowsElement(PointsElement):
         cls,
         positions: np.ndarray,
         direction_magnitude: Union[float, np.ndarray] = 1,
-        parameters: Dict[str, Any] = None,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> "ArrowsElement":
         """create element from separately specified positions and directions
 

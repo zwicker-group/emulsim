@@ -11,7 +11,7 @@ Provides classes that track simulation results
 """
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
@@ -48,7 +48,7 @@ class FieldTracker(TrackerBase):
     def initialize(  # type: ignore
         self,
         state: State,
-        info: InfoDict = None,
+        info: Optional[InfoDict] = None,
     ) -> float:
         """initialize the tracker with information about the simulation
 
@@ -94,7 +94,7 @@ class FieldTracker(TrackerBase):
             )
         self.tracker.handle(field, t)
 
-    def finalize(self, info: InfoDict = None) -> None:
+    def finalize(self, info: Optional[InfoDict] = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:
@@ -125,7 +125,7 @@ class DropletElementTracker(TrackerBase):
         store_emulsions: Union[bool, str] = True,
         store_droplet_tracks: Union[bool, str] = True,
         keep_vanished: bool = False,
-        background_grid: GridBase = None,
+        background_grid: Optional[GridBase] = None,
     ):
         """
         Args:
@@ -168,7 +168,7 @@ class DropletElementTracker(TrackerBase):
     def initialize(  # type: ignore
         self,
         state: State,
-        info: InfoDict = None,
+        info: Optional[InfoDict] = None,
     ) -> float:
         """
         Args:
@@ -220,7 +220,7 @@ class DropletElementTracker(TrackerBase):
                 if is_active or droplet.radius > 0 or self.keep_vanished:
                     track.append(droplet, time=t)
 
-    def finalize(self, info: InfoDict = None) -> None:
+    def finalize(self, info: Optional[InfoDict] = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:

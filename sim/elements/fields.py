@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Any, Callable, Dict, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 import numba as nb
 import numpy as np
@@ -39,7 +39,7 @@ class ReservoirElement(ElementBase):
 
     dim = None  # works for any dimension
 
-    def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
+    def __init__(self, data: float = 0, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (float):
@@ -239,7 +239,7 @@ class MeanfieldElement(FieldElementBase):
         )
     ]
 
-    def __init__(self, data: float = 0, parameters: Dict[str, Any] = None):
+    def __init__(self, data: float = 0, parameters: Optional[Dict[str, Any]] = None):
         """initialize the meanfield element
 
         Args:
@@ -429,7 +429,9 @@ class ScalarFieldElement(FieldElementBase):
         Parameter("label", "", str, "The name of the field"),
     ]
 
-    def __init__(self, data: NumberOrArray = 0, parameters: Dict[str, Any] = None):
+    def __init__(
+        self, data: NumberOrArray = 0, parameters: Optional[Dict[str, Any]] = None
+    ):
         """
         Args:
             data (:class:`~numpy.ndarray` or float, optional):
@@ -563,7 +565,7 @@ class FieldCollectionElement(ElementBase):
     def __init__(
         self,
         data: np.ndarray,
-        parameters: Dict[str, Any] = None,
+        parameters: Optional[Dict[str, Any]] = None,
     ):
         """
         Args:
@@ -776,7 +778,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         Parameter("label", "", str, "The name of the field"),
     ]
 
-    def __init__(self, data: NumberOrArray = 0, parameters: Dict[str, Any] = None):
+    def __init__(
+        self, data: NumberOrArray = 0, parameters: Optional[Dict[str, Any]] = None
+    ):
         """
         Args:
             data (:class:`~numpy.ndarray` or float, optional):
@@ -832,9 +836,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         cls,
         grid: CartesianGrid,
         axis: int,
-        upper: bool = None,
+        upper: Optional[bool] = None,
         data: NumberOrArray = 0,
-        parameters: Dict[str, Any] = None,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> ScalarBoundaryFieldElement:
         """create a scalar boundary element using a grid describing the full domain
 

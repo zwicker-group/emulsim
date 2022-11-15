@@ -194,7 +194,7 @@ class MulticomponentDropletsElement(ElementBase):
 
     droplet_class = MulticomponentDroplet
 
-    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
@@ -237,7 +237,10 @@ class MulticomponentDropletsElement(ElementBase):
 
     @classmethod
     def from_droplets(
-        cls, droplets: Emulsion, copy: bool = False, parameters: Dict[str, Any] = None
+        cls,
+        droplets: Emulsion,
+        copy: bool = False,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> MulticomponentDropletsElement:
         """
         Args:

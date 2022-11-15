@@ -10,7 +10,7 @@ import inspect
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -96,8 +96,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                     mismatch_cls = ", ".join(cls.__name__ for cls in expected)  # type: ignore
             else:
                 # actor supports a single class for this element
-                if not issubclass(given_cls, expected):  # type: ignore
-                    mismatch_cls = expected.__name__  # type: ignore
+                if not issubclass(given_cls, expected):
+                    mismatch_cls = expected.__name__
 
             if mismatch_cls:
                 # the actor did not accept the element
@@ -154,7 +154,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             cache_key = state_attributes + tuple(sorted(kwargs.items()))
             if not objects_equal(self._cache.get("cache_key"), cache_key):
                 # the cache is out-of-date
-                self._update_cache(elements, **kwargs)  # type: ignore
+                self._update_cache(elements, **kwargs)
                 self._cache["cache_key"] = cache_key
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:

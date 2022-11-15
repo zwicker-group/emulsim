@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class SphericalDropletsElement(ElementBase):
 
     _data: np.recarray
 
-    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
@@ -67,7 +67,10 @@ class SphericalDropletsElement(ElementBase):
 
     @classmethod
     def from_droplets(
-        cls, droplets: Emulsion, copy: bool = False, parameters: Dict[str, Any] = None
+        cls,
+        droplets: Emulsion,
+        copy: bool = False,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
         """
         Args:
