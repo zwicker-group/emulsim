@@ -15,7 +15,7 @@ Provides actors that influence scalar fields
 
 
 import inspect
-from typing import Any, Callable, Dict, Tuple, Type  # @UnusedImport
+from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
 
 import numba as nb
 import numpy as np
@@ -46,7 +46,7 @@ class MeanfieldActor(ActorBase):
 
     element_classes = (MeanfieldElement,)
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -124,7 +124,7 @@ class ScalarPDEActor(ActorBase):
 
     element_classes = (ScalarFieldElement,)
 
-    def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
+    def __init__(self, pde: PDEBase, parameters: Optional[Dict[str, Any]] = None):
         """initialize the actor and its PDE
 
         Args:
@@ -211,7 +211,7 @@ class DiffusionActor(ScalarPDEActor):
         ),
     ]
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -276,7 +276,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
         ),
     ]
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -344,7 +344,7 @@ class CollectionPDEActor(ActorBase):
 
     element_classes = (FieldCollectionElement,)
 
-    def __init__(self, pde: PDEBase, parameters: Dict[str, Any] = None):
+    def __init__(self, pde: PDEBase, parameters: Optional[Dict[str, Any]] = None):
         """initialize the actor and its PDE
 
         Args:

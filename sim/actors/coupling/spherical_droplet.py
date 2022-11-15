@@ -18,7 +18,7 @@ local size compared to all other shell sectors.
 
 import itertools
 import warnings
-from typing import Any, Callable, Dict, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numba as nb
 import numpy as np
@@ -176,7 +176,7 @@ class PointsOnSphere:
         self.dim = self.points.shape[-1]
 
     @classmethod
-    def make_uniform(cls, dim: int, num_points: int = None):
+    def make_uniform(cls, dim: int, num_points: Optional[int] = None):
         """create uniformly distributed points on a sphere
 
         Args:
@@ -338,7 +338,7 @@ class PointsOnSphere:
 class ShellSectors:
     """class representing the sectors of a single shell"""
 
-    def __init__(self, vectors: np.ndarray, weights: np.ndarray = None):
+    def __init__(self, vectors: np.ndarray, weights: Optional[np.ndarray] = None):
         """
         Args:
             vectors (list):
@@ -440,7 +440,7 @@ class ShellCollection:
         self,
         shells: Sequence[ShellSectors],
         max_radii: Sequence[float],
-        info_dict: Dict[str, Any] = None,
+        info_dict: Optional[Dict[str, Any]] = None,
     ):
         """
         Args:
@@ -472,7 +472,9 @@ class ShellCollection:
 
     @classmethod
     def from_dictlist(
-        cls, dictlist: Sequence[Dict[str, Any]], info_dict: Dict[str, Any] = None
+        cls,
+        dictlist: Sequence[Dict[str, Any]],
+        info_dict: Optional[Dict[str, Any]] = None,
     ) -> "ShellCollection":
         """create shell collection from a list of dictionaries
 
@@ -498,7 +500,7 @@ class ShellCollection:
         dim: int,
         sector_size_max: float = 1,
         radius_max: float = np.inf,
-        info_dict: Dict[str, Any] = None,
+        info_dict: Optional[Dict[str, Any]] = None,
     ) -> "ShellCollection":
         """generate a :class:`ShellCollection` for a simulation
 
@@ -1253,9 +1255,9 @@ class SphericalDropletActor(ActorBase):
     def plot_shell_points(
         self,
         elements: ActorElementType,
-        state_style: Dict[str, Any] = None,
-        point_style: Dict[str, Any] = None,
-        shell_style: Dict[str, Any] = None,
+        state_style: Optional[Dict[str, Any]] = None,
+        point_style: Optional[Dict[str, Any]] = None,
+        shell_style: Optional[Dict[str, Any]] = None,
     ):
         r"""plot all shell points around the droplets of a given state
 

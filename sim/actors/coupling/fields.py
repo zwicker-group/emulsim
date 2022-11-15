@@ -4,7 +4,7 @@ Provides an actor coupling two or more fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class FieldCouplingActor(ActorBase):
         ),
     ]
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):

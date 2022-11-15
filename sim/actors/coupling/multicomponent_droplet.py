@@ -6,7 +6,7 @@ Provides an actor coupling multicomponent droplets to background fields
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numba as nb
 import numpy as np
@@ -235,7 +235,7 @@ class MulticomponentDropletActor(ActorBase):
         cls,
         parameters: Dict[str, Any],
         rates: np.ndarray,
-        production: np.ndarray = None,
+        production: Optional[np.ndarray] = None,
     ) -> MulticomponentDropletActor:
         """create functions suitable to describe linear reactions
 
@@ -271,7 +271,10 @@ class MulticomponentDropletActor(ActorBase):
         else:
 
             def droplet_reactions(
-                phis: np.ndarray, mus: np.ndarray, t: float, out: np.ndarray = None
+                phis: np.ndarray,
+                mus: np.ndarray,
+                t: float,
+                out: Optional[np.ndarray] = None,
             ) -> np.ndarray:
                 """function implementing the linear reactions"""
                 if out is None:

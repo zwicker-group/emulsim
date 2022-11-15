@@ -40,7 +40,9 @@ class State(Parameterized):
     ]
 
     def __init__(
-        self, elements: Dict[str, ElementBase] = None, parameters: Dict[str, Any] = None
+        self,
+        elements: Optional[Dict[str, ElementBase]] = None,
+        parameters: Optional[Dict[str, Any]] = None,
     ):
         """
         Args:
@@ -204,7 +206,7 @@ class State(Parameterized):
             element._write_hdf_dataset(hdf_path.create_group(name))
         hdf_write_attributes(hdf_path, {"elements": element_names})
 
-    def to_file(self, filename: str, info: Dict[str, Any] = None) -> None:
+    def to_file(self, filename: str, info: Optional[Dict[str, Any]] = None) -> None:
         r"""store elements in a hdf file
 
         Args:
@@ -304,8 +306,8 @@ class State(Parameterized):
     def plot(
         self,
         ax,
-        element_args: Dict[str, Any] = None,
-        invisible_elements: Iterable[str] = None,
+        element_args: Optional[Dict[str, Any]] = None,
+        invisible_elements: Optional[Iterable[str]] = None,
         **kwargs,
     ):
         r"""visualize the state
@@ -353,7 +355,10 @@ class State(Parameterized):
             ax.set_aspect(1)
 
     def plot_interactive(
-        self, grid: GridBase = None, viewer_args: Dict[str, Any] = None, **kwargs
+        self,
+        grid: Optional[GridBase] = None,
+        viewer_args: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ):
         """create an interactive plot of the field using :mod:`napari`
 

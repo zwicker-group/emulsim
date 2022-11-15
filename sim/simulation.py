@@ -13,7 +13,16 @@ Provides a class representing the full simulation
 import logging
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Union  # @UnusedImport
+from typing import (  # @UnusedImport
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numba as nb
 import numpy as np
@@ -37,7 +46,7 @@ class Simulation:
     def __init__(
         self,
         state: State,
-        actors: Sequence[Tuple[ElementNamesType, ActorBase]] = None,
+        actors: Optional[Sequence[Tuple[ElementNamesType, ActorBase]]] = None,
         *,
         check: str = "log",
         profile: bool = False,
@@ -305,7 +314,7 @@ class Simulation:
                 graph, pos, edge_labels=edge_labels, label_pos=0.5
             )
 
-    def estimate_dt(self, state: State = None) -> float:
+    def estimate_dt(self, state: Optional[State] = None) -> float:
         """get the optimal time step for the simulation
 
         Args:
@@ -330,7 +339,7 @@ class Simulation:
         return min(dts)
 
     def _make_evolve_state(
-        self, actor_id: int, state: State = None
+        self, actor_id: int, state: Optional[State] = None
     ) -> Callable[[Tuple[np.ndarray, ...], float, float], Union[float, None]]:
         """factory function creating a function to evolve a single actor
 
@@ -388,7 +397,7 @@ class Simulation:
         # return the evolver for this actor, which now will be properly closed
         return evolve_state  # type: ignore
 
-    def make_evolver_numba(self, state: State = None) -> EvolverType:
+    def make_evolver_numba(self, state: Optional[State] = None) -> EvolverType:
         """return a function evolving the state from time `t` to `t + dt`
 
         Args:
@@ -402,7 +411,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        def chain(actor_id: int, inner: Callable = None) -> Callable:
+        def chain(actor_id: int, inner: Optional[Callable] = None) -> Callable:
             """recursive factory function for running all actors"""
             # get the evolver function
             actor_evolver = self._make_evolve_state(actor_id, state=state)
@@ -491,7 +500,7 @@ class Simulation:
     def run(
         self,
         t_range: TRangeType,
-        dt: float = None,
+        dt: Optional[float] = None,
         tracker: TrackerCollectionDataType = ["progress"],
         backend: str = "auto",
         ret_info: bool = False,
@@ -776,7 +785,7 @@ class SimulationSolver(SolverBase):
         self._cache_stepper["fixed_numba"] = stepper
         return stepper
 
-    def make_stepper(self, state: State, dt: float = None) -> Callable:
+    def make_stepper(self, state: State, dt: Optional[float] = None) -> Callable:
         r"""return a stepper function using an explicit scheme
 
         Note that if the `numba` backend is chosen, the state supplied to this
