@@ -1019,8 +1019,8 @@ class SphericalDropletActor(ActorBase):
                     else:
                         # irregular case where reaction sensitivities are destabilizng
                         ξ = np.sqrt(D / -k)
-                        t1 = (cEqOut * k - A) * (ξ + radius / np.tanh(L / ξ))
-                        t2 = (A - c_far * k) * (L + radius) / np.sinh(L / ξ)
+                        t1 = (A - cEqOut * k) * (ξ + radius / np.tan(L / ξ))
+                        t2 = (c_far * k - A) * (L + radius) / np.sin(L / ξ)
                         final_expression = 4 * π * D * radius * (t1 + t2) / (-k * ξ)
 
             else:  # Reactions are OFF
@@ -1213,8 +1213,8 @@ class SphericalDropletActor(ActorBase):
                         else:
                             # irregular case where reaction sensitivities are destabilizng
                             ξ = np.sqrt(D / -k)
-                            t1 = (cEqOut * k - A) * (ξ + R / np.tanh(L / ξ))
-                            t2 = (A - c_far * k) * (L + R) / np.sinh(L / ξ)
+                            t1 = (A - cEqOut * k) * (ξ + R / np.tan(L / ξ))
+                            t2 = (c_far * k - A) * (L + R) / np.sin(L / ξ)
                             final_expression = 4 * π * D * R * (t1 + t2) / (-k * ξ)
 
                     return final_expression
