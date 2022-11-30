@@ -12,12 +12,12 @@ jobs:
         python-version: ['3.8', '3.10']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
          submodules: 'true'
          token: ${{ secrets.ACCESS_TOKEN }}
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -39,4 +39,4 @@ jobs:
     - name: Test types with mypy
       continue-on-error: true
       run: |
-        python -m mypy --config-file tests/mypy.ini --pretty --package sim
+        python -m mypy --config-file pyproject.toml --pretty --package sim
