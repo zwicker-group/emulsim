@@ -295,6 +295,7 @@ sphinx_gallery_conf = {
     "ignore_pattern": r".*movie.*|.*interactive.*",
     "capture_repr": (),
     "show_signature": False,
+    "only_warn_on_example_error": True,
 }
 
 # run autodoc
