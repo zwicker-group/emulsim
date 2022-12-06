@@ -15,7 +15,7 @@ from droplets import Emulsion, SphericalDroplet
 from droplets.tools.spherical import volume_from_radius
 from pde.grids.base import GridBase
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
 class MulticomponentDroplet(SphericalDroplet):
@@ -186,7 +186,7 @@ class MulticomponentDroplet(SphericalDroplet):
         return super()._get_mpl_patch(dim=dim, **kwargs)
 
 
-class MulticomponentDropletsElement(ElementBase):
+class MulticomponentDropletsElement(ArrayElementBase):
     """an element representing many droplets"""
 
     _data: np.recarray
@@ -256,7 +256,7 @@ class MulticomponentDropletsElement(ElementBase):
         # create class without calling its __init__
         obj = cls.__new__(cls)
         # call the parent __init__ with a temporary array
-        ElementBase.__init__(obj, None, parameters=parameters)
+        ArrayElementBase.__init__(obj, None, parameters=parameters)
 
         # initialize droplets
         obj.droplets = Emulsion(droplets, copy=copy)

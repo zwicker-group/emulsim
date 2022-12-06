@@ -11,12 +11,12 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
-from pde.tools.parameters import Parameter
+from modelrunner.parameters import Parameter
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
-class SphericalDropletsElement(ElementBase):
+class SphericalDropletsElement(ArrayElementBase):
     """an element representing many droplets"""
 
     parameters_default = [
@@ -86,7 +86,7 @@ class SphericalDropletsElement(ElementBase):
         # create class without calling its __init__
         obj = cls.__new__(cls)
         # call the parent __init__ with a temporary array
-        ElementBase.__init__(obj, None, parameters=parameters)
+        ArrayElementBase.__init__(obj, None, parameters=parameters)
 
         # initialize droplets
         obj.droplets = Emulsion(droplets, copy=copy)

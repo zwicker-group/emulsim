@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements.fields import FieldElementBase
 from ..base import ActorBase, ElementsType

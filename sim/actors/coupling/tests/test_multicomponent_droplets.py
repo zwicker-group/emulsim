@@ -249,9 +249,8 @@ def test_multicomponent_coarsening(backend):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
     """test active droplet simulation"""
-    import phasesep
-
     import droplets
+    import phasesep
 
     chi, mobility, kf, kb, t_range = 3.0, 1, 0.002, 0.01, 1000
 

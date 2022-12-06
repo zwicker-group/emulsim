@@ -14,8 +14,8 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 
+from modelrunner.parameters import Parameterized
 from pde.tools.cache import objects_equal
-from pde.tools.parameters import Parameterized
 
 from ..elements import ElementBase
 

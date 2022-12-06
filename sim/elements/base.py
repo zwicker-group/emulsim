@@ -15,8 +15,9 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 
 import numpy as np
 
+from modelrunner.parameters import Parameterized
+from modelrunner.state import ArrayState
 from pde.tools.cache import objects_equal
-from pde.tools.parameters import Parameterized
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -92,15 +93,15 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         return cls(data, attributes.get("parameters", None))
 
     @classmethod
-    def _from_hdf_dataset(cls, dataset) -> ElementBase:
+    def _from_hdf(cls, hdf_element) -> ElementBase:
         """construct the element by reading data from an hdf5 dataset
 
         Args:
             dataset: the hdf5 dataset (in an already opened file)
         """
-        if "class" in dataset.attrs:
+        if "class" in hdf_element.attrs:
             # assume everything is stored in root directory
-            dataset = dataset
+            dataset = hdf_element
         else:
             # assume a single field is stored in the data
             dataset_names = list(dataset.keys())
@@ -126,21 +127,6 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
         # construct the instance
         return field_cls.from_state(attributes, data=dataset)
-
-    @classmethod
-    def from_file(cls, path: str) -> ElementBase:
-        """create element instance from a stored state
-
-        Args:
-            path (str): Path to the file being read
-
-        Returns:
-            :class:`ElementBase`: The create instance
-        """
-        import h5py
-
-        with h5py.File(path, "r") as fp:
-            return cls._from_hdf_dataset(fp)
 
     def __str__(self):
         return f"{self.__class__.__name__}(...)"
@@ -218,7 +204,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
         return value
 
-    def to_file(self, filename: str, **kwargs):
+    def _write_hdf(self, root, key: str = "data", **kwargs):
         r"""store element state in a file
 
         Args:
@@ -227,35 +213,11 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             \**kwargs:
                 Additional parameters may be supported for some formats
         """
-        import h5py
-
-        with h5py.File(filename, "w") as fp:
-            self._write_hdf_dataset(fp, **kwargs)
-
-    def _write_hdf_dataset(self, hdf_path, key: str = "data"):
-        """write data to a given hdf5 file pointer `hdf_path`
-
-        Args:
-            hdf_path: the hdf5 dataset (in an already opened file)
-        """
-        dataset = hdf_path.create_dataset(key, data=self.data)
+        dataset = root.create_dataset(key, data=self.data)
 
         # write serialized attributes
         for name, value in self.attributes.items():
             dataset.attrs[name] = self.serialize_attribute(name, value)
-
-    def copy(self, data=None):
-        """create a copy of the element
-
-        Args:
-            data:
-                New data to overwrite the data of the current element. If
-                omitted, the data of the current element is copied.
-        """
-        if data is None:
-            data = self.data.copy()
-        attributes = copy.deepcopy(self.attributes)
-        return self.__class__.from_state(attributes=attributes, data=data)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -289,3 +251,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
             dict: all the information necessary to plot this element
         """
         raise NotImplementedError
+
+
+class ArrayElementBase(ElementBase, ArrayState):
+    ...

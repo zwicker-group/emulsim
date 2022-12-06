@@ -8,10 +8,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.grids import CartesianGrid
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import FieldElementBase, ScalarBoundaryFieldElement
 from ..base import ActorBase, ElementsType

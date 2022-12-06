@@ -22,19 +22,19 @@ import numba as nb
 import numpy as np
 from numba.extending import register_jitable
 
+from modelrunner.parameters import Parameter
 from pde.fields import FieldCollection, ScalarField
 from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
-class ReservoirElement(ElementBase):
+class ReservoirElement(ArrayElementBase):
     """an element representing a homogeneous, constant field"""
 
     dim = None  # works for any dimension
@@ -135,7 +135,7 @@ class ReservoirElement(ElementBase):
         return add_amount  # type: ignore
 
 
-class FieldElementBase(ElementBase, metaclass=ABCMeta):
+class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
     """base class for field elements"""
 
     def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
@@ -545,7 +545,7 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.grid.make_inserter_compiled()
 
 
-class FieldCollectionElement(ElementBase):
+class FieldCollectionElement(ArrayElementBase):
     """the state associated with multiple spatially resolved fields"""
 
     parameters_default = [

@@ -20,11 +20,11 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
 import numba as nb
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.pdes.base import PDEBase
 from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import FieldCollectionElement, MeanfieldElement, ScalarFieldElement
 from ..base import ActorBase, ElementsType

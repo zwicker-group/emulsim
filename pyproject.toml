@@ -65,8 +65,9 @@ extend-exclude = "submodules"
 
 [tool.isort]
 profile = "black"
+skip_glob = "*submodules*"
 src_paths = ["sim", "examples", "tests"]
-known_first_party = ["pde", "droplets", "phasesep"]
+known_first_party = ["droplets", "modelrunner", "pde", "phasesep"]
 known_self = "sim"
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "SELF", "LOCALFOLDER"]
 
@@ -106,6 +107,7 @@ module = [
     "napari.*",
     "networkx.*",
     "numba_mpi.*",
+    "numcodecs.*",
     "numpy.*",
     "pandas.*",
     "pyfftw.*",
@@ -114,5 +116,6 @@ module = [
     "scipy.*",
     "sympy.*",
     "tqdm.*",
+    "zarr.*",
 ]
 ignore_missing_imports = true

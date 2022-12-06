@@ -6,9 +6,9 @@ from typing import Callable, Tuple
 
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType

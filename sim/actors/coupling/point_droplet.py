@@ -10,10 +10,10 @@ from typing import Callable, List, Tuple, Union
 import numpy as np
 
 from droplets.tools import spherical
+from modelrunner.parameters import Parameter
 from pde.grids.base import DimensionError
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase

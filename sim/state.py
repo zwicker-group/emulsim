@@ -13,9 +13,9 @@ from collections import defaultdict
 from typing import Optional  # @UnusedImport
 from typing import Any, Dict, Iterable, Sequence, Set, Tuple, Union
 
+from modelrunner.parameters import Parameter, Parameterized
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.misc import hdf_write_attributes
-from pde.tools.parameters import Parameter, Parameterized
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import ElementBase

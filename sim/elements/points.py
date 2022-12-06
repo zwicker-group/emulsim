@@ -9,13 +9,13 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from pde.tools.parameters import Parameter
+from modelrunner.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
-class PointsElement(ElementBase):
+class PointsElement(ArrayElementBase):
     """an element that represents a collection of points"""
 
     parameters_default = [
