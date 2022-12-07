@@ -810,7 +810,10 @@ class SimulationSolver(SolverBase):
             dt = self.simulation.estimate_dt(state)
             if np.isinf(dt):
                 # this can happen if there are no restrictions on the time step
-                dt = 1e3
+                dt = 1.0
+                self._logger.warning(
+                    f"Time step could not be determined automatically. Using dt={dt}"
+                )
 
         # store information about the simulation
         self.info["dt"] = dt
