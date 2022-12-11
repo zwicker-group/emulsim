@@ -13,7 +13,7 @@ from pde.tools.misc import skipUnlessModule
 
 from .. import (
     ArrowsElement,
-    ElementBase,
+    ObjectElementBase,
     MeanfieldElement,
     PointsElement,
     ScalarFieldElement,
@@ -21,7 +21,7 @@ from .. import (
 )
 
 
-class EmptyElement(ElementBase):
+class EmptyElement(ObjectElementBase):
     """dummy class to test the simplest element"""
 
     parameters_default = {"dim": 2}  # type: ignore

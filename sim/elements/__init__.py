@@ -17,7 +17,7 @@ Provides classes representing elements of a simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .base import ElementBase
+from .base import ObjectElementBase, ArrayElementBase
 from .fields import (
     FieldCollectionElement,
     FieldElementBase,

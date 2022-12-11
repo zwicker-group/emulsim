@@ -6,7 +6,6 @@ Module defining the abstract base class of elements
 
 from __future__ import annotations
 
-import copy
 import json
 import logging
 import math
@@ -16,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 import numpy as np
 
 from modelrunner.parameters import Parameterized
-from modelrunner.state import ArrayState
+from modelrunner.state import ArrayState, ObjectState
 from pde.tools.cache import objects_equal
 
 SerializedAttributesType = Dict[str, str]
@@ -253,5 +252,13 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError
 
 
+class ObjectElementBase(ElementBase, ObjectState):
+    """Element storing data in a python object"""
+
+    ...
+
+
 class ArrayElementBase(ElementBase, ArrayState):
+    """Element storing data in a numpy array"""
+
     ...
