@@ -5,19 +5,18 @@
 import numpy as np
 import pytest
 
+from droplets import SphericalDroplet
 from pde.tools.misc import skipUnlessModule
 
-from .... import Simulation, State
-from .. import CoalescenceDropletActor
+from sim import Simulation, State
+from sim.actors.autonomous import CoalescenceDropletActor
+from sim.elements import SphericalDropletsElement
 
 
 @skipUnlessModule("droplets")
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_coalescence(backend):
     """simple test of droplet coalescence"""
-    from droplets import SphericalDroplet
-
-    from ....elements import SphericalDropletsElement
 
     droplets = [
         SphericalDroplet(np.random.uniform(0, 1, 2), np.random.uniform(1, 2))

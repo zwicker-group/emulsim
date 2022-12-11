@@ -12,9 +12,9 @@ from pde import CartesianGrid, ScalarField, UnitGrid
 from pde.grids.base import DimensionError
 from pde.tools.misc import module_available, skipUnlessModule
 
-from .... import ReactionDiffusionActor, Simulation, State
-from ....elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
-from .. import spherical_droplet
+from sim import ReactionDiffusionActor, Simulation, State
+from sim.actors.coupling import spherical_droplet
+from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
 
 
 def recarrays_allclose(a, b):

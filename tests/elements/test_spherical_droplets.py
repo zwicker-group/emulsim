@@ -8,7 +8,7 @@ import pytest
 
 from droplets import SphericalDroplet
 
-from .. import SphericalDropletsElement
+from sim.elements import SphericalDropletsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])

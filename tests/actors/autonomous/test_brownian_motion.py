@@ -5,10 +5,11 @@
 
 import numpy as np
 
+from droplets import SphericalDroplet
 from pde.tools.misc import skipUnlessModule
 
-from ....elements import PointsElement
-from .. import BrownianMotionActor
+from sim.actors.autonomous import BrownianMotionActor
+from sim.elements import PointsElement, SphericalDropletsElement
 
 
 def test_brownian_motion_points():
@@ -31,10 +32,6 @@ def test_brownian_motion_points():
 @skipUnlessModule("droplets")
 def test_brownian_motion_droplets():
     """simple test of Brownian motion of droplets"""
-
-    from droplets import SphericalDroplet
-
-    from ....elements import SphericalDropletsElement
 
     droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)

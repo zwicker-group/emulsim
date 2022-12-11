@@ -8,13 +8,13 @@ import pytest
 from pde import CartesianGrid, DiffusionPDE, ScalarField, UnitGrid
 from pde.tools.misc import skipUnlessModule
 
-from ....elements import MeanfieldElement, ScalarFieldElement
-from ..fields import (
+from sim.actors.autonomous.fields import (
     DiffusionActor,
     MeanfieldActor,
     ReactionDiffusionActor,
     ScalarPDEActor,
 )
+from sim.elements import MeanfieldElement, ScalarFieldElement
 
 
 def test_diffusion_actor():

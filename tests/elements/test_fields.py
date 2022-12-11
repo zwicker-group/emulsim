@@ -9,7 +9,7 @@ import pytest
 
 from pde import CartesianGrid, FieldCollection, ScalarField, UnitGrid
 
-from .. import (
+from sim.elements import (
     FieldCollectionElement,
     MeanfieldElement,
     ReservoirElement,
