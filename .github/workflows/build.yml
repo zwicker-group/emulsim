@@ -33,7 +33,7 @@ jobs:
         MPLBACKEND: agg
       run: |
         pip install pytest
-        cd tests
+        cd scripts
         ./tests_run.sh
 
     - name: Test types with mypy

@@ -8,14 +8,14 @@ import pytest
 
 from pde import CartesianGrid, ScalarField, UnitGrid
 
-from .... import Simulation, State
-from ....elements import (
+from sim import Simulation, State
+from sim.actors.autonomous import DiffusionActor
+from sim.actors.coupling.fields import FieldBoundaryExchangeActor, FieldCouplingActor
+from sim.elements import (
     MeanfieldElement,
     ScalarBoundaryFieldElement,
     ScalarFieldElement,
 )
-from ...autonomous import DiffusionActor
-from ..fields import FieldBoundaryExchangeActor, FieldCouplingActor
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])

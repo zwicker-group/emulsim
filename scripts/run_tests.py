@@ -123,7 +123,7 @@ def run_unit_tests(
         )
 
     # specify the package to run
-    args.append(PACKAGE)
+    args.append("tests")
 
     # actually run the test
     sp.check_call(args, env=env, cwd=PACKAGE_PATH)

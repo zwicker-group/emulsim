@@ -10,14 +10,14 @@ import pde
 from pde.tools.misc import skipUnlessModule
 from pde.tools.numba import jit
 
-from .... import Simulation, State
-from ....elements import (
+from sim import Simulation, State
+from sim.actors.coupling import MulticomponentDropletActor
+from sim.actors.coupling.multicomponent_droplet import _make_regularizer
+from sim.elements import (
     FieldCollectionElement,
     MulticomponentDroplet,
     MulticomponentDropletsElement,
 )
-from .. import MulticomponentDropletActor
-from ..multicomponent_droplet import _make_regularizer
 
 
 @pytest.mark.parametrize("do_jit", [True, False])

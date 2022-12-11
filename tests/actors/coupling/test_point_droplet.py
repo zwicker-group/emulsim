@@ -12,9 +12,8 @@ from pde.grids import UnitGrid
 from pde.grids.base import DimensionError
 
 from sim import Simulation, State
-
-from ....elements import MeanfieldElement, SphericalDropletsElement
-from ..point_droplet import PointDropletActor
+from sim.actors.coupling.point_droplet import PointDropletActor
+from sim.elements import MeanfieldElement, SphericalDropletsElement
 
 
 @pytest.mark.parametrize("dim", [3])

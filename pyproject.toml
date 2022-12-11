@@ -50,11 +50,7 @@ zip-safe = false  # required for mypy to find the py.typed file
 
 [tool.setuptools.packages.find]
 include = ["sim*"]
-exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
 namespaces = false
-
-[tool.setuptools.exclude-package-data]
-"*" = ["*.tests", "*.tests.*", "tests.*", "tests"]
 
 [tool.setuptools_scm]
 write_to = "sim/_version.py"
@@ -113,6 +109,7 @@ module = [
     "qtpy.*",
     "scipy.*",
     "sympy.*",
+    "ternary.*",
     "tqdm.*",
 ]
 ignore_missing_imports = true

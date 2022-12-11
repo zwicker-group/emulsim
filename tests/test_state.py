@@ -4,10 +4,10 @@
 
 import pytest
 
+from elements.test_generic import generate_elements
 from pde.tools.misc import skipUnlessModule
 
-from ..elements.tests.test_generic import generate_elements
-from ..state import State
+from sim.state import State
 
 
 @pytest.mark.parametrize("dim", [1, 2])

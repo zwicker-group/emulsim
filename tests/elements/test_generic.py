@@ -11,7 +11,7 @@ from droplets import SphericalDroplet
 from pde import ScalarField, UnitGrid
 from pde.tools.misc import skipUnlessModule
 
-from .. import (
+from sim.elements import (
     ArrowsElement,
     ElementBase,
     MeanfieldElement,
