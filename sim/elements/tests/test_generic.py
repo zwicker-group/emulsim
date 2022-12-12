@@ -13,8 +13,8 @@ from pde.tools.misc import skipUnlessModule
 
 from .. import (
     ArrowsElement,
-    ObjectElementBase,
     MeanfieldElement,
+    ObjectElementBase,
     PointsElement,
     ScalarFieldElement,
     SphericalDropletsElement,
