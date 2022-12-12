@@ -17,7 +17,7 @@ import numpy as np
 from modelrunner.parameters import Parameterized
 from pde.tools.cache import objects_equal
 
-from ..elements import ElementBase
+from ..elements.base import ElementBase
 
 ElementsType = Tuple[ElementBase, ...]
 ElementsSpec = Union[Type[ElementBase], List[Type[ElementBase]]]

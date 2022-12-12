@@ -362,7 +362,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        state_data_type = nb.typeof(state.data)
+        state_data_type = nb.typeof(state._data_numba)
 
         elements, actor = self.actors[actor_id]
         actor_evolver = actor.make_evolver_numba(state[elements])
@@ -715,7 +715,7 @@ class SimulationSolver(SolverBase):
 
                 # calculate maximal error
                 error = 0.0
-                for data1, data2 in zip(state1.data, state2.data):
+                for data1, data2 in zip(state1._data_numba, state2._data_numba):
                     error_item = np.abs(data1 - data2).max()
                     if np.isnan(error_item):
                         error = np.nan
@@ -731,8 +731,8 @@ class SimulationSolver(SolverBase):
                     if error_rel <= 1:
                         steps += 1
                         t += dt_step
-                        for i, el_data in enumerate(state2.data):
-                            state.data[i][...] = el_data
+                        for i, el_data in enumerate(state2._data_numba):
+                            state._data_numba[i][...] = el_data
 
                 if t < t_end:
                     # adjust the time step and continue
@@ -776,7 +776,7 @@ class SimulationSolver(SolverBase):
 
             for step in range(steps):
                 t = t_start + step * dt  # advance time
-                simulation_evolver(state.data, t, dt)
+                simulation_evolver(state._data_numba, t, dt)
 
             self.info["steps"] += steps
 
@@ -810,7 +810,10 @@ class SimulationSolver(SolverBase):
             dt = self.simulation.estimate_dt(state)
             if np.isinf(dt):
                 # this can happen if there are no restrictions on the time step
-                dt = 1e3
+                dt = 1.0
+                self._logger.warning(
+                    f"Time step could not be determined automatically. Using dt={dt}"
+                )
 
         # store information about the simulation
         self.info["dt"] = dt

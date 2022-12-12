@@ -6,8 +6,8 @@
 import numpy as np
 import pytest
 
-from ...elements import MeanfieldElement
-from ..function import FunctionActor, NumbaFunctionActor
+from sim.actors.function import FunctionActor, NumbaFunctionActor
+from sim.elements import MeanfieldElement
 
 
 def test_function_actor_1el():

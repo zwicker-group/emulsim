@@ -31,7 +31,7 @@ class SphericalDropletsElement(ArrayElementBase):
 
     droplet_class = SphericalDroplet
 
-    _data: np.recarray
+    data: np.recarray
 
     def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
         """
@@ -62,7 +62,11 @@ class SphericalDropletsElement(ArrayElementBase):
                 "determine the dimensionality of the element."
             )
 
-        self._data = self.droplets.get_linked_data()  # type: ignore
+        self._set_data_from_droplets()
+
+    def _set_data_from_droplets(self) -> None:
+        """sets the data data arrays from the droplet data array"""
+        self._data_numba = self.data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
 
     @classmethod
@@ -95,8 +99,7 @@ class SphericalDropletsElement(ArrayElementBase):
                 cls_name = droplet.__class__.__name__
                 raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
 
-        obj._data = obj.droplets.get_linked_data()  # type: ignore
-        obj.dim = obj.droplets.dim
+        obj._set_data_from_droplets()
 
         return obj
 

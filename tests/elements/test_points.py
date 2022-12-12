@@ -7,7 +7,7 @@ Test points element functionality
 import numpy as np
 import pytest
 
-from .. import ArrowsElement
+from sim.elements import ArrowsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])

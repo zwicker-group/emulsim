@@ -7,7 +7,7 @@ import pytest
 
 from pde.tools.numba import jit
 
-from .. import MulticomponentDroplet, MulticomponentDropletsElement
+from sim.elements import MulticomponentDroplet, MulticomponentDropletsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])

@@ -229,11 +229,15 @@ class MulticomponentDropletsElement(ArrayElementBase):
         self.droplets = Emulsion(droplets)  # type: ignore
 
         if len(self.droplets) == 0:
-            self._data = data.copy().view(np.recarray)
+            self._data_numba = self.data = data.copy().view(np.recarray)
             self.dim = None
         else:
-            self._data = self.droplets.get_linked_data()  # type: ignore
-            self.dim = self.droplets.dim
+            self._set_data_from_droplets()
+
+    def _set_data_from_droplets(self) -> None:
+        """sets the data data arrays from the droplet data array"""
+        self._data_numba = self.data = self.droplets.get_linked_data()  # type: ignore
+        self.dim = self.droplets.dim
 
     @classmethod
     def from_droplets(
@@ -265,8 +269,7 @@ class MulticomponentDropletsElement(ArrayElementBase):
                 cls_name = droplet.__class__.__name__
                 raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
 
-        obj._data = obj.droplets.get_linked_data()  # type: ignore
-        obj.dim = obj.droplets.dim
+        obj._set_data_from_droplets()
 
         return obj
 

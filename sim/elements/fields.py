@@ -73,7 +73,7 @@ class ReservoirElement(ArrayElementBase):
                 color specifications are allowed.
             {PLOT_ARGS}
         """
-        pass
+        ...
 
     def get_concentration(self, points: np.ndarray):
         """determine concentration at the given points
@@ -102,7 +102,7 @@ class ReservoirElement(ArrayElementBase):
             amount:
                 The total amount added to the field
         """
-        pass
+        ...
 
     def make_get_concentration_compiled(self) -> Callable:
         """get a compiled function for obtaining concentrations
@@ -130,7 +130,7 @@ class ReservoirElement(ArrayElementBase):
 
         @nb.jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
-            pass
+            ...
 
         return add_amount  # type: ignore
 
@@ -151,15 +151,15 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
 
-    @cached_property()
+    @abstractmethod
     def grid(self) -> CartesianGrid:
         """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
-        return CartesianGrid(self.bounds, 1)
+        ...
 
     @abstractproperty
     def total_amount(self) -> float:
         """float: the total material amount in the field"""
-        pass
+        ...
 
     @property
     def average_concentration(self) -> float:
@@ -175,7 +175,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
                 The coordinates of the single point or the list of points at
                 which the concentration is returned
         """
-        pass
+        ...
 
     @abstractmethod
     def add_amount(self, point: np.ndarray, amount: float):
@@ -187,7 +187,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
             amount (float):
                 The total amount added to the field
         """
-        pass
+        ...
 
     def make_get_concentration_compiled(self) -> Callable:
         """get a compiled function for obtaining concentrations
@@ -211,7 +211,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
     def plot(self, ax=None, **kwargs):
         """plot the field"""
-        pass
+        ...
 
     def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
         """returns data for plotting on a single napari layer
@@ -274,6 +274,11 @@ class MeanfieldElement(FieldElementBase):
         assert isinstance(field, ScalarField)
         data = float(field.average)  # type: ignore
         return cls(data, {"bounds": field.grid.axes_bounds})
+
+    @cached_property()
+    def grid(self) -> CartesianGrid:
+        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        return CartesianGrid(self.bounds, 1)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -451,7 +456,7 @@ class ScalarFieldElement(FieldElementBase):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data = self._field.data
+        self._data_numba = self.data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
     @classmethod
@@ -592,8 +597,7 @@ class FieldCollectionElement(ArrayElementBase):
         else:
             fields = [ScalarField(self.grid, field_data) for field_data in data]
         self._fields = FieldCollection(fields, label=self.parameters["label"])
-
-        self._data = self.fields.data
+        self._data_numba = self.data = self.fields.data
 
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
@@ -803,7 +807,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data = self._field.data
+        self._data_numba = self.data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
         # correct some values to make them bulk quantities

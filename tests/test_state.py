@@ -4,21 +4,22 @@
 
 import pytest
 
-from pde.tools.misc import skipUnlessModule
+from elements.test_generic import generate_elements
+from pde.tools.numba import jit
 
-from ..elements.tests.test_generic import generate_elements
-from ..state import State
+from sim.state import State
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_state(dim):
+def test_state_general(dim, capsys):
     """test some methods of the SimulationState class"""
-    s = State({str(i): el for i, el in enumerate(generate_elements(dim))})
+    s = State(
+        {str(i): el for i, el in enumerate(generate_elements(dim, incl_obj=False))}
+    )
 
     assert isinstance(str(s), str)
     assert isinstance(repr(s), str)
     assert isinstance(s.attributes, dict)
-    assert len(s.attributes["elements"]) == len(s)
     assert len(s.data) == len(s)
     assert s.degrees_of_freedom > 0
 
@@ -56,6 +57,14 @@ def test_state(dim):
     if dim == 2:
         s.plot()
 
+    @jit
+    def printer(state):
+        print(state)
+
+    printer(s._data_numba)
+    captured = capsys.readouterr()
+    assert captured.out != ""
+
 
 def test_state_errors():
     """test some safe-guarding of the State class"""
@@ -63,13 +72,12 @@ def test_state_errors():
         State({str(i): el for i, el in enumerate(generate_elements())})
 
 
-@skipUnlessModule("h5py")
 @pytest.mark.parametrize("dim", [1, 2])
 def test_state_io(dim, tmp_path):
     """test some IO of the State class"""
     s1 = State({str(i): el for i, el in enumerate(generate_elements(dim))})
 
-    path = tmp_path / "state.hdf5"
+    path = tmp_path / "state.zarr"
     s1.to_file(path)
     s2 = State.from_file(path)
     assert s1 is not s2

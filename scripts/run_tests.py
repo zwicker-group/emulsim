@@ -123,14 +123,14 @@ def run_unit_tests(
         )
 
     # specify the package to run
-    args.append(PACKAGE)
+    args.append("tests")
 
     # actually run the test
     sp.check_call(args, env=env, cwd=PACKAGE_PATH)
 
 
 def main():
-    """ the main program controlling the tests """
+    """the main program controlling the tests"""
     # parse the command line arguments
     parser = argparse.ArgumentParser(
         description=f"Run tests of the `{PACKAGE}` package.",

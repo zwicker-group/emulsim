@@ -7,7 +7,7 @@ import numpy as np
 from droplets import SphericalDroplet
 from pde import MemoryStorage, ScalarField, UnitGrid
 
-from .. import *
+from sim import *
 
 
 def test_field_tracker():

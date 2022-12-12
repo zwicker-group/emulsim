@@ -6,8 +6,8 @@
 import numpy as np
 import pytest
 
-from ....elements import ArrowsElement
-from .. import ActiveParticleActor
+from sim.actors.autonomous import ActiveParticleActor
+from sim.elements import ArrowsElement
 
 
 def test_active_particles():
