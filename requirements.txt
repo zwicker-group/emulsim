@@ -1,6 +1,6 @@
 matplotlib>=3.1.0
 networkx>=2
-numpy>=1.18.0
+numpy>=1.18.0,<1.24
 numba>=0.56
 scipy>=1.4.0
 sympy>=1.5.0

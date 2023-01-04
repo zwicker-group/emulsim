@@ -149,7 +149,7 @@ class Simulation:
 
             if len(actor.element_classes) > 0:
                 element_objects = [self.state.elements[name] for name in elements]
-                if not actor.supports_elements(*element_objects):
+                if not actor.supports_elements(*element_objects, silent=True):
                     show_msg(f"Unsupported elements for `{actor.__class__.__name__}`")
 
             # check whether the same actor has already been added earlier
