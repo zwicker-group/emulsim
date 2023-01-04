@@ -101,7 +101,10 @@ class PointsElement(ElementBase):
         patches = [mpl.patches.Circle(pos, radius) for pos in positions]
 
         # add all patches as a collection
-        coll = mpl.collections.PatchCollection(patches, facecolors=(color,))
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+        plot_args.setdefault("facecolors", (color,))
+        coll = mpl.collections.PatchCollection(patches, **plot_args)
         ax.add_collection(coll)
 
         # determine bounding box
@@ -248,7 +251,10 @@ class ArrowsElement(PointsElement):
 
         # add all patches as a collection
         # TODO represent data by arrows
-        coll = mpl.collections.PatchCollection(patches, facecolors=(color,))
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+        plot_args.setdefault("facecolors", (color,))
+        coll = mpl.collections.PatchCollection(patches, **plot_args)
         ax.add_collection(coll)
 
         # determine bounding box

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 import numpy as np
 
 from pde.tools.cache import objects_equal
-from pde.tools.parameters import Parameterized
+from pde.tools.parameters import Parameter, Parameterized
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -27,6 +27,10 @@ if TYPE_CHECKING:
 
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """represents a simulation element"""
+
+    parameters_default = [
+        Parameter("plot_args", {}, dict, "Extra arguments for plotting this element")
+    ]
 
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
