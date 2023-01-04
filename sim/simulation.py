@@ -136,14 +136,14 @@ class Simulation:
         if check != "ignore":
             # run some checks before adding the actor
 
-            def show_msg(msg: str):
+            def show_msg(msg: str, exception: TypeError):
                 """helper function showing the message according to chosen method"""
                 if check == "warn":
                     warnings.warn(msg)
                 elif check == "log":
                     self._logger.warning(msg)
                 elif check == "raise":
-                    raise RuntimeError(msg)
+                    raise exception(msg)
                 else:
                     raise ValueError(f"Unknown argument check='{check}'")
 
@@ -157,7 +157,8 @@ class Simulation:
                 if elements2 == elements and actor2.__class__ is actor.__class__:
                     show_msg(
                         f"An actor of type `{actor.__class__.__name__}` has already "
-                        f"been added for elements {elements}"
+                        f"been added for elements {elements}",
+                        RuntimeError,
                     )
 
         self.actors.append((elements, actor))
