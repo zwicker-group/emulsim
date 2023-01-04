@@ -122,7 +122,7 @@ def test_spherical_droplets(dim):
     evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver((droplets.data, field.data), 0, 0.5)
+    evolver((droplets._data_numba, field._data_numba), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
@@ -173,7 +173,7 @@ def test_spherical_droplets_const_shell_count(dim):
     evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver((droplets.data, field.data), 0, 0.5)
+    evolver((droplets._data_numba, field._data_numba), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
@@ -218,7 +218,7 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
 
     if compiled:
         evolver = sim.make_evolver_numba(state)
-        evolver(state.data, 0, 0.5)
+        evolver(state._data_numba, 0, 0.5)
     else:
         sim.evolve(state, 0, 0.5)
     assert d1.total_amount > d2.total_amount
@@ -249,7 +249,7 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
 
     if compiled:
         evolver = sim.make_evolver_numba(state)
-        evolver(state.data, 0, 0.5)
+        evolver(state._data_numba, 0, 0.5)
     else:
         sim.evolve(state, 0, 0.5)
     assert d1.total_amount > d2.total_amount
@@ -407,7 +407,7 @@ def test_multithreading():
     evolver1 = coupling1.make_evolver_numba((droplets1, field1))
     evolver2 = coupling2.make_evolver_numba((droplets2, field2))
 
-    evolver1((droplets1.data, field1.data), 0, 0.001)
-    evolver2((droplets2.data, field2.data), 0, 0.001)
+    evolver1((droplets1._data_numba, field1._data_numba), 0, 0.001)
+    evolver2((droplets2._data_numba, field2._data_numba), 0, 0.001)
 
     np.testing.assert_allclose(field1.data, field2.data, rtol=0.1)

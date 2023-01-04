@@ -42,7 +42,7 @@ def test_point_droplets_diffusion(dim):
     evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver((droplets.data, field.data), 0, 0.5)
+    evolver((droplets._data_numba, field._data_numba), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
@@ -145,7 +145,7 @@ def test_point_droplets_linear(dim):
     evolver = coupling.make_evolver_numba((droplets, field))
     droplets.data[0].radius = 1  # reset radius to check whether it agrees
     field.concentration = 0
-    evolver((droplets.data, field.data), 0, 0.5)
+    evolver((droplets._data_numba, field._data_numba), 0, 0.5)
     assert field.total_amount + droplets.total_amount == total_amount
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius

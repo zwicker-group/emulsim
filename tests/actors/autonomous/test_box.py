@@ -30,7 +30,7 @@ def test_box_actor_reflect(periodic):
     np.testing.assert_allclose(p1.positions, expected.reshape(-1, 1))
 
     evolver = box.make_evolver_numba((p2,))
-    evolver((p2.data,), 1, 1)
+    evolver((p2._data_numba,), 1, 1)
     np.testing.assert_allclose(p2.positions, expected.reshape(-1, 1))
 
 
@@ -59,6 +59,6 @@ def test_box_actor_reflect_arrows(periodic):
     np.testing.assert_allclose(p1.directions, direction_exp)
 
     evolver = box.make_evolver_numba((p2,))
-    evolver((p2.data,), 1, 1)
+    evolver((p2._data_numba,), 1, 1)
     np.testing.assert_allclose(p2.positions, coords_exp)
     np.testing.assert_allclose(p2.directions, direction_exp)

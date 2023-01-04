@@ -35,7 +35,7 @@ def test_function_actor_1el():
 
     element.data[:] = 1
     evolver = actor_nb.make_evolver_numba((element,))
-    evolver((element.data,), 0, 2)
+    evolver((element._data_numba,), 0, 2)
     np.testing.assert_allclose(element.data, np.array([3]))
 
 

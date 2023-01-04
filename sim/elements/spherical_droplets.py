@@ -66,7 +66,7 @@ class SphericalDropletsElement(ArrayElementBase):
 
     def _set_data_from_droplets(self) -> None:
         """sets the data data arrays from the droplet data array"""
-        self._data_numba = self.data = self.droplets.get_linked_data()  # type: ignore
+        self.data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
 
     @classmethod

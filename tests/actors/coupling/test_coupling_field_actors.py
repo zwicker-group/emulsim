@@ -37,7 +37,7 @@ def test_fields_1(dim):
 
     state = element.copy()
     evolver = actor.make_evolver_numba((state,))
-    evolver((state.data,), 1, 2)
+    evolver((state._data_numba,), 1, 2)
     assert np.allclose(state.data, 6)
 
 
@@ -65,7 +65,7 @@ def test_fields_2(dim):
     e1 = element1.copy()
     e2 = element2.copy()
     evolver = actor.make_evolver_numba((e1, e2))
-    evolver((e1.data, e2.data), 0, 1)
+    evolver((e1._data_numba, e2._data_numba), 0, 1)
     assert np.allclose(e1.data, element1.data + element2.data)
     assert np.allclose(e2.data, element2.data)
 

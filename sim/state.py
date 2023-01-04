@@ -12,25 +12,24 @@ parameters of the state, e.g., how it is being visualized):
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import copy
+from __future__ import annotations
+
 import itertools
-import logging
 import warnings
 from collections import defaultdict
-from typing import Optional  # @UnusedImport
-from typing import Any, Dict, Iterable, Sequence, Set, Tuple, Union
+from typing import Optional, Any, Dict, Iterable, Sequence, Set, Union, Tuple
 
 from numba.typed import Dict as NumbaDict
 
-from modelrunner import DictState
 from modelrunner.parameters import Parameter, Parameterized
+from modelrunner.state import DictState
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import ElementBase
 
 
-class State(DictState, Parameterized):
+class State(Parameterized, DictState):
     """defines the state of the simulation as a collection of elements"""
 
     parameters_default = [
@@ -48,6 +47,8 @@ class State(DictState, Parameterized):
         ),
     ]
 
+    data: Dict[str, ElementBase]  # type: ignore
+
     def __init__(
         self,
         elements: Optional[Dict[str, ElementBase]] = None,
@@ -62,27 +63,31 @@ class State(DictState, Parameterized):
             parameters (dict):
                 Parameters that affect the entire state
         """
+        # parse parameters and initialize self.parameters
         Parameterized.__init__(self, parameters)
-        self._logger = logging.getLogger(__name__)
 
         # determine dimensionality of space
-        if self.parameters["bounds"] is not None:
-            self.dim: Optional[int] = len(self.parameters["bounds"])
+        if self.parameters["bounds"] is None:
+            self.dim = None  # cannot determine dimension at this point
         else:
-            self.dim = None
+            self.dim: Optional[int] = len(self.parameters["bounds"])
 
-        # add elements to the simulation
-        self.elements: Dict[str, ElementBase] = dict()
+        # initialize empty dictionary storage
+        DictState.__init__(self, {})
+
+        # add elements to the state
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
 
-        DictState.__init__(self, self.elements)
-
     @property
     def _data_numba(self) -> Tuple:
         """returns the data associated with the state in a form that numba can handle"""
-        return tuple(element._data_numba for element in self.data.values())
+        return tuple(state._data_numba for state in self.data.values())
+
+    @property
+    def elements(self) -> Dict[str, ElementBase]:
+        return self.data
 
     def add_element(self, name: str, element: ElementBase):
         """adds an element to the simulation
@@ -170,12 +175,12 @@ class State(DictState, Parameterized):
             return False
         return all(self.elements[key] == other.elements[key] for key in self.elements)
 
-    def copy(self) -> "State":
-        """copy the state"""
-        return self.__class__(
-            {name: element.copy() for name, element in self},
-            parameters=copy.deepcopy(self.parameters),
-        )
+    # def copy(self) -> State:
+    #     """copy the state"""
+    #     return self.__class__(
+    #         {name: element.copy() for name, element in self},
+    #         parameters=copy.deepcopy(self.parameters),
+    #     )
 
     @property
     def attributes(self) -> Dict[str, Any]:

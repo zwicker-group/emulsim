@@ -456,7 +456,7 @@ class ScalarFieldElement(FieldElementBase):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data_numba = self.data = self._field.data
+        self.data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
     @classmethod
@@ -486,7 +486,7 @@ class ScalarFieldElement(FieldElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size
+        return self.data.size  # type: ignore
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -597,7 +597,7 @@ class FieldCollectionElement(ArrayElementBase):
         else:
             fields = [ScalarField(self.grid, field_data) for field_data in data]
         self._fields = FieldCollection(fields, label=self.parameters["label"])
-        self._data_numba = self.data = self.fields.data
+        self.data = self.fields.data
 
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
@@ -642,7 +642,7 @@ class FieldCollectionElement(ArrayElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size
+        return self.data.size  # type: ignore
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -807,7 +807,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data_numba = self.data = self._field.data
+        self.data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
         # correct some values to make them bulk quantities

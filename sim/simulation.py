@@ -354,7 +354,7 @@ class Simulation:
         """
         # Programmer's note: We separated out this part of creating the inner evolvers
         # because of python's variable scoping. If the `evolve_state` functions were to
-        # be defined in the inner loop in the the `make_evolver_numba` function the
+        # be defined in the inner loop in the `make_evolver_numba` function the
         # variables used in `evolve_state` would always refer to the values at the last
         # loop (unless the whole function is compiled by numba). This leads to
         # unexpected behavior, so we now properly close the variables using this factory

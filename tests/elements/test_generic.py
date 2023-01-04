@@ -73,7 +73,6 @@ def test_basic(element):
     assert isinstance(str(element), str)
     assert isinstance(repr(element), str)
     assert isinstance(element.attributes, dict)
-    assert isinstance(element.data, np.ndarray)
 
     e1 = element.copy()
     assert e1 is not element

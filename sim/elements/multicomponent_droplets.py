@@ -229,14 +229,14 @@ class MulticomponentDropletsElement(ArrayElementBase):
         self.droplets = Emulsion(droplets)  # type: ignore
 
         if len(self.droplets) == 0:
-            self._data_numba = self.data = data.copy().view(np.recarray)
+            self.data = data.copy().view(np.recarray)
             self.dim = None
         else:
             self._set_data_from_droplets()
 
     def _set_data_from_droplets(self) -> None:
         """sets the data data arrays from the droplet data array"""
-        self._data_numba = self.data = self.droplets.get_linked_data()  # type: ignore
+        self.data = self.droplets.get_linked_data()
         self.dim = self.droplets.dim
 
     @classmethod

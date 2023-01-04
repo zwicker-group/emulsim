@@ -25,7 +25,7 @@ def test_brownian_motion_points():
 
     ref = element.copy()
     evolver = actor.make_evolver_numba((element,))
-    evolver((element.data,), 0, 1)
+    evolver((element._data_numba,), 0, 1)
     assert np.all(element.data != ref.data)
 
 
@@ -45,6 +45,6 @@ def test_brownian_motion_droplets():
 
     ref = element.copy()
     evolver = actor.make_evolver_numba((element,))
-    evolver((element.data,), 0, 1)
+    evolver((element._data_numba,), 0, 1)
     assert np.all(element.data["position"] != ref.data["position"])
     assert np.all(element.data["radius"] == ref.data["radius"])

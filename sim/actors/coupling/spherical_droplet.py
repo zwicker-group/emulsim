@@ -734,7 +734,7 @@ class SphericalDropletActor(ActorBase):
         ),
     ]
 
-    element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])
+    element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])  # type: ignore
 
     reaction_rate_tolerance: float = 1e-10
     """float: tolerance determining when a simpler expression for reactions is used"""
@@ -805,7 +805,7 @@ class SphericalDropletActor(ActorBase):
         self._cache["sBaseIn"] = self._parse_expression("mean_reaction_inside")
 
         # parse the parameters using initialization values from the background
-        discretization = field.grid.typical_discretization
+        discretization = field.grid.typical_discretization  # type: ignore
         variables = {"dx": discretization, "discretization": discretization}
         for key in ["shell_thickness", "shell_sector_size"]:
             self._cache[key] = expressions.parse_number(self.parameters[key], variables)
@@ -857,7 +857,7 @@ class SphericalDropletActor(ActorBase):
             length_scale = shell_thickness
 
         # ensure that characteristic length scale is not too small
-        grid_size = max(bounds[1] - bounds[0] for bounds in field.grid.axes_bounds)
+        grid_size = max(bounds[1] - bounds[0] for bounds in field.grid.axes_bounds)  # type: ignore
         length_scale = max(length_scale, 1e-4 * grid_size)
 
         # calculate time scale from length scale and diffusivity
@@ -1363,7 +1363,7 @@ class SphericalDropletActor(ActorBase):
         surface = spherical.make_surface_from_radius_compiled(dim)
         volume = spherical.make_volume_from_radius_compiled(dim)
 
-        normalize_point = field.grid.make_normalize_point_compiled()
+        normalize_point = field.grid.make_normalize_point_compiled()  # type: ignore
         get_concentration = field.make_get_concentration_compiled()
         add_amount = field.make_add_amount_compiled()
 
@@ -1631,4 +1631,4 @@ class SphericalDropletActor(ActorBase):
 
                 area = droplet.surface_area
                 d = droplets.dim / (cEqIn * area) * amount_per_shell_out @ shell.vectors
-                droplet.position = field.grid.normalize_point(droplet.position + d)
+                droplet.position = field.grid.normalize_point(droplet.position + d)  # type: ignore
