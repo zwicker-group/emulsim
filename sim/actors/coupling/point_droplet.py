@@ -15,6 +15,7 @@ from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
+
 from ..base import ActorBase
 
 ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
@@ -335,10 +336,11 @@ class PointDropletActor(ActorBase):
 
             # update the droplet volume
             dV = (amount_in + amount_out) / cEqIn
-            if V + dV < 0:
+            if V + dV <= 0:
                 # droplet disappears
                 amount_out = -V * cEqIn - amount_in
                 droplet_data.radius = 0.0  # remove all droplet material
+                droplet_data.lifetime = t +  dt * (-V * cEqIn)/(-dt * flux_out) 
             else:
                 droplet_data.radius = radius(V + dV)
 
@@ -415,6 +417,7 @@ class PointDropletActor(ActorBase):
                 # make sure
                 amount_out = -droplet.volume * cEqIn - amount_in
                 droplet.volume = 0  # remove all droplet material
+                droplet_data.lifetime = t +  dt * (-V * cEqIn)/(-dt * flux_out) 
             else:
                 droplet.volume = droplet.volume + dV
 
