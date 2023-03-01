@@ -6,7 +6,20 @@ elements, encoding their autonomous dynamics, or on multiple elements,
 introducing couplings.
 """
 
-__version__ = "0.1"
+# determine the package version
+try:
+    # try reading version of the automatically generated module
+    from ._version import __version__  # type: ignore
+except ImportError:
+    # determine version automatically from CVS information
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        __version__ = version("sim")
+    except PackageNotFoundError:
+        # package is not installed, so we cannot determine any version
+        __version__ = "unknown"
+    del version, PackageNotFoundError  # clean name space
 
 from .actors import *
 from .elements import *

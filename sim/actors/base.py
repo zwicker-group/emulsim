@@ -6,9 +6,11 @@ Supplies the base class for actors
 
 from __future__ import annotations
 
+import inspect
+import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 
@@ -18,19 +20,19 @@ from pde.tools.parameters import Parameterized
 from ..elements import ElementBase
 
 ElementsType = Tuple[ElementBase, ...]
-ElementsSpec = Union[Type[ElementBase], Tuple[Type[ElementBase], ...]]
+ElementsSpec = Union[Type[ElementBase], List[Type[ElementBase]]]
 EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """represents a single actor, which affects one or more elements"""
 
-    element_classes: Tuple[ElementsSpec, ...] = (ElementBase,)
-    """ tuple: defines the elements this actor handles and in what order they
-    need to be supplied. The default assumes a single generic element. If an
-    actor affects multiple elements, this values needs to be specified."""
+    element_classes: Tuple[ElementsSpec, ...] = tuple()
+    """tuple: defines the elements this actor handles and in what order they need to be
+    supplied. An empty list indicates that all elements and lists of elements are
+    accepted. Setting this attribute allows internal consistency checks."""
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -39,6 +41,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """
         super().__init__(parameters)
         self._cache: Dict[str, Any] = {}
+        self.diagnostics: Dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
@@ -51,6 +54,66 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """int: the number of elements this actor affects. This value is
         determined from the `element_classes` attribute"""
         return len(self.element_classes)
+
+    @classmethod
+    def supports_elements(
+        cls,
+        *elements: Union[ElementBase, Type[ElementBase]],
+        silent: bool = False,
+    ) -> bool:
+        """determines whether this actor supports the given elements
+
+        Args:
+            elements (:class:`~sim.elements.base.ElementBase`):
+                Various elements or element classes.
+            silent (bool):
+                Determines whether the function returns silently or whether an exception
+                is raised when an element is not supported.
+
+        Returns:
+            bool: Whether the current actor supports the elements in the given order
+        """
+        if len(elements) != len(cls.element_classes):
+            if silent:
+                return False
+            else:
+                raise ValueError(f"Expected {len(cls.element_classes)} elements")
+
+        # check whether all elements have the expected type
+        for given, expected in zip(elements, cls.element_classes):
+            if isinstance(given, ElementBase):
+                given_cls = given.__class__
+            elif inspect.isclass(given):
+                given_cls = given
+            else:
+                raise TypeError("Instance of subclass of `ElementBase` required")
+
+            # check whether the actor declares the element as matching
+            mismatch_cls = None
+            if hasattr(expected, "__iter__"):
+                # actor supports multiple classes for this element
+                if not any(issubclass(given_cls, cls) for cls in expected):  # type: ignore
+                    mismatch_cls = ", ".join(cls.__name__ for cls in expected)  # type: ignore
+            else:
+                # actor supports a single class for this element
+                if not issubclass(given_cls, expected):
+                    mismatch_cls = expected.__name__
+
+            if mismatch_cls:
+                # the actor did not accept the element
+                # check whether the element declares the actor as compatible
+                if cls in given_cls._compatible_actors:
+                    mismatch_cls = None
+
+            if mismatch_cls:
+                if silent:
+                    return False
+                else:
+                    raise TypeError(
+                        f"Element is a `{given_cls.__name__}`, but actor type "
+                        f"`{cls.__name__}` expects `{mismatch_cls}`."
+                    )
+        return True
 
     @property
     def info(self) -> Dict[str, Any]:
@@ -91,7 +154,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             cache_key = state_attributes + tuple(sorted(kwargs.items()))
             if not objects_equal(self._cache.get("cache_key"), cache_key):
                 # the cache is out-of-date
-                self._update_cache(elements, **kwargs)  # type: ignore
+                self._update_cache(elements, **kwargs)
                 self._cache["cache_key"] = cache_key
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:
@@ -126,3 +189,37 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 which evolves the state
         """
         pass
+
+
+def find_actors(
+    *elements: Union[ElementBase, Type[ElementBase]], unordered: bool = False
+) -> List[Type[ActorBase]]:
+    """finds actors compatible with the given elements
+
+    Args:
+        elements (:class:`~sim.elements.base.ElementBase`):
+            Element classes or instances that shall serve as input for the actors
+        unordered (bool):
+            Determines whether also actors are returned that only accept a reordered
+            arrangement of the elements.
+
+    Returns:
+        list of :class:`ActorBase`: A list of all compatible actor classes
+    """
+    # determine all tested permutations of the elements
+    if unordered:
+        elements_list = list(itertools.permutations(elements))
+    else:
+        elements_list = [elements]
+
+    # check all actors
+    result: Set[Type[ActorBase]] = set()
+    for actor in ActorBase._subclasses.values():
+        if issubclass(actor, ActorBase):
+            for elements in elements_list:
+                if actor.supports_elements(*elements, silent=True):
+                    result.add(actor)
+                    break
+
+    # return a sorted list of actor classes
+    return sorted(result, key=lambda cls: cls.__name__)

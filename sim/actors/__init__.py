@@ -1,7 +1,7 @@
 """
-Provides actors that determine the dynamics of the simulation by modifying the
-state of elements in time. The actors are separated into several categories, which we
-describe separately below.
+Provides actors that determine the dynamics of the simulation by modifying the state of
+elements during each time step. Actors are separated into several categories, which we
+describe separately below. 
 
 
 **General actors** are classes that provide basic infrastructure to implement custom
@@ -35,20 +35,25 @@ dynamics of this element when it is not coupled to other elements.
 
 
 **Coupling actors** affect several elements and thus describe a coupling between these
-elements.  
+elements.
 
 .. autosummary::
    :nosignatures:
 
    ~coupling.fields.FieldCouplingActor
+   ~coupling.fields.FieldBoundaryExchangeActor
    ~coupling.point_droplet.PointDropletActor
    ~coupling.spherical_droplet.SphericalDropletActor
-   
+   ~coupling.multicomponent_droplet.MulticomponentDropletActor
+
+
+Use :func:`~base.find_actors` to discover actors that are compatible with a given list
+of elements.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
 from .autonomous import *
-from .base import ActorBase
+from .base import ActorBase, find_actors
 from .coupling import *
 from .function import FunctionActor, NumbaFunctionActor

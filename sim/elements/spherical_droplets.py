@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class SphericalDropletsElement(ElementBase):
 
     _data: np.recarray
 
-    def __init__(self, data: np.ndarray, parameters: Dict[str, Any] = None):
+    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             data (:class:`~numpy.ndarray`):
@@ -45,7 +45,7 @@ class SphericalDropletsElement(ElementBase):
                 :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
                 for details.
         """
-        if isinstance(data, Emulsion) or isinstance(data[0], SphericalDroplet):
+        if isinstance(data, Emulsion) or isinstance(data[0], self.droplet_class):
             raise TypeError(
                 "`data` should be a numpy array. To initialize "
                 f"`{self.__class__.__name__}` with an emulsions use "
@@ -67,7 +67,10 @@ class SphericalDropletsElement(ElementBase):
 
     @classmethod
     def from_droplets(
-        cls, droplets: Emulsion, copy: bool = False, parameters: Dict[str, Any] = None
+        cls,
+        droplets: Emulsion,
+        copy: bool = False,
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
         """
         Args:
@@ -90,7 +93,7 @@ class SphericalDropletsElement(ElementBase):
         for droplet in obj.droplets:
             if not isinstance(droplet, obj.droplet_class):
                 cls_name = droplet.__class__.__name__
-                raise ValueError(f"DropletAgentsElement does not support `{cls_name}`")
+                raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
 
         obj._data = obj.droplets.get_linked_data()  # type: ignore
         obj.dim = obj.droplets.dim
@@ -112,7 +115,7 @@ class SphericalDropletsElement(ElementBase):
     def total_amount(self) -> float:
         """float: total amount in the droplets"""
         total_volume = sum(droplet.volume for droplet in self.droplets)
-        return float(self.parameters["droplet_concentration"]) * total_volume
+        return float(self.parameters["droplet_concentration"]) * total_volume  # type: ignore
 
     def plot(self, ax=None, *args, **kwargs):
         """plot all droplets of this element
@@ -123,11 +126,14 @@ class SphericalDropletsElement(ElementBase):
                 All additional arguments are forwarded to
                 :meth:`droplets.emulsions.Emulsion.plot`.
         """
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+
         emulsion = self.droplets
         if "grid" in kwargs:
             emulsion = emulsion.copy()
             emulsion.grid = kwargs.pop("grid")
-        emulsion.plot(ax=ax, *args, **kwargs)
+        emulsion.plot(ax=ax, *args, **plot_args)
 
     def _get_napari_layer_data(
         self, point_like: bool = False, resolution: float = 1, **kwargs

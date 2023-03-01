@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Multiple coupled PDEs
+=====================
+
+Demonstrates how multiple PDEs can be coupled.
+"""
 
 from pde import PDE, FieldCollection, ScalarField, UnitGrid
 
@@ -13,7 +19,7 @@ grid = UnitGrid([64, 64])
 u = ScalarField(grid, a, label="Field $u$")
 v = b / a + 0.1 * ScalarField.random_normal(grid, label="Field $v$")
 field = FieldCollection([u, v])
-element = sim.FieldCollectionElement.from_field(field)
+element = sim.FieldCollectionElement.from_fields(field)
 state = sim.State({"field": element})
 
 # set up simulation

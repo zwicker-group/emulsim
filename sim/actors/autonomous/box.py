@@ -2,11 +2,11 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 
-from pde.grids.cartesian import CartesianGrid, CartesianGridBase
+from pde.grids.cartesian import CartesianGrid
 from pde.tools.numba import jit
 from pde.tools.parameters import Parameter
 
@@ -28,9 +28,9 @@ class BoxActor(ActorBase):
         ),
     ]
 
-    element_classes = ((PointsElement, ArrowsElement, SphericalDropletsElement),)
+    element_classes = ([PointsElement, ArrowsElement, SphericalDropletsElement],)
 
-    def __init__(self, parameters: Dict[str, Any] = None):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
@@ -47,11 +47,11 @@ class BoxActor(ActorBase):
         self._grid = CartesianGrid(self.parameters["bounds"], 1, periodic)
 
     @classmethod
-    def from_grid(cls, grid: CartesianGridBase):
+    def from_grid(cls, grid: CartesianGrid):
         """create BoxActor from a Cartesian grid
 
         Args:
-            grid (:class:`pde.grids.cartesian.CartesianGridBase`):
+            grid (:class:`pde.grids.cartesian.CartesianGrid`):
                 The Cartesian grid that defines the box
         """
         return cls({"bounds": grid.axes_bounds, "periodic": grid.periodic})
@@ -95,7 +95,7 @@ class BoxActor(ActorBase):
 
         # figure out which axes need to be considered for flipping direction
         if "direction" in points_element.data.dtype.fields:
-            flip_ax = np.flatnonzero(np.logical_not(self._grid.periodic))
+            flip_ax: np.ndarray = np.flatnonzero(np.logical_not(self._grid.periodic))
         else:
             flip_ax = np.empty((0,))
         test_for_flipping = flip_ax.size > 0
@@ -146,8 +146,10 @@ class BoxActor(ActorBase):
             dt (float):
                 The time step
         """
+        if not self.parameters["point_like"]:
+            raise NotImplementedError("numpy backend can only deal with point-objects")
+
         (points,) = elements  # extract single element
-        assert self.parameters["point_like"]
 
         if "direction" in points.data.dtype.fields:
             # flip direction if out of bound

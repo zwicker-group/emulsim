@@ -10,11 +10,12 @@ dynamics, or on multiple elements, introducing couplings.
 Contents
 --------
 
-.. toctree::
+.. toctree-filt::
     :maxdepth: 2
 
     installation
     quickstart/index
+    :gallery:examples_gallery/index
     dev_guide/index
     packages/sim
  

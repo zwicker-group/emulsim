@@ -33,6 +33,7 @@ Note that the public packages `py-pde` and `py-droplets` are included as submodu
 `submodules` folder. To update these, please run
 
 ```bash
+git submodule update --init --recursive
 git pull --recurse-submodules
 ```
 

@@ -9,13 +9,14 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import math
 from abc import ABCMeta
-from typing import Any, Dict, Optional, Sequence, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 
 import numpy as np
 
 from pde.tools.cache import objects_equal
-from pde.tools.parameters import Parameterized
+from pde.tools.parameters import Parameter, Parameterized
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -27,6 +28,10 @@ if TYPE_CHECKING:
 class ElementBase(Parameterized, metaclass=ABCMeta):
     """represents a simulation element"""
 
+    parameters_default = [
+        Parameter("plot_args", {}, dict, "Extra arguments for plotting this element")
+    ]
+
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
     _subclasses: Dict[str, ElementBase] = {}  # type: ignore
@@ -34,7 +39,11 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
 
     _data: np.ndarray
 
-    def __init__(self, data: np.ndarray = None, parameters: Dict[str, Any] = None):
+    def __init__(
+        self,
+        data: Optional[np.ndarray] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+    ):
         """
         Args:
             data (:class:`~numpy.ndarray`):
@@ -266,7 +275,7 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
         if arr.dtype.fields:
             # array is a structured array or record array with fields
             itemsize = sum(
-                np.product(fields[0].shape) for fields in arr.dtype.fields.values()
+                math.prod(fields[0].shape) for fields in arr.dtype.fields.values()
             )
         else:
             # array is a simple array

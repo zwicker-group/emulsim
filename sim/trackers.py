@@ -11,7 +11,7 @@ Provides classes that track simulation results
 """
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
@@ -38,13 +38,17 @@ class FieldTracker(TrackerBase):
         """
         self.element_name = element_name
         self.tracker = tracker
-        self.interval = tracker.interval
+        try:
+            self.interrupt = tracker.interrupt
+        except AttributeError:
+            # fall-back to deprecated attribute (remove on 2023-03-15)
+            self.interval = tracker.interval  # type: ignore
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(  # type: ignore
         self,
         state: State,
-        info: InfoDict = None,
+        info: Optional[InfoDict] = None,
     ) -> float:
         """initialize the tracker with information about the simulation
 
@@ -86,12 +90,11 @@ class FieldTracker(TrackerBase):
             field = state[self.element_name]._field
         else:
             self._logger.warning(
-                f"Element `{self.element_name}` does not seem "
-                "to contain a scalar field"
+                f"Element `{self.element_name}` does not seem to contain a scalar field"
             )
         self.tracker.handle(field, t)
 
-    def finalize(self, info: InfoDict = None) -> None:
+    def finalize(self, info: Optional[InfoDict] = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:
@@ -122,7 +125,7 @@ class DropletElementTracker(TrackerBase):
         store_emulsions: Union[bool, str] = True,
         store_droplet_tracks: Union[bool, str] = True,
         keep_vanished: bool = False,
-        background_grid: GridBase = None,
+        background_grid: Optional[GridBase] = None,
     ):
         """
         Args:
@@ -165,7 +168,7 @@ class DropletElementTracker(TrackerBase):
     def initialize(  # type: ignore
         self,
         state: State,
-        info: InfoDict = None,
+        info: Optional[InfoDict] = None,
     ) -> float:
         """
         Args:
@@ -217,7 +220,7 @@ class DropletElementTracker(TrackerBase):
                 if is_active or droplet.radius > 0 or self.keep_vanished:
                     track.append(droplet, time=t)
 
-    def finalize(self, info: InfoDict = None) -> None:
+    def finalize(self, info: Optional[InfoDict] = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:

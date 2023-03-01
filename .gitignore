@@ -1,5 +1,8 @@
-docs/source/examples/
-docs/source/packages/
+# project specific folders
+docs/source/packages
+docs/source/examples
+docs/source/examples_gallery
+tests/coverage/
 .DS_Store
 .settings
 

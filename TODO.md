@@ -7,6 +7,10 @@ TODO
 	  - one option would be to use braket notation, e.g.,
 	    simulation.add_actor(['fieldA[0]', 'fieldB[1]'], actor)
 	  the simulation then has to make sure that the correct sub-data is passed to the actor 
+* Could think about a mechanism supporting a more fine-grained action of actors on elements
+	- elements could offer `slots`, which would only affect a subset of their data
+	- this could for instance allow accessing one field of a collection
+	- we could support this by `add_actor(['el_name[slot_name]'], actor`)
 * Support storage for storing trajectories to memory and file
 	- introduce the concept of trajectories of states
 	- this is simple for MemoryStorage (could reuse py-pde?)

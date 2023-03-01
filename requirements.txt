@@ -1,7 +1,8 @@
-matplotlib
-numpy
-numba
-scipy
-sympy
-py-pde>=0.16.0
-py-droplets>=0.9.0
+matplotlib>=3.1.0
+networkx>=2
+numpy>=1.18.0,<1.24
+numba>=0.56
+scipy>=1.4.0
+sympy>=1.5.0
+py-pde>=0.22.3
+py-droplets>=0.12
