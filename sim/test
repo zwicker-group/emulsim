@@ -1,0 +1,38 @@
+import time
+from numba import jit
+
+result = 0
+begin = time.time() # Get the current time
+
+for i in range(10_000_000):
+    result = result + v1[i]*v2[i]
+
+delta1 = time.time() - begin # Get the current time and compare it to before
+
+print("Time elapsed: ", delta1)
+
+@jit(nopython=True)
+def multiply_numba(v1, v2):
+    for i in range(10_000_000):
+        result = result + v1[i]*v2[i]
+    return result
+
+begin = time.time()
+
+result = v1.dot(v2)
+
+delta2 = time.time() - begin
+
+print("Time elapsed: ", delta2)
+
+print(f"NumPy was {delta1/delta2} times faster.")
+
+begin = time.time()
+
+result = multiply_numba(v1,v2)
+
+delta3 = time.time() - begin
+
+print("Time elapsed: ", delta3)
+
+print(f"Numba was {delta1/delta3} times faster.")
