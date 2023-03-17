@@ -2,8 +2,6 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-
-import glob
 import os
 import subprocess as sp
 import sys
@@ -14,7 +12,7 @@ import pytest
 
 from pde.tools.misc import module_available
 
-PACKAGEPATH = Path(__file__).parents[2].resolve()
+PACKAGEPATH = Path(__file__).resolve().parents[1]
 EXAMPLE_PATH = PACKAGEPATH / "examples"
 SKIP_EXAMPLES: Set[str] = set()
 if not module_available("phasesep"):
@@ -25,10 +23,10 @@ if not module_available("numba_scipy"):
 
 @pytest.mark.no_cover
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
-@pytest.mark.parametrize("path", glob.glob(str(EXAMPLE_PATH / "*.py")))
-def test_examples(path):
+@pytest.mark.parametrize("path", EXAMPLE_PATH.glob("**/*.py"))
+def test_notebooks(path):
     """runs an example script given by path"""
-    if any(name in path for name in SKIP_EXAMPLES):
+    if any(name in str(path) for name in SKIP_EXAMPLES):
         pytest.skip(f"Skip test {path} since module is missing")
 
     env = os.environ.copy()
