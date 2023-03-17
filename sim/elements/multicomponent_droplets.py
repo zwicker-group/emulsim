@@ -290,6 +290,11 @@ class MulticomponentDropletsElement(ElementBase):
         return sum(droplet.radius > 0 for droplet in self.droplets)
 
     @property
+    def phis(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: fractions of all components in all droplets"""
+        return np.array([d.phis for d in self.droplets if d.radius > 0])  # type: ignore
+
+    @property
     def amounts(self) -> np.ndarray:
         """:class:`~numpy.ndarray`: the amounts in all droplets"""
         return sum(droplet.amounts for droplet in self.droplets if droplet.radius > 0)  # type: ignore
