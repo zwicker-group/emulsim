@@ -10,6 +10,7 @@ import copy
 import json
 import logging
 import math
+import warnings
 from abc import ABCMeta
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union
 
@@ -74,7 +75,10 @@ class ElementBase(Parameterized, metaclass=ABCMeta):
     def __init_subclass__(cls, **kwargs):  # @NoSelf
         """register all subclassess to reconstruct them later"""
         super().__init_subclass__(**kwargs)
-        cls._subclasses[cls.__name__] = cls
+        if cls is not ElementBase:
+            if cls.__name__ in cls._subclasses:
+                warnings.warn(f"Redefining class {cls.__name__}")
+            cls._subclasses[cls.__name__] = cls
 
     @classmethod
     def from_state(cls, attributes: Dict[str, Any], data=None) -> ElementBase:
