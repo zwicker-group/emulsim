@@ -129,11 +129,14 @@ class SphericalDropletsElement(ArrayElementBase):
                 All additional arguments are forwarded to
                 :meth:`droplets.emulsions.Emulsion.plot`.
         """
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+
         emulsion = self.droplets
         if "grid" in kwargs:
             emulsion = emulsion.copy()
             emulsion.grid = kwargs.pop("grid")
-        emulsion.plot(ax=ax, *args, **kwargs)
+        emulsion.plot(ax=ax, *args, **plot_args)
 
     def _get_napari_layer_data(
         self, point_like: bool = False, resolution: float = 1, **kwargs

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
+import warnings
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
@@ -62,7 +63,10 @@ class ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
     def __init_subclass__(cls, **kwargs):  # @NoSelf
         """register all subclassess to reconstruct them later"""
         super().__init_subclass__(**kwargs)
-        cls._subclasses[cls.__name__] = cls
+        if cls is not ElementBase:
+            if cls.__name__ in cls._subclasses:
+                warnings.warn(f"Redefining class {cls.__name__}")
+            cls._subclasses[cls.__name__] = cls
 
     @classmethod
     def from_data(cls, attributes: Dict[str, Any], data=None) -> ElementBase:

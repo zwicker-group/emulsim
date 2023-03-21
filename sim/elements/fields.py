@@ -342,14 +342,17 @@ class MeanfieldElement(FieldElementBase):
                 color specifications are allowed.
             {PLOT_ARGS}
         """
+        # determine the arguments for plotting this element
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+        plot_args.setdefault("edgecolor", "none")
+        plot_args.setdefault("facecolor", color)
+
         # create the rectangle representing the background
         from matplotlib import patches
 
         rect = patches.Rectangle(
-            self._cuboid.pos[:2],
-            *self._cuboid.size[:2],
-            edgecolor="none",
-            facecolor=color,
+            self._cuboid.pos[:2], *self._cuboid.size[:2], **plot_args
         )
         ax.add_patch(rect)
         ax.set_xlim(*self.bounds[0])
@@ -494,7 +497,9 @@ class ScalarFieldElement(FieldElementBase):
         This simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
         arguments are forwarded to this method.
         """
-        return self._field.plot(ax=ax, **kwargs)
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+        return self._field.plot(ax=ax, **plot_args)
 
     @property
     def total_amount(self) -> float:
@@ -651,11 +656,13 @@ class FieldCollectionElement(ArrayElementBase):
         The method simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
         arguments are forwarded.
         """
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
         if self.dim == 1:
             for field in self.fields:
-                field.plot(ax=ax, **kwargs)
+                field.plot(ax=ax, **plot_args)
         else:
-            self.fields[0].plot(ax=ax, **kwargs)
+            self.fields[0].plot(ax=ax, **plot_args)
 
     @property
     def amounts(self) -> np.ndarray:
@@ -904,6 +911,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 All remaining parameters are forwarded to
                 :class:`matplotlib.axes.Axes.pcolormesh`
         """
+        plot_args = self.parameters["plot_args"].copy()
+        plot_args.update(kwargs)
+
         if self.dim == 2:
             # plot boundary of 2d domain as a line
             axis_position = self.parameters["axis_position"]
@@ -932,7 +942,8 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 raise RuntimeError("`axis` value out of bounds")
 
             # show concentration along the line
-            colormesh = ax.pcolormesh(xs, ys, data, shading="flat", **kwargs)
+            plot_args.setdefault("shading", "flat")
+            colormesh = ax.pcolormesh(xs, ys, data, **plot_args)
             if colorbar:
                 from pde.tools.plotting import add_scaled_colorbar
 

@@ -1,6 +1,6 @@
 matplotlib>=3.1.0
 networkx>=2
-numpy>=1.18.0
+numpy>=1.18.0,<1.24
 numba>=0.56
 py-droplets>=0.12
 py-modelrunner>=0.10

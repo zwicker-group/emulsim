@@ -161,7 +161,7 @@ class PointDropletActor(ActorBase):
 
     def get_flux_outside(self, radius: float, c_back: float, cEqOut: float) -> float:
         """returns the integrated outwards flux at the droplet surface given
-        some imposed concentration value at the outer shell
+        some imposed concentration value far away
 
         Args:
             radius (float):
@@ -169,8 +169,7 @@ class PointDropletActor(ActorBase):
             c_back (float):
                 The concentration in the background field at the position of the droplet
             cEqOut (float):
-                The concentration right at the inner side of the shell sector,
-                right at the droplet surface.
+                The concentration right at the droplet surface.
 
         Returns:
             float: the integrated flux in the outward normal direction.
@@ -199,8 +198,7 @@ class PointDropletActor(ActorBase):
 
     def _make_flux_outside(self) -> Callable:
         """create a function that calculates the integrated outwards flux at
-        the droplet surface given some imposed concentration value at the outer
-        shell.
+        the droplet surface given some imposed concentration far away.
 
         Returns:
             callable: The function with the signature (radius: float, c_back: float,
@@ -411,7 +409,7 @@ class PointDropletActor(ActorBase):
             # Calculate the integrated fluxes exchanged between the droplet and the
             # background. The sign is such that positive values indicate outward fluxes
             flux_out = self.get_flux_outside(droplet.radius, cInf, cEqOut)
-            # amount taken up from the outside per shell
+            # amount taken up from the outside
             amount_out = -dt * flux_out
             # amount produced inside the droplet
             # amount_total_in = params['dt'] * sBaseIn * droplet.volume
