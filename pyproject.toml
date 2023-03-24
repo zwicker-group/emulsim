@@ -27,10 +27,11 @@ dependencies = [
     "networkx>=2",
     "numba>=0.56.0",
     "numpy>=1.22.0,<1.24",
+    "py-droplets>=0.12",
+    "py-modelrunner>=0.11.1",
+    "py-pde>=0.23.0",
     "scipy>=1.4.0",
     "sympy>=1.5.0",
-    "py-pde>=0.23.0",
-    "py-droplets>=0.12",
 ]
 
 [project.urls]
