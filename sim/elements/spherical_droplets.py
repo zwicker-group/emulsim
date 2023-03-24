@@ -6,12 +6,13 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
 from modelrunner.parameters import Parameter
+from modelrunner.state import NoData
 
 from .base import ArrayElementBase
 
@@ -33,39 +34,43 @@ class SphericalDropletsElement(ArrayElementBase):
 
     data: np.recarray
 
-    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
-        """
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            data (:class:`~numpy.ndarray`):
-                The positions and radii of all points. This should be a
-                structured array as returned by
-                :attr:`~droplets.emulsions.Emulsion.data`
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
-                for details.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        if isinstance(data, Emulsion) or isinstance(data[0], self.droplet_class):
-            raise TypeError(
-                "`data` should be a numpy array. To initialize "
-                f"`{self.__class__.__name__}` with an emulsions use "
-                "the `from_droplets` classmethod."
-            )
+        super()._state_init(attributes, data)
+        self._init_droplets(data)
 
-        # set temporary data first and overwrite it later
-        super().__init__(None, parameters)
-        droplets = [self.droplet_class.from_data(data_row) for data_row in data]
-        self.droplets = Emulsion(droplets)  # type: ignore
+    def _init_droplets(self, data: Union[np.ndarray, Emulsion]):
+        """helper function that ensures that the droplet attribute is linked with `data`
+
+        Args:
+            data:
+                The droplet data, either in form of :class:`Emulsion` or as a
+                :class:`~numpy.ndarray`.
+        """
+        if isinstance(data, Emulsion):
+            # given data is already a list of droplets
+            self.droplets = data
+            for droplet in data:
+                if not isinstance(droplet, self.droplet_class):
+                    cls_name = droplet.__class__.__name__
+                    raise ValueError(f"`{cls_name}` is not `{self.droplet_class}`")
+
+        elif isinstance(data, np.ndarray):
+            # given data is a numpy array
+            droplets = [self.droplet_class.from_data(data_row) for data_row in data]
+            self.droplets = Emulsion(droplets)  # type: ignore
+
+        else:
+            raise TypeError(f"Unknown data `{data}`")
+
         if len(self.droplets) == 0:
-            raise ValueError(
-                "At least a single droplet needs to be defined to "
-                "determine the dimensionality of the element."
-            )
+            raise ValueError("Need a droplet to get dimensionality of the element")
 
-        self._set_data_from_droplets()
-
-    def _set_data_from_droplets(self) -> None:
-        """sets the data data arrays from the droplet data array"""
         self.data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
 
@@ -89,18 +94,7 @@ class SphericalDropletsElement(ArrayElementBase):
         """
         # create class without calling its __init__
         obj = cls.__new__(cls)
-        # call the parent __init__ with a temporary array
-        ArrayElementBase.__init__(obj, None, parameters=parameters)
-
-        # initialize droplets
-        obj.droplets = Emulsion(droplets, copy=copy)
-        for droplet in obj.droplets:
-            if not isinstance(droplet, obj.droplet_class):
-                cls_name = droplet.__class__.__name__
-                raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
-
-        obj._set_data_from_droplets()
-
+        obj._state_init({"parameters": parameters}, data=Emulsion(droplets, copy=copy))
         return obj
 
     def __len__(self) -> int:

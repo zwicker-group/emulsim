@@ -13,16 +13,7 @@ Provides a class representing the full simulation
 import logging
 import time
 import warnings
-from typing import (  # @UnusedImport
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import numba as nb
 import numpy as np
@@ -136,7 +127,7 @@ class Simulation:
         if check != "ignore":
             # run some checks before adding the actor
 
-            def show_msg(msg: str, exception: TypeError):
+            def show_msg(msg: str, exception: Type[BaseException]):
                 """helper function showing the message according to chosen method"""
                 if check == "warn":
                     warnings.warn(msg)
@@ -150,7 +141,10 @@ class Simulation:
             if len(actor.element_classes) > 0:
                 element_objects = [self.state.elements[name] for name in elements]
                 if not actor.supports_elements(*element_objects, silent=True):
-                    show_msg(f"Unsupported elements for `{actor.__class__.__name__}`")
+                    show_msg(
+                        f"Unsupported elements for `{actor.__class__.__name__}`",
+                        TypeError,
+                    )
 
             # check whether the same actor has already been added earlier
             for elements2, actor2 in self.actors:

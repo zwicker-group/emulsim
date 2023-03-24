@@ -1,31 +1,50 @@
 """
 Module defining the abstract base class of elements
 
-States combine the functionality of :class:`Parameterized`, which allows them to define
-inheritable parameters and sub-classes of :class:`StateBase`, which deals with input and
-output. There are state classes that represent data in a form of python object, a
+Elements combine the functionality of :class:`~modelrunner.parameters.Parameterized`,
+which allows them to define inheritable parameters and sub-classes of
+:class:`~modelrunner.state.StateBase`, which deals with input and output.
+There are state classes that represent data in a form of python object, a
 single numpy array, and a collection of numpy arrays:
+
+.. autosummary::
+   :nosignatures:
+
+   ArrayElementBase
+   ArrayCollectionElementBase
+   ObjectElementBase
+
+The inheritance diagram reads
 
 .. inheritance-diagram:: ObjectElementBase ArrayElementBase ArrayCollectionElementBase
    :parts: 1
+   :private-bases:
+
+.. autoclass::
+   _ElementBase
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
 from __future__ import annotations
 
-import logging
 import math
 import warnings
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numba.typed import Dict as NumbaDict
 
-from modelrunner.io import simplify_data
-from modelrunner.parameters import Parameterized
-from modelrunner.state import ArrayCollectionState, ArrayState, ObjectState, StateBase
+from modelrunner.parameters import Parameter, Parameterized
+from modelrunner.state import (
+    ArrayCollectionState,
+    ArrayState,
+    NoData,
+    ObjectState,
+    StateBase,
+    simplify_data,
+)
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -34,8 +53,8 @@ if TYPE_CHECKING:
     from ..actors.base import ActorBase
 
 
-class ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
-    """represents a simulation element
+class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
+    """(private) base class for representing simulation element
 
     Elements are generally characterized by a `data` attribute, which contains
     information about all degrees of freedom, and `parameters`, which contain additional
@@ -48,44 +67,115 @@ class ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
     attributes can point to the same object, e.g., a :class:`~numpy.ndarray`.
     """
 
+    parameters_default = [
+        Parameter("plot_args", {}, dict, "Extra arguments for plotting this element")
+    ]
+
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
-    _subclasses: Dict[str, ElementBase] = {}  # type: ignore
+    _subclasses: Dict[str, _ElementBase] = {}  # type: ignore
     _compatible_actors: Sequence[ActorBase] = []
 
     data: Any  # defines the python access point
-    _data_numba: Any  # defines the numba access point
 
-    @abstractmethod
+    _state_attributes_attr_name = "attributes"
+    _state_data_attr_name = "data"
+
     def __init__(self, data, parameters: Optional[Dict[str, Any]] = None):
-        ...
+        self._state_init({"parameters": parameters}, data)
 
     def __init_subclass__(cls, **kwargs):  # @NoSelf
         """register all subclassess to reconstruct them later"""
         super().__init_subclass__(**kwargs)
-        if cls is not ElementBase:
+        if cls is not _ElementBase:
             if cls.__name__ in cls._subclasses:
                 warnings.warn(f"Redefining class {cls.__name__}")
             cls._subclasses[cls.__name__] = cls
 
-    @classmethod
-    def from_data(cls, attributes: Dict[str, Any], data=None) -> ElementBase:
-        """create the element state from attributes and data
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
 
         Args:
-            attributes (dict):
-                Attributes of the element. This carries information about
-                parameters and possibly additional parts that do not depend on
-                time.
-            data (:class:`~numpy.ndarray`):
-                The numerical data associated with the state of the element
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        if "__class__" in attributes and attributes["__class__"] != cls.__name__:
-            logger = logging.getLogger(__name__)
-            logger.warning(
-                f'Initialize `{cls.__name__}` with data from `{attributes["class"]}`'
+        if data is not NoData:
+            self.data = data
+
+        parameters = attributes.get("parameters", None)
+        self.parameters = self._parse_parameters(
+            parameters, include_deprecated=True, check_validity=True
+        )
+
+        if len(attributes) != 1:
+            raise ValueError(f"Too many attributes: {attributes.keys()}")
+
+    @property
+    def _data_numba(self):
+        return self.data
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """dict: information about the element state, which does not change in time"""
+        return {"parameters": self.parameters}
+
+    @property
+    def _state_attributes_store(self) -> Dict[str, Any]:
+        """dict: Attributes in the form in which they will be written to storage
+
+        This property modifies the normal `_state_attributes` and adds information
+        necessary for restoring the class using :meth:`StateBase.from_data`.
+        """
+        attrs = super()._state_attributes_store
+
+        if "parameters" in attrs:
+            # serialize the individual parameters
+            default_parameters = self.get_parameters(
+                include_hidden=True, include_deprecated=True, sort=False
             )
-        return cls(data, attributes.get("parameters", None))
+
+            for key, value in attrs["parameters"].items():
+                if key in default_parameters:
+                    def_param_extra = default_parameters[key].extra
+                    if "serializer" in def_param_extra:
+                        attrs["parameters"][key] = def_param_extra["serializer"](value)
+                        continue
+                attrs["parameters"][key] = simplify_data(value)
+
+        return attrs
+
+    @classmethod
+    def _unpack_parameters(cls, parameters: Dict[str, Any]) -> None:
+        """convert an attribute from a form that was stored"""
+        default_parameters = cls.get_parameters(
+            include_hidden=True, include_deprecated=True, sort=False
+        )
+
+        # unserialize the individual parameters
+        for key in parameters:
+            if key in default_parameters:
+                def_param_extra = default_parameters[key].extra
+                if "unserializer" in def_param_extra:
+                    parameters[key] = def_param_extra["unserializer"](parameters[key])
+
+    @classmethod
+    def from_data(cls, attributes: Dict[str, Any], data=NoData) -> _ElementBase:
+        """create instance of any state class from attributes and data
+
+        Args:
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
+
+        Returns:
+            The object containing the given attributes and data
+        """
+        cls._unpack_parameters(attributes["parameters"])
+        return super().from_data(attributes=attributes, data=data)
+
+    def __setstate__(self, dictdata):
+        """set all properties of the object from a stored representation"""
+        self._unpack_parameters(dictdata["attributes"]["parameters"])
+        super().__setstate__(dictdata)
 
     def __str__(self):
         return f"{self.__class__.__name__}(...)"
@@ -95,77 +185,10 @@ class ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
             f"{self.__class__.__name__}(data={self.data}, parameters={self.parameters})"
         )
 
-    @property
-    def _data_numba(self):
-        return self.data
-
     @abstractproperty
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
         ...
-
-    @property
-    def attributes(self) -> Dict[str, Any]:
-        """dict: information about the element state, which does not change in time"""
-        attributes = super().attributes
-        attributes["parameters"] = self.parameters
-        return attributes
-
-    def _pack_attribute(self, name: str, value) -> Any:
-        """convert an attribute into a form that can be stored
-
-        If this function raises :class:`DoNotStore`, the attribute will not be stored
-
-        Args:
-            name (str): Name of the attribute
-            value: The value of the attribute
-
-        Returns:
-            A simplified form of the attribute that can be restored
-        """
-        if name == "parameters":
-            # serialize the individual parameters
-            default_parameters = self.get_parameters(
-                include_hidden=True, include_deprecated=True, sort=False
-            )
-
-            parameters = {}
-            for key in self.parameters:
-                if key in default_parameters:
-                    def_param_extra = default_parameters[key].extra
-                    if "serializer" in def_param_extra:
-                        parameters[key] = def_param_extra["serializer"](value[key])
-                        continue
-                parameters[key] = simplify_data(value[key])
-            return parameters
-
-        return super()._pack_attribute(name, value)
-
-    @classmethod
-    def _unpack_attribute(cls, name: str, value: Any) -> Any:
-        """convert an attribute from a form that was stored
-
-        Args:
-            name (str): Name of the attribute
-            value: The value of the attribute
-
-        Returns:
-            A restored form of the attribute
-        """
-        if name == "parameters":
-            # unserialize the individual parameters
-            default_parameters = cls.get_parameters(
-                include_hidden=True, include_deprecated=True, sort=False
-            )
-
-            for key in value:
-                if key in default_parameters:
-                    def_param_extra = default_parameters[key].extra
-                    if "unserializer" in def_param_extra:
-                        value[key] = def_param_extra["unserializer"](value[key])
-            return value
-
-        return super()._unpack_attribute(name, value)
 
     def plot(self, ax=None, *args, **kwargs):
         """plot the element"""
@@ -180,7 +203,7 @@ class ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class ObjectElementBase(ElementBase, ObjectState):
+class ObjectElementBase(_ElementBase, ObjectState):
     """Element storing data in a python object"""
 
     def __init__(self, data, parameters: Optional[Dict[str, Any]] = None):
@@ -189,8 +212,8 @@ class ObjectElementBase(ElementBase, ObjectState):
             data: The data describing the state
             parameters: Additional parameters that affect the element
         """
-        Parameterized.__init__(self, parameters)
         ObjectState.__init__(self, data)
+        self._state_init({"parameters": parameters})
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -201,7 +224,7 @@ class ObjectElementBase(ElementBase, ObjectState):
             return 1
 
 
-class ArrayElementBase(ElementBase, ArrayState):
+class ArrayElementBase(_ElementBase, ArrayState):
     """Element storing data in a numpy array"""
 
     def __init__(
@@ -214,9 +237,7 @@ class ArrayElementBase(ElementBase, ArrayState):
             data: The data describing the state
             parameters: Additional parameters that affect the element
         """
-        Parameterized.__init__(self, parameters)
-        if data is not None:
-            ArrayState.__init__(self, data)
+        self._state_init({"parameters": parameters}, data)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -233,7 +254,7 @@ class ArrayElementBase(ElementBase, ArrayState):
         return int(arr.size * itemsize)
 
 
-class ArrayCollectionElementBase(ElementBase, ArrayCollectionState):
+class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
     """Element storing data in multiple numpy array"""
 
     def __init__(
@@ -246,8 +267,8 @@ class ArrayCollectionElementBase(ElementBase, ArrayCollectionState):
             data: The data describing the state
             parameters: Additional parameters that affect the element
         """
-        Parameterized.__init__(self, parameters)
         ArrayCollectionState.__init__(self, data)
+        self._state_init({"parameters": parameters})
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -267,7 +288,7 @@ class ArrayCollectionElementBase(ElementBase, ArrayCollectionState):
 
 
 #
-# class DictElementBase(ElementBase, DictState):
+# class DictElementBase(_ElementBase, DictState):
 #     """Element storing data in a dictionary of states"""
 #
 #     def __init__(

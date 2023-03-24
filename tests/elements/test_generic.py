@@ -4,18 +4,22 @@ Test generic elements functionality
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import copy
+
 import numpy as np
 import pytest
 
 from droplets import SphericalDroplet
-from pde import ScalarField, UnitGrid
+from pde import FieldCollection, ScalarField, UnitGrid
 from pde.tools.numba import jit
 
 from sim.elements import (
     ArrowsElement,
+    FieldCollectionElement,
     MeanfieldElement,
     ObjectElementBase,
     PointsElement,
+    ScalarBoundaryFieldElement,
     ScalarFieldElement,
     SphericalDropletsElement,
 )
@@ -66,6 +70,16 @@ def generate_elements(dim=None, incl_obj=True):
         field = ScalarField.random_normal(UnitGrid([3, 3]))
         yield ScalarFieldElement.from_field(field)
 
+    if dim is None or dim == 2:
+        fields = FieldCollection.scalar_random_uniform(2, UnitGrid([3, 3]))
+        yield FieldCollectionElement.from_fields(fields)
+
+    if dim is None or dim == 2:
+        grid = UnitGrid([3, 3])
+        yield ScalarBoundaryFieldElement.from_bulk_grid(
+            grid, axis=1, upper=True, data=1, parameters={"label": "boundary_field"}
+        )
+
 
 @pytest.mark.parametrize("element", generate_elements())
 def test_basic(element):
@@ -77,6 +91,10 @@ def test_basic(element):
     e1 = element.copy()
     assert e1 is not element
     assert e1 == element
+
+    e2 = copy.copy(element)
+    assert e2 is not element
+    assert e2 == element
 
     # test generic plotting
     if isinstance(element, PointsElement) or element.dim == 2:

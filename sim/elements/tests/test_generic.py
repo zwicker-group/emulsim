@@ -86,6 +86,6 @@ def test_element_io(element, tmp_path):
     path = tmp_path / f"test_io_{element.__class__.__name__}.hdf"
 
     element.to_file(path)
-    element2 = ElementBase.from_file(path)
+    element2 = _ElementBase.from_file(path)
     assert element == element2
     assert element is not element2

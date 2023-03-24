@@ -17,10 +17,10 @@ import numpy as np
 from modelrunner.parameters import Parameterized
 from pde.tools.cache import objects_equal
 
-from ..elements.base import ElementBase
+from ..elements.base import _ElementBase
 
-ElementsType = Tuple[ElementBase, ...]
-ElementsSpec = Union[Type[ElementBase], List[Type[ElementBase]]]
+ElementsType = Tuple[_ElementBase, ...]
+ElementsSpec = Union[Type[_ElementBase], List[Type[_ElementBase]]]
 EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 
 
@@ -58,13 +58,13 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     @classmethod
     def supports_elements(
         cls,
-        *elements: Union[ElementBase, Type[ElementBase]],
+        *elements: Union[_ElementBase, Type[_ElementBase]],
         silent: bool = False,
     ) -> bool:
         """determines whether this actor supports the given elements
 
         Args:
-            elements (:class:`~sim.elements.base.ElementBase`):
+            elements (:class:`~sim.elements.base._ElementBase`):
                 Various elements or element classes.
             silent (bool):
                 Determines whether the function returns silently or whether an exception
@@ -81,12 +81,12 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
         # check whether all elements have the expected type
         for given, expected in zip(elements, cls.element_classes):
-            if isinstance(given, ElementBase):
+            if isinstance(given, _ElementBase):
                 given_cls = given.__class__
             elif inspect.isclass(given):
                 given_cls = given
             else:
-                raise TypeError("Instance of subclass of `ElementBase` required")
+                raise TypeError("Instance of subclass of `_ElementBase` required")
 
             # check whether the actor declares the element as matching
             mismatch_cls = None
@@ -128,7 +128,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """estimate the maximal time step for simulating this actor
 
         Args:
-            elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -143,7 +143,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         pre-computed data, which is then available in later.
 
         Args:
-            elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
             \**kwargs:
                 Additional arguments will be forwarded to the update cache function
@@ -161,7 +161,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            *elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -176,7 +176,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point
@@ -192,12 +192,12 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 
 def find_actors(
-    *elements: Union[ElementBase, Type[ElementBase]], unordered: bool = False
+    *elements: Union[_ElementBase, Type[_ElementBase]], unordered: bool = False
 ) -> List[Type[ActorBase]]:
     """finds actors compatible with the given elements
 
     Args:
-        elements (:class:`~sim.elements.base.ElementBase`):
+        elements (:class:`~sim.elements.base._ElementBase`):
             Element classes or instances that shall serve as input for the actors
         unordered (bool):
             Determines whether also actors are returned that only accept a reordered

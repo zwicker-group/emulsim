@@ -17,16 +17,16 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from typing import Optional, Any, Dict, Iterable, Sequence, Set, Union, Tuple
+from typing import Any, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
 from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
-from modelrunner.state import DictState
+from modelrunner.state import DictState, NoData, simplify_data
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
-from .elements.base import ElementBase
+from .elements.base import _ElementBase
 
 
 class State(Parameterized, DictState):
@@ -47,11 +47,14 @@ class State(Parameterized, DictState):
         ),
     ]
 
-    data: Dict[str, ElementBase]  # type: ignore
+    _state_attributes_attr_name = "attributes"
+    _state_data_attr_name = "data"
+
+    data: Dict[str, _ElementBase]  # type: ignore
 
     def __init__(
         self,
-        elements: Optional[Dict[str, ElementBase]] = None,
+        elements: Optional[Dict[str, _ElementBase]] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ):
         """
@@ -59,7 +62,7 @@ class State(Parameterized, DictState):
             elements (dict):
                 Lists the elements in the simulation. The key in this dictionary
                 gives the name of the element, while the associated value should
-                be an instance of :class:`~sim.elements.base.ElementBase`.
+                be an instance of :class:`~sim.elements.base._ElementBase`.
             parameters (dict):
                 Parameters that affect the entire state
         """
@@ -68,9 +71,9 @@ class State(Parameterized, DictState):
 
         # determine dimensionality of space
         if self.parameters["bounds"] is None:
-            self.dim = None  # cannot determine dimension at this point
+            self.dim: Optional[int] = None  # cannot determine dimension at this point
         else:
-            self.dim: Optional[int] = len(self.parameters["bounds"])
+            self.dim = len(self.parameters["bounds"])
 
         # initialize empty dictionary storage
         DictState.__init__(self, {})
@@ -80,22 +83,85 @@ class State(Parameterized, DictState):
             for name, element in elements.items():
                 self.add_element(name, element)
 
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
+        Args:
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
+        """
+        if data is not NoData:
+            self.data = data
+
+        self.parameters = self._parse_parameters(
+            attributes["parameters"], include_deprecated=True, check_validity=True
+        )
+        if sum(1 for a in attributes if not a.startswith("_")) != 1:
+            raise ValueError(f"Too many attributes: {attributes.keys()}")
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """dict: information about the state"""
+        return {"parameters": self.parameters}
+
+    @property
+    def _state_attributes_store(self) -> Dict[str, Any]:
+        """dict: Attributes in the form in which they will be written to storage
+
+        This property modifies the normal `_state_attributes` and adds information
+        necessary for restoring the class using :meth:`StateBase.from_data`.
+        """
+        attrs = super()._state_attributes_store
+
+        if "parameters" in attrs:
+            # serialize the individual parameters
+            default_parameters = self.get_parameters(
+                include_hidden=True, include_deprecated=True, sort=False
+            )
+
+            for key, value in attrs["parameters"].items():
+                if key in default_parameters:
+                    def_param_extra = default_parameters[key].extra
+                    if "serializer" in def_param_extra:
+                        attrs["parameters"][key] = def_param_extra["serializer"](value)
+                        continue
+                attrs["parameters"][key] = simplify_data(value)
+
+        return attrs
+
+    @classmethod
+    def from_data(cls, attributes: Dict[str, Any], data=None) -> State:
+        """create the state from attributes and data
+
+        Args:
+            attributes (dict):
+                Attributes of the element. This carries information about parameters and
+                possibly additional parts that do not depend on time.
+            data (:class:`~numpy.ndarray`):
+                The numerical data associated with the state of the element
+        """
+        # re-create the State object using the DictState methods
+        obj = super().from_data(attributes, data)
+        # set the parameters correctly
+        Parameterized.__init__(obj, attributes.get("parameters", None))
+        return obj  # type: ignore
+
     @property
     def _data_numba(self) -> Tuple:
         """returns the data associated with the state in a form that numba can handle"""
         return tuple(state._data_numba for state in self.data.values())
 
     @property
-    def elements(self) -> Dict[str, ElementBase]:
+    def elements(self) -> Dict[str, _ElementBase]:
         return self.data
 
-    def add_element(self, name: str, element: ElementBase):
+    def add_element(self, name: str, element: _ElementBase):
         """adds an element to the simulation
 
         Args:
             name (str):
                 The identifier for the element.
-            element (:class:`~sim.elements.base.ElementBase`):
+            element (:class:`~sim.elements.base._ElementBase`):
                 The instance defining the element.
         """
         if name in self.elements:
@@ -181,13 +247,6 @@ class State(Parameterized, DictState):
     #         {name: element.copy() for name, element in self},
     #         parameters=copy.deepcopy(self.parameters),
     #     )
-
-    @property
-    def attributes(self) -> Dict[str, Any]:
-        """dict: information about the state"""
-        attributes = super().attributes
-        attributes["parameters"] = self.parameters
-        return attributes
 
     @property
     def degrees_of_freedom(self) -> int:

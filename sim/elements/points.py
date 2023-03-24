@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 
 from modelrunner.parameters import Parameter
+from modelrunner.state import NoData
 from pde.tools.plotting import plot_on_axes
 
 from .base import ArrayElementBase
@@ -27,14 +28,12 @@ class PointsElement(ArrayElementBase):
         )
     ]
 
-    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
-        """
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            data (:class:`~numpy.ndarray`):
-                The positions of all points
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~PointsElement.show_parameters` for details.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
         self._logger = logging.getLogger(self.__class__.__name__)
         data = np.asanyarray(data)
@@ -64,8 +63,7 @@ class PointsElement(ArrayElementBase):
             rec_data = np.recarray((num_el,), dtype=[("position", float, (self.dim,))])
             rec_data.position[:] = data
 
-        # initialize parameters
-        super().__init__(rec_data, parameters)
+        super()._state_init(attributes, rec_data)
 
     def __len__(self) -> int:
         return len(self.data)
@@ -136,22 +134,27 @@ class PointsElement(ArrayElementBase):
 
 
 class ArrowsElement(PointsElement):
-    """an element that represents a collection of points with direction"""
+    """an element that represents a collection of points with direction
 
-    def __init__(self, data: np.recarray, parameters: Optional[Dict[str, Any]] = None):
-        """
+    Args:
+        data (:class:`~numpy.recarray`):
+            The structured array with entries for 'position' and 'direction' for all
+            points. For example, the dtype of the array should be
+            `[("position", float, (dim,)), ("direction", float, (dim,))]`, where
+            `dim` is the dimension of space.
+        parameters (dict):
+            Additional parameters. Call
+            :meth:`~PointsElement.show_parameters` for details.
+    """
+
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            data (:class:`~numpy.recarray`):
-                The structured array with entries for 'position' and 'direction' for all
-                points. For example, the dtype of the array should be
-                `[("position", float, (dim,)), ("direction", float, (dim,))]`, where
-                `dim` is the dimension of space.
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~PointsElement.show_parameters` for details.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        # initialize parameters
-        super().__init__(data, parameters)
+        super()._state_init(attributes, data)
         assert self.data.dtype["direction"].shape == (self.dim,)
 
     @classmethod

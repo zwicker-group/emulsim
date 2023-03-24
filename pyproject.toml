@@ -84,6 +84,7 @@ plugins = "numpy.typing.mypy_plugin"
 warn_return_any = true
 warn_unused_configs = true
 warn_unused_ignores = true
+exclude = ["submodules"]
 
 [[tool.mypy.overrides]]
 module = "numba.*"
