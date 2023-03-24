@@ -36,34 +36,29 @@ class PointsElement(ArrayElementBase):
             data: The data of the degerees of freedom of the physical system
         """
         self._logger = logging.getLogger(self.__class__.__name__)
-        data = np.asanyarray(data)
+        # data = np.asanyarray(data)
+
+        super()._state_init(attributes, data)
 
         # ensure the right format of the input data
-        if data.dtype.fields:
+        if self.data.dtype.fields:
             # record dtype
             self._logger.debug("Data of PointsElement was recarray")
-            if data.ndim != 1 or "position" not in data.dtype.fields:
-                raise ValueError(
-                    "`data` must be an array of records with a `position` field"
-                )
-            self.dim = data.dtype["position"].shape[0]
-            if isinstance(data, np.recarray):
-                rec_data = data
-            else:
-                rec_data = data.view(np.recarray)
+            if self.data.ndim != 1 or "position" not in self.data.dtype.fields:
+                raise ValueError("`data` must be recarray with a `position` field")
+            self.dim = self.data.dtype["position"].shape[0]
+            self.data = self.data.view(np.recarray)
 
         else:
             # simple dtype
             self._logger.info("Data of PointsElement needs to be promoted to recarray")
-            data = np.atleast_2d(data)
+            data = np.atleast_2d(self.data)
             if data.ndim != 2:
                 raise ValueError("`data` must be a sequence of positions")
 
             num_el, self.dim = data.shape
-            rec_data = np.recarray((num_el,), dtype=[("position", float, (self.dim,))])
-            rec_data.position[:] = data
-
-        super()._state_init(attributes, rec_data)
+            self.data = np.recarray((num_el,), dtype=[("position", float, (self.dim,))])
+            self.data.position[:] = data
 
     def __len__(self) -> int:
         return len(self.data)

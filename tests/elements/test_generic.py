@@ -17,12 +17,15 @@ from sim.elements import (
     ArrowsElement,
     FieldCollectionElement,
     MeanfieldElement,
+    MulticomponentDroplet,
+    MulticomponentDropletsElement,
     ObjectElementBase,
     PointsElement,
     ScalarBoundaryFieldElement,
     ScalarFieldElement,
     SphericalDropletsElement,
 )
+from sim.elements.base import _ElementBase
 
 
 class EmptyElement(ObjectElementBase):
@@ -60,6 +63,19 @@ def generate_elements(dim=None, incl_obj=True):
     if dim is None or dim == 2:
         emulsion = [SphericalDroplet([0, 0], 1), SphericalDroplet([1, 1], 2)]
         yield SphericalDropletsElement.from_droplets(emulsion)
+
+    if dim is None or dim == 1:
+        emulsion = [
+            MulticomponentDroplet([0], 1, [2, 3]),
+            MulticomponentDroplet([1], 2, [0, 1]),
+        ]
+        yield MulticomponentDropletsElement.from_droplets(emulsion)
+    if dim is None or dim == 2:
+        emulsion = [
+            MulticomponentDroplet([0, 0], 1, [2, 2, 2]),
+            MulticomponentDroplet([1, 1], 2, [3, 3, 3]),
+        ]
+        yield MulticomponentDropletsElement.from_droplets(emulsion)
 
     if dim is None or dim == 1:
         yield MeanfieldElement(0.1, {"bounds": [[0, 1]]})  # 1d
@@ -115,11 +131,12 @@ def test_numba_data_access(element, capsys):
 
 
 @pytest.mark.parametrize("element", generate_elements())
-def test_element_io(element, tmp_path):
+@pytest.mark.parametrize("ext", ["zarr", "json"])
+def test_element_io(element, ext, tmp_path):
     """test writing and reading element states"""
-    path = tmp_path / f"test_io_{element.__class__.__name__}.zarr"
+    path = tmp_path / f"test_io_{element.__class__.__name__}.{ext}"
 
     element.to_file(path)
-    element2 = ObjectElementBase.from_file(path)
+    element2 = _ElementBase.from_file(path)
     assert element == element2
     assert element is not element2

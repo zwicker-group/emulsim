@@ -99,15 +99,16 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        if data is not NoData:
-            self.data = data
-
-        parameters = attributes.get("parameters", None)
+        # set the parameters
+        parameters = attributes.pop("parameters", None)
         self.parameters = self._parse_parameters(
             parameters, include_deprecated=True, check_validity=True
         )
 
-        if len(attributes) != 1:
+        # initialize the attributes and data of StateBase
+        super()._state_init(attributes, data)
+
+        if attributes:
             raise ValueError(f"Too many attributes: {attributes.keys()}")
 
     @property

@@ -6,17 +6,16 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
 
-from droplets import Emulsion, SphericalDroplet
+from droplets import SphericalDroplet
 from droplets.tools.spherical import volume_from_radius
-from modelrunner.state import NoData
 from pde.grids.base import GridBase
 
-from .base import ArrayElementBase
+from .spherical_droplets import SphericalDropletsElement
 
 
 class MulticomponentDroplet(SphericalDroplet):
@@ -187,76 +186,10 @@ class MulticomponentDroplet(SphericalDroplet):
         return super()._get_mpl_patch(dim=dim, **kwargs)
 
 
-class MulticomponentDropletsElement(ArrayElementBase):
-    """an element representing many droplets"""
+class MulticomponentDropletsElement(SphericalDropletsElement):
+    """an element representing many multicomponent droplets"""
 
-    _data: np.recarray
-    dim: Optional[int]
-
-    droplet_class = MulticomponentDroplet
-
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
-
-        Args:
-            attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
-        """
-        super()._state_init(attributes, data)
-        self._init_droplets(data)
-
-    def _init_droplets(self, data: Union[np.ndarray, Emulsion]):
-        """helper function that ensures that the droplet attribute is linked with `data`
-
-        Args:
-            data:
-                The droplet data, either in form of :class:`Emulsion` or as a
-                :class:`~numpy.ndarray`.
-        """
-        if isinstance(data, Emulsion):
-            # given data is already a list of droplets
-            self.droplets = data
-            for droplet in data:
-                if not isinstance(droplet, self.droplet_class):
-                    cls_name = droplet.__class__.__name__
-                    raise ValueError(f"`{cls_name}` is not `{self.droplet_class}`")
-
-        elif isinstance(data, np.ndarray):
-            # given data is a numpy array
-            droplets = [self.droplet_class.from_data(data_row) for data_row in data]
-            self.droplets = Emulsion(droplets)  # type: ignore
-
-        else:
-            raise TypeError(f"Unknown data `{data}`")
-
-        if len(self.droplets) == 0:
-            raise ValueError("Need a droplet to get dimensionality of the element")
-
-        self.data = self.droplets.get_linked_data()
-        self.dim = self.droplets.dim
-
-    @classmethod
-    def from_droplets(
-        cls,
-        droplets: Emulsion,
-        copy: bool = False,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> MulticomponentDropletsElement:
-        """
-        Args:
-            droplets (:class:`droplets.emulsions.Emulsion`):
-                The state of this element given as an emulsion.
-            copy (bool):
-                Flag indicating whether the droplets are copied, so they are not
-                modified during the simulation.
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~SphericalDropletsElement.show_parameters` for details.
-        """
-        # create class without calling its __init__
-        obj = cls.__new__(cls)
-        obj._state_init({"parameters": parameters}, data=Emulsion(droplets, copy=copy))
-        return obj
+    droplet_class = MulticomponentDroplet  # type: ignore
 
     @property
     def num_comps(self) -> Optional[int]:
@@ -265,17 +198,6 @@ class MulticomponentDropletsElement(ArrayElementBase):
             return int(self.droplets[0].num_comps)
         else:
             return None
-
-    def __len__(self) -> int:
-        return len(self.droplets)
-
-    @property
-    def droplet_count(self) -> int:
-        """int: the number of droplets in the emulsion
-
-        This only counts droplets with non-zero radius.
-        """
-        return sum(droplet.radius > 0 for droplet in self.droplets)
 
     @property
     def phis(self) -> np.ndarray:
