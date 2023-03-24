@@ -84,14 +84,6 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
     def __init__(self, data, parameters: Optional[Dict[str, Any]] = None):
         self._state_init({"parameters": parameters}, data)
 
-    def __init_subclass__(cls, **kwargs):  # @NoSelf
-        """register all subclassess to reconstruct them later"""
-        super().__init_subclass__(**kwargs)
-        if cls is not _ElementBase:
-            if cls.__name__ in cls._subclasses:
-                warnings.warn(f"Redefining class {cls.__name__}")
-            cls._subclasses[cls.__name__] = cls
-
     def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
