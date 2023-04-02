@@ -195,7 +195,7 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
     def num_comps(self) -> Optional[int]:
         """int: the number of components inside each droplet"""
         if len(self) > 0:
-            return int(self.droplets[0].num_comps)
+            return int(self.droplets[0].num_comps)  # type: ignore
         else:
             return None
 

@@ -690,7 +690,7 @@ class MulticomponentDropletActor(ActorBase):
         # determine diffusive flux in the background
         bc = self.parameters["boundary_conditions"]
         j_back = [
-            -mobility[i] * field.laplace(bc).data
+            -mobility[i] * field.laplace(bc).data  # type: ignore
             for i, field in enumerate(fields_el.fields)
         ]
 
