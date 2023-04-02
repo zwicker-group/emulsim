@@ -176,11 +176,12 @@ class MulticomponentDropletActor(ActorBase):
         Parameter(
             "mobility",
             1.0,
-            float,
-            "Diffusive transport coefficient. This factor determines the diffusivity of "
-            "molecules in the dilute phase and thus how fast droplets change size. The "
-            "corresponding Onsager coefficient is the product of this mobility and the "
-            "fraction of the field.",
+            np.array,
+            "Diffusive transport coefficients. This factor determines the diffusivities "
+            "of molecules in the dilute phase and thus how fast droplets change size. "
+            "The corresponding Onsager coefficient is the product of these mobilities "
+            "and the fraction of the fields. A single number implies sets the same "
+            "mobility for all components.",
         ),
         Parameter(
             "volume_relaxation_factor",
@@ -516,7 +517,7 @@ class MulticomponentDropletActor(ActorBase):
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
         volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
-        mobility = self.parameters["mobility"]
+        mobility = np.broadcast_to(self.parameters["mobility"], (num_comps,))
         surface_tension = self.parameters["surface_tension"]
         phi_min = self.parameters["dissolve_fraction"]
         volume_min = self._cache["volume_min"]
@@ -548,7 +549,7 @@ class MulticomponentDropletActor(ActorBase):
             # determine diffusive flux in the background
             j_back = np.empty_like(fields_data)
             for i in range(num_comps):
-                j_back[i] = -mobility * laplace(fields_data[i])
+                j_back[i] = -mobility[i] * laplace(fields_data[i])
 
             # determine reaction flux in the background
             if has_reaction:
@@ -595,11 +596,11 @@ class MulticomponentDropletActor(ActorBase):
 
                 # dynamics fluxes as linear functions of the respective forces
                 if dim == 1:
-                    vol_step = dt * mobility * volume_relaxation_factor
+                    vol_step = dt * mobility.mean() * volume_relaxation_factor
                     diff_step = dt * mobility * phi_out
                 elif dim == 3:
                     factor = dt * 4 * np.pi * R * mobility
-                    vol_step = factor * volume_relaxation_factor
+                    vol_step = factor.mean() * volume_relaxation_factor
                     diff_step = factor * phi_out
                 else:
                     raise NotImplementedError("Only implemented for dim ∈ [1, 3]")
@@ -673,7 +674,7 @@ class MulticomponentDropletActor(ActorBase):
         dim = self._cache["dim"]
         num_comps = self._cache["num_comps"]
         volume_relaxation_factor = self.parameters["volume_relaxation_factor"]
-        mobility = self.parameters["mobility"]
+        mobility = np.broadcast_to(self.parameters["mobility"], (num_comps,))
         surface_tension = self.parameters["surface_tension"]
         phi_min = self.parameters["dissolve_fraction"]
         volume_min = self._cache["volume_min"]
@@ -688,7 +689,10 @@ class MulticomponentDropletActor(ActorBase):
 
         # determine diffusive flux in the background
         bc = self.parameters["boundary_conditions"]
-        j_back = [-mobility * field.laplace(bc).data for field in fields_el.fields]  # type: ignore
+        j_back = [
+            -mobility[i] * field.laplace(bc).data
+            for i, field in enumerate(fields_el.fields)
+        ]
 
         self.diagnostics.setdefault("amount_corrections", np.zeros(num_comps))
 
@@ -732,11 +736,11 @@ class MulticomponentDropletActor(ActorBase):
 
             # get fluxes as linear functions of the respective forces
             if dim == 1:
-                vol_step = dt * mobility * volume_relaxation_factor
+                vol_step = dt * mobility.mean() * volume_relaxation_factor
                 diff_step = dt * mobility * phi_out
             elif dim == 3:
                 factor = dt * 4 * np.pi * droplet.radius * mobility
-                vol_step = factor * volume_relaxation_factor
+                vol_step = factor.mean() * volume_relaxation_factor
                 diff_step = factor * phi_out
             else:
                 raise NotImplementedError("Only implemented for dim ∈ [1, 3]")

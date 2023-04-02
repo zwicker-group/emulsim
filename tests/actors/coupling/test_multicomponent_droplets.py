@@ -164,7 +164,7 @@ def test_multicomponent_equilibrium():
 
     simulation = Simulation(state)
     droplet_actor = MulticomponentDropletActor(
-        {"chis": [[0, 1], [1, 0]], "chis_solvent": 3}
+        {"chis": [[0, 1], [1, 0]], "chis_solvent": 3, "mobility": [1, 2]}
     )
     simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
@@ -187,7 +187,7 @@ def test_multicomponent_equilibrium():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coexistence(backend):
-    """test equilibrium in multicomponent system"""
+    """test coexistence in multicomponent system"""
     grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
 

@@ -29,7 +29,6 @@ The inheritance diagram reads
 from __future__ import annotations
 
 import math
-import warnings
 from abc import ABCMeta, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
