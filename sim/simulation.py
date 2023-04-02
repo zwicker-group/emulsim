@@ -10,6 +10,8 @@ Provides a class representing the full simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import logging
 import time
 import warnings
@@ -91,6 +93,15 @@ class Simulation:
             info["element_names"] = element_names
             actor_infos.append(info)
         return {"state": self.state.attributes, "actors": actor_infos}
+
+    def copy(self) -> Simulation:
+        """returns a copy the entire simulation"""
+        return self.__class__(
+            state=self.state.copy(),
+            actors=[(elements, actor.copy()) for elements, actor in self.actors],
+            check="ignore",
+            profile=self.profile,
+        )
 
     def add_actor(
         self, elements: Union[str, Tuple[str]], actor: ActorBase, *, check: str = "log"
@@ -363,7 +374,7 @@ class Simulation:
         elements, actor = self.actors[actor_id]
         actor_evolver = actor.make_evolver_numba(state[elements])
         element_indices = tuple(state.get_index(name) for name in elements)
-        get_element_states = make_get_element_states(element_indices)
+        get_element_states = _make_get_element_states(element_indices)
 
         if self.profile:
             # add profiler information to the actor evolve function
@@ -702,7 +713,7 @@ class SimulationSolver(SolverBase):
         """return function evolving state using adaptive time steps
 
         Args:
-            state (:class:`~pde.fields.base.FieldBase`):
+            state (:class:`~sim.state.State`):
                 An example for the state from which the grid and other information can
                 be extracted
             dt (float):
@@ -867,13 +878,16 @@ class SimulationSolver(SolverBase):
                 raise ValueError(f"Unknown backend `{self.backend}`")
 
 
-def make_get_element_states(
+def _make_get_element_states(
     element_indices: Tuple[int, ...]
 ) -> Callable[[Tuple[np.ndarray, ...]], Tuple[np.ndarray, ...]]:
     """creates helper function that extracts the states of the given elements
 
     Args:
         element_indices (tuple): Indices of the elements to be extracted
+
+    Returns:
+        Function that returns the element data corresponding to the given indices
     """
     num_elements = len(element_indices)
     if num_elements == 1:

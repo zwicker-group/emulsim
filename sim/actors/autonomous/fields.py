@@ -13,6 +13,7 @@ Provides actors that influence scalar fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
 
 import inspect
 from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
@@ -149,6 +150,10 @@ class ScalarPDEActor(ActorBase):
         result = super().info
         result["pde"] = {"class": self.pde.__class__.__name__}
         return result
+
+    def copy(self) -> ScalarPDEActor:
+        """returns a copy the actor"""
+        return self.__class__(self.pde, self.parameters.copy())
 
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
@@ -370,6 +375,10 @@ class CollectionPDEActor(ActorBase):
         result["pde"] = {"class": self.pde.__class__.__name__}
         return result
 
+    def copy(self) -> CollectionPDEActor:
+        """returns a copy the actor"""
+        return self.__class__(self.pde, self.parameters.copy())
+
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
     ) -> Callable[[Tuple[np.ndarray], float, float], None]:
@@ -407,4 +416,4 @@ class CollectionPDEActor(ActorBase):
         """
         (element,) = elements  # extract single element
         rate = self.pde.evolution_rate(element.fields, t)  # type: ignore
-        element.fields += dt * rate  # type: ignore
+        element.fields.data += dt * rate.data  # type: ignore
