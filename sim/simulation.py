@@ -21,6 +21,7 @@ import numpy as np
 from pde.solvers.base import SolverBase
 from pde.solvers.controller import Controller, TrackerCollectionDataType, TRangeType
 from pde.solvers.explicit import ExplicitSolver
+from pde.tools.math import OnlineStatistics
 from pde.tools.numba import jit, make_array_constructor
 
 from .actors.base import ActorBase, EvolverType
@@ -621,7 +622,9 @@ class SimulationSolver(SolverBase):
 
     _make_dt_adjuster = ExplicitSolver._make_dt_adjuster
 
-    def _make_fixed_stepper_numpy(self, dt: float) -> Callable:
+    def _make_fixed_stepper_numpy(
+        self, dt: float
+    ) -> Callable[[State, float, float], float]:
         """return function evolving state from time `t_start` to `t_end`
 
         Args:
@@ -652,96 +655,9 @@ class SimulationSolver(SolverBase):
         self._cache_stepper["fixed_numpy"] = stepper
         return stepper
 
-    def _make_adaptive_stepper_numpy(self, dt: float) -> Callable:
-        """return function evolving state using adaptive time steps
-
-        Args:
-            state (:class:`~pde.fields.base.FieldBase`):
-                An example for the state from which the grid and other information can
-                be extracted
-
-        Returns:
-            Function that can be called to advance the `state` from time `t_start` to
-            time `t_end`. The function call signature is `(state: numpy.ndarray,
-            t_start: float, t_end: float)`
-        """
-        assert self.adaptive
-
-        if self.use_cache and "adaptive_numpy" in self._cache_stepper:
-            self._logger.info("Use cached adaptive numpy stepper")
-            return self._cache_stepper["adaptive_numpy"]
-
-        # obtain auxiliary functions
-        adjust_dt = self._make_dt_adjuster()  # type: ignore
-        tolerance = self.tolerance
-        dt_min = self.dt_min
-
-        dt_arr = np.array(dt)
-        if self.backend == "numba":
-            get_dt = make_array_constructor(dt_arr)
-        elif self.backend == "numpy":
-            get_dt = lambda: dt_arr
-        else:
-            raise NotImplementedError
-
-        def stepper(state: State, t_start: float, t_end: float, dt_init=None) -> float:
-            """create the adaptive stepper"""
-            # get
-            if dt_init is None:
-                dt_opt = get_dt().item()
-            else:
-                dt_opt = dt_init
-
-            t = t_start
-            steps = 0
-            while True:
-                # use a smaller (but not too small) time step if close to t_end
-                dt_step = np.clip(dt_opt, dt_min, t_end - t)
-
-                state1 = state.copy()
-                state2 = state.copy()
-
-                # single step with current value for dt
-                self.simulation.evolve(state1, t, dt_step)
-
-                # double step with half the time step
-                self.simulation.evolve(state2, t, 0.5 * dt_step)
-                self.simulation.evolve(state2, t + 0.5 * dt_step, 0.5 * dt_step)
-
-                # calculate maximal error
-                error = 0.0
-                for data1, data2 in zip(state1._data_numba, state2._data_numba):
-                    error_item = np.abs(data1 - data2).max()
-                    if np.isnan(error_item):
-                        error = np.nan
-                        break
-                    else:
-                        error = max(error_item, error)
-
-                else:
-                    # error is finite
-                    error_rel = error / tolerance  # normalize error to given tolerance
-
-                    # do the step if the error is sufficiently small
-                    if error_rel <= 1:
-                        steps += 1
-                        t += dt_step
-                        for i, el_data in enumerate(state2._data_numba):
-                            state._data_numba[i][...] = el_data
-
-                if t < t_end:
-                    # adjust the time step and continue
-                    dt_opt = adjust_dt(dt_step, error_rel, t)
-                else:
-                    break  # return to the controller
-
-            return t
-
-        stepper._dt_arr = dt_arr  # type: ignore
-        self._cache_stepper["adaptive_numpy"] = stepper
-        return stepper
-
-    def _make_fixed_stepper_numba(self, state: State, dt: float) -> Callable:
+    def _make_fixed_stepper_numba(
+        self, state: State, dt: float
+    ) -> Callable[[State, float, float], float]:
         """return function evolving state from time `t_start` to `t_end`
 
         This function uses compiled functions for the actors.
@@ -780,6 +696,114 @@ class SimulationSolver(SolverBase):
         self._cache_stepper["fixed_numba"] = stepper
         return stepper
 
+    def _make_adaptive_stepper(
+        self, state: State, dt: float, backend: str
+    ) -> Callable[[State, float, float], float]:
+        """return function evolving state using adaptive time steps
+
+        Args:
+            state (:class:`~pde.fields.base.FieldBase`):
+                An example for the state from which the grid and other information can
+                be extracted
+            dt (float):
+                The value of the initial time step
+            backend (str):
+                The backend for which the adapative stepper is created. This must not be
+                `auto`.
+
+        Returns:
+            Function that can be called to advance the `state` from time `t_start` to
+            time `t_end`. The function call signature is `(state: numpy.ndarray,
+            t_start: float, t_end: float)`
+        """
+        assert self.adaptive
+
+        cache_key = f"adaptive_{backend}"
+        if self.use_cache and cache_key in self._cache_stepper:
+            self._logger.info(f"Use cached adaptive {backend} stepper")
+            return self._cache_stepper[cache_key]
+
+        # initialize the optimal time step with the given one. This value will be
+        # changed by the stepper.
+        dt_opt = float(dt)
+        self.info["dt_statistics"] = OnlineStatistics()  # keep statistics about dt
+
+        # obtain auxiliary functions
+        adjust_dt = self._make_dt_adjuster()  # type: ignore
+        tolerance = self.tolerance
+        dt_min = self.dt_min
+
+        if backend == "numpy":
+
+            def single_step(state: State, t: float, dt_step: float) -> None:
+                """helper function doing a single step usign numpy"""
+                self.simulation.evolve(state, t, dt_step)
+
+        elif backend == "numba":
+
+            simulation_evolver = self.simulation.make_evolver_numba(state)
+
+            def single_step(state: State, t: float, dt_step: float) -> None:
+                """helper function doing a single step usign numba"""
+                simulation_evolver(state._data_numba, t, dt_step)
+
+        else:
+            raise ValueError(f"Unknown backend `{backend}`")
+
+        def stepper(state: State, t_start: float, t_end: float) -> float:
+            """create the adaptive stepper"""
+            nonlocal dt_opt  # `dt_opt` stores value for the next call
+
+            t = t_start
+            steps = 0
+            while True:
+                # use a smaller (but not too small) time step if close to t_end
+                dt_step = np.clip(dt_opt, dt_min, t_end - t)
+
+                state1 = state.copy()
+                state2 = state.copy()
+
+                # single step with current value for dt
+                single_step(state1, t, dt_step)
+
+                # double step with half the time step
+                single_step(state2, t, 0.5 * dt_step)
+                single_step(state2, t + 0.5 * dt_step, 0.5 * dt_step)
+
+                # calculate maximal error
+                error = 0.0
+                for data1, data2 in zip(state1._data_numba, state2._data_numba):
+                    error_item = np.abs(data1 - data2).max()
+                    if np.isnan(error_item):
+                        error = np.nan
+                        break
+                    else:
+                        error = max(error_item, error)
+
+                else:
+                    # error is finite
+                    error_rel = error / tolerance  # normalize error to given tolerance
+
+                    # do the step if the error is sufficiently small
+                    if error_rel <= 1:
+                        steps += 1
+                        t += dt_step
+                        for i, el_data in enumerate(state2._data_numba):
+                            state._data_numba[i][...] = el_data
+                        self.info["dt_statistics"].add(dt_step)
+
+                if t < t_end:
+                    # adjust the time step and continue
+                    dt_opt = adjust_dt(dt_step, error_rel, t)
+                else:
+                    break  # return to the controller
+
+            self.info["steps"] += steps
+            return t
+
+        self._cache_stepper[cache_key] = stepper
+        return stepper
+
     def make_stepper(self, state: State, dt: Optional[float] = None) -> Callable:
         r"""return a stepper function using an explicit scheme
 
@@ -816,12 +840,15 @@ class SimulationSolver(SolverBase):
 
         if self.adaptive:
             # adaptive time step
-            if self.backend == "auto" or self.backend == "numpy":
-                return self._make_adaptive_stepper_numpy(dt)
-            elif self.backend == "numba":
-                raise NotImplementedError(f"numba backend with adaptive dt")
+            if self.backend == "auto":
+                try:
+                    return self._make_adaptive_stepper(state, dt, backend="numba")
+                except NotImplementedError:
+                    self._logger.warning("Numba backend not implemented for all actors")
+                    return self._make_adaptive_stepper(state, dt, backend="numpy")
+
             else:
-                raise ValueError(f"Unknown backend `{self.backend}`")
+                return self._make_adaptive_stepper(state, dt, backend=self.backend)
 
         else:
             # fixed time step
@@ -829,10 +856,7 @@ class SimulationSolver(SolverBase):
                 try:
                     return self._make_fixed_stepper_numba(state, dt)
                 except NotImplementedError:
-                    self._logger.warning(
-                        "Numba backend is not implemented for all "
-                        "parts of the simulation."
-                    )
+                    self._logger.warning("Numba backend not implemented for all actors")
                     return self._make_fixed_stepper_numpy(dt)
 
             elif self.backend == "numba":
