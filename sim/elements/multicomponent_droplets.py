@@ -6,16 +6,16 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
 
-from droplets import Emulsion, SphericalDroplet
+from droplets import SphericalDroplet
 from droplets.tools.spherical import volume_from_radius
 from pde.grids.base import GridBase
 
-from .base import ElementBase
+from .spherical_droplets import SphericalDropletsElement
 
 
 class MulticomponentDroplet(SphericalDroplet):
@@ -186,113 +186,23 @@ class MulticomponentDroplet(SphericalDroplet):
         return super()._get_mpl_patch(dim=dim, **kwargs)
 
 
-class MulticomponentDropletsElement(ElementBase):
-    """an element representing many droplets"""
+class MulticomponentDropletsElement(SphericalDropletsElement):
+    """an element representing many multicomponent droplets"""
 
-    _data: np.recarray
-    dim: Optional[int]
-
-    droplet_class = MulticomponentDroplet
-
-    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
-        """
-        Args:
-            data (:class:`~numpy.ndarray`):
-                The positions and radii of all points. This should be a
-                structured array as returned by
-                :attr:`~droplets.emulsions.Emulsion.data`
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~sim.elements.spherical_droplets.SphericalDropletsElement.show_parameters`
-                for details.
-        """
-        if isinstance(data, Emulsion):
-            raise TypeError(
-                "`data` should be a numpy array, not `Emulsion`. To initialize "
-                f"`{self.__class__.__name__}` with an emulsions use "
-                "the `from_droplets` classmethod."
-            )
-        if (
-            hasattr(data, "__iter__")
-            and len(data) > 0
-            and isinstance(data[0], self.droplet_class)
-        ):
-            raise TypeError(
-                "`data` should only contain the droplet data, no objects. To "
-                f"initialize `{self.__class__.__name__}` with an emulsions use "
-                "the `from_droplets` classmethod."
-            )
-
-        # set temporary data first and overwrite it later
-        super().__init__(None, parameters)
-        droplets = [self.droplet_class.from_data(data_row) for data_row in data]
-        self.droplets = Emulsion(droplets)  # type: ignore
-
-        if len(self.droplets) == 0:
-            self._data = data.copy().view(np.recarray)
-            self.dim = None
-        else:
-            self._data = self.droplets.get_linked_data()  # type: ignore
-            self.dim = self.droplets.dim
-
-    @classmethod
-    def from_droplets(
-        cls,
-        droplets: Emulsion,
-        copy: bool = False,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> MulticomponentDropletsElement:
-        """
-        Args:
-            droplets (:class:`droplets.emulsions.Emulsion`):
-                The state of this element given as an emulsion.
-            copy (bool):
-                Flag indicating whether the droplets are copied, so they are not
-                modified during the simulation.
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~SphericalDropletsElement.show_parameters` for details.
-        """
-        # create class without calling its __init__
-        obj = cls.__new__(cls)
-        # call the parent __init__ with a temporary array
-        ElementBase.__init__(obj, None, parameters=parameters)
-
-        # initialize droplets
-        obj.droplets = Emulsion(droplets, copy=copy)
-        for droplet in obj.droplets:
-            if not isinstance(droplet, obj.droplet_class):
-                cls_name = droplet.__class__.__name__
-                raise ValueError(f"{cls.__name__} does not support `{cls_name}`")
-
-        obj._data = obj.droplets.get_linked_data()  # type: ignore
-        obj.dim = obj.droplets.dim
-
-        return obj
+    droplet_class = MulticomponentDroplet  # type: ignore
 
     @property
     def num_comps(self) -> Optional[int]:
         """int: the number of components inside each droplet"""
         if len(self) > 0:
-            return int(self.droplets[0].num_comps)
+            return int(self.droplets[0].num_comps)  # type: ignore
         else:
             return None
-
-    def __len__(self) -> int:
-        return len(self.droplets)
-
-    @property
-    def droplet_count(self) -> int:
-        """int: the number of droplets in the emulsion
-
-        This only counts droplets with non-zero radius.
-        """
-        return sum(droplet.radius > 0 for droplet in self.droplets)
 
     @property
     def phis(self) -> np.ndarray:
         """:class:`~numpy.ndarray`: fractions of all components in all droplets"""
-        return np.array([d.phis for d in self.droplets if d.radius > 0])  # type: ignore
+        return np.array([d.phis for d in self.droplets if d.radius > 0])
 
     @property
     def amounts(self) -> np.ndarray:

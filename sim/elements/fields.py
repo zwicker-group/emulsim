@@ -22,19 +22,20 @@ import numba as nb
 import numpy as np
 from numba.extending import register_jitable
 
+from modelrunner.parameters import Parameter
+from modelrunner.state import NoData
 from pde.fields import FieldCollection, ScalarField
 from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
-class ReservoirElement(ElementBase):
+class ReservoirElement(ArrayElementBase):
     """an element representing a homogeneous, constant field"""
 
     dim = None  # works for any dimension
@@ -73,7 +74,7 @@ class ReservoirElement(ElementBase):
                 color specifications are allowed.
             {PLOT_ARGS}
         """
-        pass
+        ...
 
     def get_concentration(self, points: np.ndarray):
         """determine concentration at the given points
@@ -102,7 +103,7 @@ class ReservoirElement(ElementBase):
             amount:
                 The total amount added to the field
         """
-        pass
+        ...
 
     def make_get_concentration_compiled(self) -> Callable:
         """get a compiled function for obtaining concentrations
@@ -130,12 +131,12 @@ class ReservoirElement(ElementBase):
 
         @nb.jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
-            pass
+            ...
 
         return add_amount  # type: ignore
 
 
-class FieldElementBase(ElementBase, metaclass=ABCMeta):
+class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
     """base class for field elements"""
 
     def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
@@ -151,15 +152,15 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
 
-    @cached_property()
+    @abstractproperty
     def grid(self) -> CartesianGrid:
         """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
-        return CartesianGrid(self.bounds, 1)
+        ...
 
     @abstractproperty
     def total_amount(self) -> float:
         """float: the total material amount in the field"""
-        pass
+        ...
 
     @property
     def average_concentration(self) -> float:
@@ -175,7 +176,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
                 The coordinates of the single point or the list of points at
                 which the concentration is returned
         """
-        pass
+        ...
 
     @abstractmethod
     def add_amount(self, point: np.ndarray, amount: float):
@@ -187,7 +188,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
             amount (float):
                 The total amount added to the field
         """
-        pass
+        ...
 
     def make_get_concentration_compiled(self) -> Callable:
         """get a compiled function for obtaining concentrations
@@ -211,7 +212,7 @@ class FieldElementBase(ElementBase, metaclass=ABCMeta):
 
     def plot(self, ax=None, **kwargs):
         """plot the field"""
-        pass
+        ...
 
     def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
         """returns data for plotting on a single napari layer
@@ -240,21 +241,32 @@ class MeanfieldElement(FieldElementBase):
     ]
 
     def __init__(self, data: float = 0, parameters: Optional[Dict[str, Any]] = None):
-        """initialize the meanfield element
-
+        """
         Args:
             data (float):
                 The initial concentration in the field
             parameters (dict):
                 Additional parameters determining how the element behaves. Most
-                importantly, the entry 'bounds' determines the size of the
-                element. It needs to be a sequence of tuples specifying the
-                lower and upper bound for each axis. The number of entries sets
-                the space dimension.
+                importantly, the entry 'grid' determines the discretization grid
+                on which this field is defined.
         """
-        super().__init__(np.full((1,), data, dtype=np.double), parameters)
+        # this only defines a new default value
+        super().__init__(data, parameters)  # type: ignore
 
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
+        Args:
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
+        """
         # store data in a mutable 1d-array
+        if data is NoData:
+            data = np.zeros((1,), dtype=np.double)
+        else:
+            data = np.full((1,), data, dtype=np.double)
+        super()._state_init(attributes, data)
+
         if self.parameters["bounds"] is None:
             raise ValueError("`bounds` need to be specified in parameters")
         else:
@@ -274,6 +286,11 @@ class MeanfieldElement(FieldElementBase):
         assert isinstance(field, ScalarField)
         data = float(field.average)  # type: ignore
         return cls(data, {"bounds": field.grid.axes_bounds})
+
+    @cached_property()
+    def grid(self) -> CartesianGrid:
+        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        return CartesianGrid(self.bounds, 1)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -444,8 +461,17 @@ class ScalarFieldElement(FieldElementBase):
                 importantly, the entry 'grid' determines the discretization grid
                 on which this field is defined.
         """
-        # set temporary data first and overwrite it later
-        super().__init__(None, parameters)
+        # this only defines a new default value
+        super().__init__(data, parameters)  # type: ignore
+
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
+        Args:
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
+        """
+        super()._state_init(attributes)
 
         if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
@@ -454,7 +480,7 @@ class ScalarFieldElement(FieldElementBase):
             )
 
         self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data = self._field.data
+        self.data = self._field.data
         self.set_bounds(self.grid.axes_bounds)
 
     @classmethod
@@ -484,7 +510,7 @@ class ScalarFieldElement(FieldElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size
+        return self.data.size  # type: ignore
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -550,7 +576,7 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.grid.make_inserter_compiled()
 
 
-class FieldCollectionElement(ElementBase):
+class FieldCollectionElement(ArrayElementBase):
     """the state associated with multiple spatially resolved fields"""
 
     parameters_default = [
@@ -567,23 +593,14 @@ class FieldCollectionElement(ElementBase):
         Parameter("label", "", str, "The name of the field collection"),
     ]
 
-    def __init__(
-        self,
-        data: np.ndarray,
-        parameters: Optional[Dict[str, Any]] = None,
-    ):
-        """
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            num_fields (int):
-                The number of fields in the collection
-            data (:class:`~numpy.ndarray`):
-                Field values at the support points of the grid
-            parameters (dict):
-                Additional parameters determining how the element behaves. Most
-                importantly, the entry 'grid' determines the discretization grid
-                on which this field is defined.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        super().__init__(None, parameters)
+        super()._state_init(attributes)
 
         if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
@@ -597,8 +614,7 @@ class FieldCollectionElement(ElementBase):
         else:
             fields = [ScalarField(self.grid, field_data) for field_data in data]
         self._fields = FieldCollection(fields, label=self.parameters["label"])
-
-        self._data = self.fields.data
+        self.data = self.fields.data
 
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
@@ -643,7 +659,7 @@ class FieldCollectionElement(ElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size
+        return self.data.size  # type: ignore
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -797,21 +813,20 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 importantly, the entry 'grid' determines the discretization grid
                 on which this field is defined.
         """
-        # set temporary data first and overwrite it later
-        super().__init__(None, parameters)  # type: ignore
+        # this only defines a new default value
+        super().__init__(data, parameters)
+
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
+        Args:
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
+        """
+        super()._state_init(attributes, data)
 
         if not 0 <= self.axis <= self.grid.num_axes:
             raise ValueError(f"`axis={self.axis}` is out of bounds")
-
-        if not isinstance(self.grid, CartesianGrid):
-            raise NotImplementedError(
-                "The simulations are only been implemented for Cartesian grids and not "
-                f"for {self.grid.__class__.__name__}"
-            )
-
-        self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self._data = self._field.data
-        self.set_bounds(self.grid.axes_bounds)
 
         # correct some values to make them bulk quantities
         self.dim = self.grid.dim + 1

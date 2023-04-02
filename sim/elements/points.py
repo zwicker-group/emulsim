@@ -9,13 +9,14 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from pde.tools.parameters import Parameter
+from modelrunner.parameters import Parameter
+from modelrunner.state import NoData
 from pde.tools.plotting import plot_on_axes
 
-from .base import ElementBase
+from .base import ArrayElementBase
 
 
-class PointsElement(ElementBase):
+class PointsElement(ArrayElementBase):
     """an element that represents a collection of points"""
 
     parameters_default = [
@@ -27,52 +28,44 @@ class PointsElement(ElementBase):
         )
     ]
 
-    def __init__(self, data: np.ndarray, parameters: Optional[Dict[str, Any]] = None):
-        """
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            data (:class:`~numpy.ndarray`):
-                The positions of all points
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~PointsElement.show_parameters` for details.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
         self._logger = logging.getLogger(self.__class__.__name__)
-        data = np.asanyarray(data)
+        # data = np.asanyarray(data)
+
+        super()._state_init(attributes, data)
 
         # ensure the right format of the input data
-        if data.dtype.fields:
+        if self.data.dtype.fields:
             # record dtype
             self._logger.debug("Data of PointsElement was recarray")
-            if data.ndim != 1 or "position" not in data.dtype.fields:
-                raise ValueError(
-                    "`data` must be an array of records with a `position` field"
-                )
-            self.dim = data.dtype["position"].shape[0]
-            if isinstance(data, np.recarray):
-                rec_data = data
-            else:
-                rec_data = data.view(np.recarray)
+            if self.data.ndim != 1 or "position" not in self.data.dtype.fields:
+                raise ValueError("`data` must be recarray with a `position` field")
+            self.dim = self.data.dtype["position"].shape[0]
+            self.data = self.data.view(np.recarray)
 
         else:
             # simple dtype
             self._logger.info("Data of PointsElement needs to be promoted to recarray")
-            data = np.atleast_2d(data)
+            data = np.atleast_2d(self.data)
             if data.ndim != 2:
                 raise ValueError("`data` must be a sequence of positions")
 
             num_el, self.dim = data.shape
-            rec_data = np.recarray((num_el,), dtype=[("position", float, (self.dim,))])
-            rec_data.position[:] = data
-
-        # initialize parameters
-        super().__init__(rec_data, parameters)
+            self.data = np.recarray((num_el,), dtype=[("position", float, (self.dim,))])
+            self.data.position[:] = data
 
     def __len__(self) -> int:
         return len(self.data)
 
     @property
     def positions(self) -> np.ndarray:
-        return self.data["position"]
+        return self.data["position"]  # type: ignore
 
     @positions.setter
     def positions(self, value: np.ndarray) -> None:
@@ -136,22 +129,27 @@ class PointsElement(ElementBase):
 
 
 class ArrowsElement(PointsElement):
-    """an element that represents a collection of points with direction"""
+    """an element that represents a collection of points with direction
 
-    def __init__(self, data: np.recarray, parameters: Optional[Dict[str, Any]] = None):
-        """
+    Args:
+        data (:class:`~numpy.recarray`):
+            The structured array with entries for 'position' and 'direction' for all
+            points. For example, the dtype of the array should be
+            `[("position", float, (dim,)), ("direction", float, (dim,))]`, where
+            `dim` is the dimension of space.
+        parameters (dict):
+            Additional parameters. Call
+            :meth:`~PointsElement.show_parameters` for details.
+    """
+
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
+
         Args:
-            data (:class:`~numpy.recarray`):
-                The structured array with entries for 'position' and 'direction' for all
-                points. For example, the dtype of the array should be
-                `[("position", float, (dim,)), ("direction", float, (dim,))]`, where
-                `dim` is the dimension of space.
-            parameters (dict):
-                Additional parameters. Call
-                :meth:`~PointsElement.show_parameters` for details.
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        # initialize parameters
-        super().__init__(data, parameters)
+        super()._state_init(attributes, data)
         assert self.data.dtype["direction"].shape == (self.dim,)
 
     @classmethod
@@ -221,7 +219,7 @@ class ArrowsElement(PointsElement):
 
     @property
     def directions(self) -> np.ndarray:
-        return self.data["direction"]
+        return self.data["direction"]  # type: ignore
 
     @directions.setter
     def directions(self, value: np.ndarray) -> None:

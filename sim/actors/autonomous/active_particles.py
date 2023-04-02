@@ -7,8 +7,8 @@ from typing import Callable, Tuple
 import numba as nb
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import ArrowsElement
 from ..base import ActorBase, ElementsType

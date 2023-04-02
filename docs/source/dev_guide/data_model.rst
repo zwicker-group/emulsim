@@ -42,75 +42,40 @@ radius for the a droplet), we use structured datatypes of numpy, which can be cr
 with the :class:`numpy.dtype` class. 
 
 To define a custom element, you need to define a class that inherits from
-:class:`~sim.elements.base.ElementBase`. This default element can already take a 
-:class:`~numpy.ndarray` as the data attribute and is fully functional.
+:class:`~sim.elements.base.ArrayElementBase`,
+:class:`~sim.elements.base.ArrayCollectionElementBase`, or
+:class:`~sim.elements.base.ObjectElementBase` depending on what data is best describing
+the degrees of freedom of your element.
+These base elements can already support the data attribute and are fully functional.
 To customize the element, you can add model parameters to it by defining the class
 attribute `parameters_default`.
 If you want to add attributes other than parameters, you need to overwrite the
-:attr:`~sim.elements.base.ElementBase.attributes` property and the class method
-:meth:`~sim.elements.base.ElementBase.from_state`, which initializes objects from a 
+:attr:`~sim.elements.base._ElementBase.attributes` property and the class method
+:meth:`~sim.elements.base._ElementBase._state_init`, which initializes objects from a 
 supplied state.
 These aspects are explained in the code example below:
 
 .. code-block:: python
-    
+
     from sim.elements.base import ElementBase
-    
+
     class CustomElement(ElementBase):
-        
+
         parameters_default = {'mass': 10}
-        
+
         def __init__(self, data, name="Custom", parameters=None):
             super().__init__(data, parameters)
             self.name = name
-        
+
         @property
         def attributes(self):
             attrs = super().attributes
             attrs['name'] = self.name
             return attrs
-            
-        @classmethod
-        def from_state(cls, attributes, data=None):
-            obj = super().from_state(attributes, data)
-            obj.name = attributes.get("name", "No name")
-            return obj        
 
-
-If an attribute value is a custom object, you might also need to overwrite the 
-:meth:`~sim.elements.base.ElementBase.serialize_attribute` and
-:meth:`~sim.elements.base.ElementBase.unserialize_attribute` methods to define how the object can
-be converted to a string representation and vice versa.
-Moreover, it will usually be helpful to overwrite the
-:meth:`~sim.elements.base.ElementBase.plot` method to allow displaying the element.
-These three methods are quickly showcased in the following snippet:
-
-.. code-block:: python
-    
-    class CustomElement(ElementBase):
-        
-        [...]
-        
-        def serialize_attribute(self, name, value):
-            if name == 'complicated_attribute':
-                # treat the special attribute
-                return value.get_string_representation()
-                
-            # fall back to default behavior for all others
-            return super().serialize_attribute(name, value)
-
-        @classmethod
-        def unserialize_attribute(cls, name, value_str):
-            if name == 'complicated_attribute':
-                # treat the special attribute
-                return complicated_attribute_from_str(value_str)
-
-            # fall back to default behavior for all others
-            return super().unserialize_attribute(name, value_str)
-    
-        def plot(self, ax=None, *args, **kwargs):
-            ax.plot(self.data)
-
+        def _state_init(self, attributes, data):
+            super()._state_init(attributes, data)
+            self.name = attributes.get("name", "No name")
 
 
 Simulation dynamics (Actors)
@@ -133,27 +98,27 @@ In the simplest case, a custom actor only needs to overwrite the
 :code:`t` to :code:`t + dt`, changing the respective :attr:`data` attributes in place:
 
 .. code-block:: python
-    
+
     class BrownianParticlesActor(sim.ActorBase):
-    
+
         diffusivity = 1
-    
+
         def evolve(self, elements, t, dt):
             """ evolve the particles in time """
             (particles,) = elements
             scale = np.sqrt(dt) * self.diffusivity
             particles.data[...] += scale * np.random.normal(size=particles.data.shape)
-    
-        
+
+
         def make_evolver_numba(self, elements):
             """return a function evolve the field state from time `t` to `t + dt` """
             diffusivity = self.diffusivity
-    
+
             @jit
             def evolver(state_data, t, dt):
                 """ evolve all points explicitly """
                 scale = np.sqrt(dt * diffusivity)
                 for i in range(state_data[0].size):
                     state_data[0].flat[i] += scale * np.random.randn()
-    
+
             return evolver

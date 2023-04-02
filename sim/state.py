@@ -1,27 +1,35 @@
 """
-Provides a class representing the full system state of multiple elements
+Provides a class representing the full system state of multiple elements.
+
+The class inherits both from :class:`~modelrunner.state.DictState` (governing input and
+output) and :class:`~modelrunner.parameters.Parametrized` (to allow controlling
+parameters of the state, e.g., how it is being visualized):
+
+.. inheritance-diagram:: State
+   :parts: 1
+
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-import copy
+from __future__ import annotations
+
 import itertools
-import json
-import logging
 import warnings
 from collections import defaultdict
-from typing import Optional  # @UnusedImport
-from typing import Any, Dict, Iterable, Sequence, Set, Tuple, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
+from numba.typed import Dict as NumbaDict
+
+from modelrunner.parameters import Parameter, Parameterized
+from modelrunner.state import DictState, NoData, simplify_data
 from pde.grids.base import DimensionError, GridBase
-from pde.tools.misc import hdf_write_attributes
-from pde.tools.parameters import Parameter, Parameterized
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
-from .elements.base import ElementBase
+from .elements.base import _ElementBase
 
 
-class State(Parameterized):
+class State(Parameterized, DictState):
     """defines the state of the simulation as a collection of elements"""
 
     parameters_default = [
@@ -39,9 +47,14 @@ class State(Parameterized):
         ),
     ]
 
+    _state_attributes_attr_name = "attributes"
+    _state_data_attr_name = "data"
+
+    data: Dict[str, _ElementBase]  # type: ignore
+
     def __init__(
         self,
-        elements: Optional[Dict[str, ElementBase]] = None,
+        elements: Optional[Dict[str, _ElementBase]] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ):
         """
@@ -49,57 +62,106 @@ class State(Parameterized):
             elements (dict):
                 Lists the elements in the simulation. The key in this dictionary
                 gives the name of the element, while the associated value should
-                be an instance of :class:`~sim.elements.base.ElementBase`.
+                be an instance of :class:`~sim.elements.base._ElementBase`.
             parameters (dict):
                 Parameters that affect the entire state
         """
-        super().__init__(parameters)
-        self._logger = logging.getLogger(__name__)
+        # parse parameters and initialize self.parameters
+        Parameterized.__init__(self, parameters)
 
         # determine dimensionality of space
-        if self.parameters["bounds"] is not None:
-            self.dim: Optional[int] = len(self.parameters["bounds"])
+        if self.parameters["bounds"] is None:
+            self.dim: Optional[int] = None  # cannot determine dimension at this point
         else:
-            self.dim = None
+            self.dim = len(self.parameters["bounds"])
 
-        # add elements to the simulation
-        self.elements: Dict[str, ElementBase] = dict()
+        # initialize empty dictionary storage
+        DictState.__init__(self, {})
+
+        # add elements to the state
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
 
-    @classmethod
-    def _from_hdf_dataset(cls, dataset) -> "State":
-        """construct the instance by reading data from an hdf5 dataset
+    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state with attributes and (optionally) data
 
         Args:
-            dataset: the hdf5 dataset (in an already opened file)
+            attributes (dict): Additional (unserialized) attributes
+            data: The data of the degerees of freedom of the physical system
         """
-        element_names = json.loads(dataset.attrs["elements"])
-        elements = {
-            name: ElementBase._from_hdf_dataset(dataset[name]) for name in element_names
-        }
-        return cls(elements)
+        if data is not NoData:
+            self.data = data
+
+        self.parameters = self._parse_parameters(
+            attributes["parameters"], include_deprecated=True, check_validity=True
+        )
+        if sum(1 for a in attributes if not a.startswith("_")) != 1:
+            raise ValueError(f"Too many attributes: {attributes.keys()}")
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """dict: information about the state"""
+        return {"parameters": self.parameters}
+
+    @property
+    def _state_attributes_store(self) -> Dict[str, Any]:
+        """dict: Attributes in the form in which they will be written to storage
+
+        This property modifies the normal `_state_attributes` and adds information
+        necessary for restoring the class using :meth:`StateBase.from_data`.
+        """
+        attrs = super()._state_attributes_store
+
+        if "parameters" in attrs:
+            # serialize the individual parameters
+            default_parameters = self.get_parameters(
+                include_hidden=True, include_deprecated=True, sort=False
+            )
+
+            for key, value in attrs["parameters"].items():
+                if key in default_parameters:
+                    def_param_extra = default_parameters[key].extra
+                    if "serializer" in def_param_extra:
+                        attrs["parameters"][key] = def_param_extra["serializer"](value)
+                        continue
+                attrs["parameters"][key] = simplify_data(value)
+
+        return attrs
 
     @classmethod
-    def from_file(cls, path: str) -> "State":
-        """create simulation state instance from data stored in a hdf file
+    def from_data(cls, attributes: Dict[str, Any], data=None) -> State:
+        """create the state from attributes and data
 
         Args:
-            path (str): Path to the hdf file being read
+            attributes (dict):
+                Attributes of the element. This carries information about parameters and
+                possibly additional parts that do not depend on time.
+            data (:class:`~numpy.ndarray`):
+                The numerical data associated with the state of the element
         """
-        import h5py
+        # re-create the State object using the DictState methods
+        obj = super().from_data(attributes, data)
+        # set the parameters correctly
+        Parameterized.__init__(obj, attributes.get("parameters", None))
+        return obj  # type: ignore
 
-        with h5py.File(path, "r") as fp:
-            return cls._from_hdf_dataset(fp)
+    @property
+    def _data_numba(self) -> Tuple:
+        """returns the data associated with the state in a form that numba can handle"""
+        return tuple(state._data_numba for state in self.data.values())
 
-    def add_element(self, name: str, element: ElementBase):
+    @property
+    def elements(self) -> Dict[str, _ElementBase]:
+        return self.data
+
+    def add_element(self, name: str, element: _ElementBase):
         """adds an element to the simulation
 
         Args:
             name (str):
                 The identifier for the element.
-            element (:class:`~sim.elements.base.ElementBase`):
+            element (:class:`~sim.elements.base._ElementBase`):
                 The instance defining the element.
         """
         if name in self.elements:
@@ -179,56 +241,12 @@ class State(Parameterized):
             return False
         return all(self.elements[key] == other.elements[key] for key in self.elements)
 
-    def copy(self) -> "State":
-        """copy the state"""
-        return self.__class__(
-            {name: element.copy() for name, element in self},
-            parameters=copy.deepcopy(self.parameters),
-        )
-
-    @property
-    def attributes(self) -> Dict[str, Any]:
-        """dict: information about the state"""
-        return {
-            "elements": {name: element.attributes for name, element in self},
-            "parameters": self.parameters,
-        }
-
-    def _write_hdf_dataset(self, hdf_path):
-        """write data to a given hdf5 file
-
-        Args:
-            dataset: the hdf5 dataset (in an already opened file)
-        """
-        element_names = []
-        for name, element in self:
-            element_names.append(name)
-            element._write_hdf_dataset(hdf_path.create_group(name))
-        hdf_write_attributes(hdf_path, {"elements": element_names})
-
-    def to_file(self, filename: str, info: Optional[Dict[str, Any]] = None) -> None:
-        r"""store elements in a hdf file
-
-        Args:
-            filename (str):
-                Path where the data is stored
-            info (dict):
-                Extra information that is written to the hdf attributes. Note
-                that the values in this dictionary will be JSON-serialized.
-        """
-        import h5py
-
-        if info is not None and "elements" in info:
-            self._logger.warning("`elements` entry of `info` will be overwritten")
-
-        with h5py.File(filename, "w") as fp:
-            hdf_write_attributes(fp, info)
-            self._write_hdf_dataset(fp)
-
-    @property
-    def data(self) -> Tuple[Any, ...]:
-        """tuple: the full data of the state  s"""
-        return tuple(element.data for element in self.elements.values())
+    # def copy(self) -> State:
+    #     """copy the state"""
+    #     return self.__class__(
+    #         {name: element.copy() for name, element in self},
+    #         parameters=copy.deepcopy(self.parameters),
+    #     )
 
     @property
     def degrees_of_freedom(self) -> int:

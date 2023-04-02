@@ -19,7 +19,7 @@ from numba import TypingError
 
 from pde.tools.numba import jit
 
-from ..elements.base import ElementBase
+from ..elements.base import _ElementBase
 from .base import ActorBase, ElementsType, EvolverType
 
 
@@ -38,7 +38,7 @@ class FunctionActor(ActorBase):
                 performance can be achieved when the function can be compiled by numba.
         """
         super().__init__()
-        self.element_classes = (ElementBase,) * num_elements
+        self.element_classes = (_ElementBase,) * num_elements
 
         # inspect and check that there are three arguments
         pos_args, unknown_args = 0, 0
@@ -62,7 +62,7 @@ class FunctionActor(ActorBase):
         """evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point
@@ -92,7 +92,7 @@ class NumbaFunctionActor(ActorBase):
                 performance can be achieved when the function can be compiled by numba.
         """
         super().__init__()
-        self.element_classes = (ElementBase,) * num_elements
+        self.element_classes = (_ElementBase,) * num_elements
 
         # inspect and check that there are three arguments
         pos_args, unknown_args = 0, 0
@@ -116,7 +116,7 @@ class NumbaFunctionActor(ActorBase):
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            *elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -139,7 +139,7 @@ class NumbaFunctionActor(ActorBase):
         """evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base.ElementBase`):
+            elements (tuple of :class:`~sim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point

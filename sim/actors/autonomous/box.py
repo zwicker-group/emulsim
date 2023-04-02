@@ -6,9 +6,9 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 
+from modelrunner.parameters import Parameter
 from pde.grids.cartesian import CartesianGrid
 from pde.tools.numba import jit
-from pde.tools.parameters import Parameter
 
 from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType

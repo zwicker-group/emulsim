@@ -7,3 +7,6 @@
 [submodule "submodules/py-droplets"]
 	path = submodules/py-droplets
 	url = https://github.com/zwicker-group/py-droplets.git
+[submodule "submodules/py-modelrunner"]
+	path = submodules/py-modelrunner
+	url = https://github.com/zwicker-group/py-modelrunner

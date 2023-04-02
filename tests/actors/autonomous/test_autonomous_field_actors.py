@@ -42,8 +42,8 @@ def test_diffusion_vs_pde():
     a2.evolve((e2,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
-    a1.make_evolver_numba((e1,))((e1.data,), 0, 0.1)
-    a2.make_evolver_numba((e2,))((e2.data,), 0, 0.1)
+    a1.make_evolver_numba((e1,))((e1._data_numba,), 0, 0.1)
+    a2.make_evolver_numba((e2,))((e2._data_numba,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
@@ -72,12 +72,12 @@ def test_meanfield_reactions():
     # numba version
     element.concentration = 1
     evolver = actor.make_evolver_numba((element,))
-    evolver((element.data,), 0, dt=1)
+    evolver((element._data_numba,), 0, dt=1)
     assert element.concentration == pytest.approx(4)
 
-    evolver((element.data,), 1, dt=1)
+    evolver((element._data_numba,), 1, dt=1)
     assert element.concentration == pytest.approx(11)
-    evolver((element.data,), 1, dt=0)
+    evolver((element._data_numba,), 1, dt=0)
     assert element.concentration == pytest.approx(11)
 
 
@@ -95,8 +95,8 @@ def test_diffusion_vs_reaction_diffusion():
     a2.evolve((e2,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
-    a1.make_evolver_numba((e1,))((e1.data,), 0, 0.1)
-    a2.make_evolver_numba((e2,))((e2.data,), 0, 0.1)
+    a1.make_evolver_numba((e1,))((e1._data_numba,), 0, 0.1)
+    a2.make_evolver_numba((e2,))((e2._data_numba,), 0, 0.1)
     np.testing.assert_array_equal(e1.data, e2.data)
 
 

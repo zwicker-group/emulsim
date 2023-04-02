@@ -10,14 +10,14 @@ import pde
 from pde.tools.misc import skipUnlessModule
 from pde.tools.numba import jit
 
-from sim import Simulation, State
-from sim.actors.coupling import MulticomponentDropletActor
-from sim.actors.coupling.multicomponent_droplet import _make_regularizer
-from sim.elements import (
+from .... import Simulation, State
+from ....elements import (
     FieldCollectionElement,
     MulticomponentDroplet,
     MulticomponentDropletsElement,
 )
+from .. import MulticomponentDropletActor
+from ..multicomponent_droplet import _make_regularizer
 
 
 @pytest.mark.parametrize("do_jit", [True, False])
@@ -115,40 +115,40 @@ def test_multicomponent_droplet_actor(dim, num_comps):
     np.testing.assert_allclose(res2.get_total_quantity("amounts"), amounts)
 
 
-# @pytest.mark.parametrize("dim", [1, 3])
-# @pytest.mark.parametrize("num_comps", [1, 2])
-# def test_multicomponent_no_droplets(dim, num_comps):
-#     """test basic multicomponent droplets simulations"""
-#     # create the background field
-#     grid = pde.CartesianGrid([[0, 32]] * dim, 1, periodic=True)
-#     fc = pde.FieldCollection.scalar_random_uniform(num_comps, grid, 0, 0.1 / num_comps)
-#     bulk = FieldCollectionElement.from_fields(fc)
-#
-#     # create no droplets :)
-#     dtype = MulticomponentDroplet.get_dtype(
-#         amounts=np.zeros(num_comps), position=np.zeros(dim)
-#     )
-#     data = np.empty((0,), dtype=dtype)
-#     droplets_element = MulticomponentDropletsElement(data)
-#
-#     # create the simulation state
-#     state = State({"bulk": bulk, "droplets": droplets_element})
-#     amounts = state.get_total_quantity("amounts")
-#
-#     # create the dynamics
-#     simulation = Simulation(state)
-#     droplet_actor = MulticomponentDropletActor(
-#         {"chis": np.full(num_comps, 1), "chis_solvent": 3}
-#     )
-#     simulation.add_actor(("droplets", "bulk"), droplet_actor)
-#
-#     res1 = simulation.run(t_range=1, backend="numpy", dt=1e-2, tracker=None)
-#     res2 = simulation.run(t_range=1, backend="numba", dt=1e-2, tracker=None)
-#
-#     for res in [res1, res2]:
-#         assert len(res["droplets"]) == 0
-#         np.testing.assert_allclose(res["bulk"].data, state["bulk"].data)
-#         np.testing.assert_allclose(res.get_total_quantity("amounts"), amounts)
+@pytest.mark.parametrize("dim", [1, 3])
+@pytest.mark.parametrize("num_comps", [1, 2])
+def test_multicomponent_no_droplets(dim, num_comps):
+    """test basic multicomponent droplets simulations"""
+    # create the background field
+    grid = pde.CartesianGrid([[0, 32]] * dim, 1, periodic=True)
+    fc = pde.FieldCollection.scalar_random_uniform(num_comps, grid, 0, 0.1 / num_comps)
+    bulk = FieldCollectionElement.from_fields(fc)
+
+    # create no droplets :)
+    dtype = MulticomponentDroplet.get_dtype(
+        amounts=np.zeros(num_comps), position=np.zeros(dim)
+    )
+    data = np.empty((0,), dtype=dtype)
+    droplets_element = MulticomponentDropletsElement(data)
+
+    # create the simulation state
+    state = State({"bulk": bulk, "droplets": droplets_element})
+    amounts = state.get_total_quantity("amounts")
+
+    # create the dynamics
+    simulation = Simulation(state)
+    droplet_actor = MulticomponentDropletActor(
+        {"chis": np.full(num_comps, 1), "chis_solvent": 3}
+    )
+    simulation.add_actor(("droplets", "bulk"), droplet_actor)
+
+    res1 = simulation.run(t_range=1, backend="numpy", dt=1e-2, tracker=None)
+    res2 = simulation.run(t_range=1, backend="numba", dt=1e-2, tracker=None)
+
+    for res in [res1, res2]:
+        assert len(res["droplets"]) == 0
+        np.testing.assert_allclose(res["bulk"].data, state["bulk"].data)
+        np.testing.assert_allclose(res.get_total_quantity("amounts"), amounts)
 
 
 def test_multicomponent_equilibrium():
@@ -164,7 +164,7 @@ def test_multicomponent_equilibrium():
 
     simulation = Simulation(state)
     droplet_actor = MulticomponentDropletActor(
-        {"chis": [[0, 1], [1, 0]], "chis_solvent": 3, "mobility": [1, 2]}
+        {"chis": [[0, 1], [1, 0]], "chis_solvent": 3}
     )
     simulation.add_actor(("droplets", "bulk"), droplet_actor)
 
@@ -187,7 +187,7 @@ def test_multicomponent_equilibrium():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coexistence(backend):
-    """test coexistence in multicomponent system"""
+    """test equilibrium in multicomponent system"""
     grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
 

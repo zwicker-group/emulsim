@@ -13,16 +13,7 @@ Provides a class representing the full simulation
 import logging
 import time
 import warnings
-from typing import (  # @UnusedImport
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import numba as nb
 import numpy as np
@@ -136,7 +127,7 @@ class Simulation:
         if check != "ignore":
             # run some checks before adding the actor
 
-            def show_msg(msg: str, exception: TypeError):
+            def show_msg(msg: str, exception: Type[BaseException]):
                 """helper function showing the message according to chosen method"""
                 if check == "warn":
                     warnings.warn(msg)
@@ -150,7 +141,10 @@ class Simulation:
             if len(actor.element_classes) > 0:
                 element_objects = [self.state.elements[name] for name in elements]
                 if not actor.supports_elements(*element_objects, silent=True):
-                    show_msg(f"Unsupported elements for `{actor.__class__.__name__}`")
+                    show_msg(
+                        f"Unsupported elements for `{actor.__class__.__name__}`",
+                        TypeError,
+                    )
 
             # check whether the same actor has already been added earlier
             for elements2, actor2 in self.actors:
@@ -355,7 +349,7 @@ class Simulation:
         """
         # Programmer's note: We separated out this part of creating the inner evolvers
         # because of python's variable scoping. If the `evolve_state` functions were to
-        # be defined in the inner loop in the the `make_evolver_numba` function the
+        # be defined in the inner loop in the `make_evolver_numba` function the
         # variables used in `evolve_state` would always refer to the values at the last
         # loop (unless the whole function is compiled by numba). This leads to
         # unexpected behavior, so we now properly close the variables using this factory
@@ -363,7 +357,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        state_data_type = nb.typeof(state.data)
+        state_data_type = nb.typeof(state._data_numba)
 
         elements, actor = self.actors[actor_id]
         actor_evolver = actor.make_evolver_numba(state[elements])
@@ -716,7 +710,7 @@ class SimulationSolver(SolverBase):
 
                 # calculate maximal error
                 error = 0.0
-                for data1, data2 in zip(state1.data, state2.data):
+                for data1, data2 in zip(state1._data_numba, state2._data_numba):
                     error_item = np.abs(data1 - data2).max()
                     if np.isnan(error_item):
                         error = np.nan
@@ -732,8 +726,8 @@ class SimulationSolver(SolverBase):
                     if error_rel <= 1:
                         steps += 1
                         t += dt_step
-                        for i, el_data in enumerate(state2.data):
-                            state.data[i][...] = el_data
+                        for i, el_data in enumerate(state2._data_numba):
+                            state._data_numba[i][...] = el_data
 
                 if t < t_end:
                     # adjust the time step and continue
@@ -777,7 +771,7 @@ class SimulationSolver(SolverBase):
 
             for step in range(steps):
                 t = t_start + step * dt  # advance time
-                simulation_evolver(state.data, t, dt)
+                simulation_evolver(state._data_numba, t, dt)
 
             self.info["steps"] += steps
 

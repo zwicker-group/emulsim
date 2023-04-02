@@ -27,10 +27,11 @@ dependencies = [
     "networkx>=2",
     "numba>=0.56.0",
     "numpy>=1.22.0,<1.24",
+    "py-droplets>=0.12",
+    "py-modelrunner>=0.12",
+    "py-pde>=0.23.0",
     "scipy>=1.4.0",
     "sympy>=1.5.0",
-    "py-pde>=0.23.0",
-    "py-droplets>=0.12",
 ]
 
 [project.urls]
@@ -63,7 +64,7 @@ extend-exclude = "submodules"
 profile = "black"
 src_paths = ["sim", "examples", "tests"]
 extend_skip_glob = ["submodules/*"]
-known_first_party = ["pde", "droplets", "phasesep"]
+known_first_party = ["droplets", "modelrunner", "pde", "phasesep"]
 known_self = "sim"
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "SELF", "LOCALFOLDER"]
 
@@ -84,6 +85,7 @@ plugins = "numpy.typing.mypy_plugin"
 warn_return_any = true
 warn_unused_configs = true
 warn_unused_ignores = true
+exclude = ["submodules"]
 
 [[tool.mypy.overrides]]
 module = "numba.*"
@@ -103,6 +105,7 @@ module = [
     "napari.*",
     "networkx.*",
     "numba_mpi.*",
+    "numcodecs.*",
     "numpy.*",
     "pandas.*",
     "pyfftw.*",
@@ -112,5 +115,6 @@ module = [
     "sympy.*",
     "ternary.*",
     "tqdm.*",
+    "zarr.*",
 ]
 ignore_missing_imports = true
