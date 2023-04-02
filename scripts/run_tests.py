@@ -117,7 +117,7 @@ def run_unit_tests(
             [
                 "--cov-config=pyproject.toml",
                 "--cov-report",
-                "html:tests/coverage",
+                "html:scripts/coverage",
                 f"--cov={PACKAGE}",
             ]
         )

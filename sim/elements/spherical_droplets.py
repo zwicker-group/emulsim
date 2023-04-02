@@ -70,8 +70,11 @@ class SphericalDropletsElement(ArrayElementBase):
                 raise ValueError(f"`{cls_name}` is not `{self.droplet_class}`")
 
         # set additional information about droplets
-        self.data = self.droplets.get_linked_data()  # type: ignore
         self.dim = self.droplets.dim
+        self.data = self.droplets.get_linked_data().view(np.recarray)
+        # note that the conversion to a record array is necessary so the attribute
+        # access works when code intended for numba is executed in pure python, e.g.,
+        # for coverage determination
 
     @classmethod
     def from_droplets(

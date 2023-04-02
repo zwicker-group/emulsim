@@ -49,29 +49,48 @@ def test_simulation():
     simulation.run(t_range=10, tracker=None)
 
 
-def test_simulation_values():
-    """test some methods of the Simulation class"""
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_adaptive_simulation_simple(backend):
+    """test some adaptive simulations"""
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
-    # set up simulation
+    # prepare simulation
     simulation = sim.Simulation(state.copy())
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
+    simulation2 = simulation.copy()
 
-    # run simulation using the numba backend
-    simulation.run(t_range=1, backend="numba", tracker=None)
+    # run simulation using fixed and adaptive time steps
+    simulation.run(t_range=1, backend=backend, tracker=None)
+    result = simulation.state["field"].data
+    simulation2.run(t_range=1, backend=backend, adaptive=True, tracker=None)
+    np.testing.assert_allclose(result, simulation2.state["field"].data)
+
+
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_adaptive_simulation_complex(backend):
+    """test some adaptive simulations"""
+    # set up state
+    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
+    element = sim.ScalarFieldElement.from_field(field)
+    state = sim.State({"field": element})
+
+    # run simulation using fixed time steps
+    simulation = sim.Simulation(state.copy())
+    eq = DiffusionPDE(diffusivity=0.1)
+    simulation.add_actor("field", sim.ScalarPDEActor(eq))
+    simulation.run(t_range=1, backend=backend, tracker=None)
     result = simulation.state["field"].data
 
-    for adaptive in [True, False]:
-        # run simulation using the numpy backend
-        simulation = sim.Simulation(state.copy())
-        eq = DiffusionPDE(diffusivity=0.1)
-        simulation.add_actor("field", sim.ScalarPDEActor(eq))
-        simulation.run(t_range=1, backend="numpy", adaptive=adaptive, tracker=None)
-        np.testing.assert_allclose(result, simulation.state["field"].data)
+    # run simulation using adaptive time steps
+    simulation = sim.Simulation(state.copy())
+    eq = DiffusionPDE(diffusivity=0.1)
+    simulation.add_actor("field", sim.ScalarPDEActor(eq))
+    simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
+    np.testing.assert_allclose(result, simulation.state["field"].data)
 
 
 def test_simulation_timing():
