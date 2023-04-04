@@ -3,27 +3,28 @@
 """
 
 import numpy as np
+import pytest
 
 from droplets import SphericalDroplet
 from pde import MemoryStorage, ScalarField, UnitGrid
 
-from sim import *
+import sim
 
 
 def test_field_tracker():
     """test the field tracker"""
     # setup state
     field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))
-    background = ScalarFieldElement.from_field(field)
-    state = State({"field": background})
+    background = sim.ScalarFieldElement.from_field(field)
+    state = sim.State({"field": background})
 
     # setup simulation
-    simulation = Simulation(state)
-    simulation.add_actor("field", DiffusionActor())
+    simulation = sim.Simulation(state)
+    simulation.add_actor("field", sim.DiffusionActor())
 
     # run simulation
     storage = MemoryStorage()
-    tracker = FieldTracker("field", storage.tracker(interval=1))
+    tracker = sim.FieldTracker("field", storage.tracker(interval=1))
     result = simulation.run(t_range=3.00001, dt=0.1, backend="numpy", tracker=tracker)
 
     assert len(storage) == 4
@@ -35,28 +36,37 @@ def test_field_tracker():
     )
 
 
-def test_droplet_element_trackers():
-    """test DropletElementTracker"""
+def test_element_trackers(tmp_path):
+    """test DropletElementTracker and Trajectory"""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
-    background = ScalarFieldElement.from_field(ScalarField(grid, 0.1))
+    background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
     droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(2)]
-    droplets = SphericalDropletsElement.from_droplets(droplet_data)
-    state = State({"background": background, "droplets": droplets})
+    droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
+    state = sim.State({"background": background, "droplets": droplets})
 
     # setup simulation
-    simulation = Simulation(state)
-    simulation.add_actor("background", DiffusionActor())
-    simulation.add_actor(("droplets", "background"), SphericalDropletActor())
+    simulation = sim.Simulation(state)
+    simulation.add_actor("background", sim.DiffusionActor())
+    simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
     # run simulation
-    tracker = DropletElementTracker("droplets", background_grid=grid)
-    simulation.run(t_range=2.5, dt=0.1, backend="numpy", tracker=tracker)
+    drop_t = sim.DropletElementTracker("droplets", background_grid=grid)
+    traj_t = sim.TrajectoryTracker(tmp_path / "trajectory")
+    simulation.run(t_range=2.5, dt=0.1, backend="numpy", tracker=[drop_t, traj_t])
 
     # test EmulsionTimeCourse
-    np.testing.assert_allclose(tracker.emulsions.times, [0, 1, 2])
-    assert [len(em) for em in tracker.emulsions] == [2] * 3
-    assert tracker.emulsions.grid == grid
+    np.testing.assert_allclose(drop_t.emulsions.times, [0, 1, 2])
+    assert [len(em) for em in drop_t.emulsions] == [2] * 3
+    assert drop_t.emulsions.grid == grid
 
     # test DropletTrackList
-    assert len(tracker.droplet_tracks) == 2
+    assert len(drop_t.droplet_tracks) == 2
+
+    # test Trajectory
+    traj = sim.Trajectory(tmp_path / "trajectory")
+    np.testing.assert_allclose(traj.times, [0, 1, 2])
+    assert traj[0]["droplets"] == droplets
+    assert traj[0]["background"] == background
+    assert traj[0]["background"].field.fluctuations == pytest.approx(0)
+    assert traj[-1]["background"].field.fluctuations > 1e-6  # demand significant change
