@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Simple droplet dynamics
-=======================
+Storing data during simulation
+==============================
 
-Minimal examples of passive droplets interacting in a common background.
+Example of how to store data during a simulation.
 """
 
 from droplets import SphericalDroplet
@@ -14,7 +14,7 @@ import sim
 # set up state
 grid = UnitGrid([32, 32], periodic=True)
 background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
-droplet_data = [SphericalDroplet(grid.get_random_point(), 0.5) for _ in range(10)]
+droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
 droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
 state = sim.State({"background": background, "droplets": droplets})
 
@@ -23,7 +23,10 @@ simulation = sim.Simulation(state)
 simulation.add_actor("background", sim.DiffusionActor())
 simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
-# run simulation
-result = simulation.run(t_range=10)
+# run simulation and store data periodically
+tracker = sim.TrajectoryTracker("trajectory.zarr", interval=2)
+simulation.run(t_range=10, tracker=tracker)
 
-result.plot()
+# retrieve data and plot last state
+data = sim.Trajectory("trajectory.zarr")
+data[-1].plot()
