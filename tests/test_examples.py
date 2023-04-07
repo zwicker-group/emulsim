@@ -17,6 +17,8 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 SKIP_EXAMPLES: Set[str] = set()
 if not module_available("phasesep"):
     SKIP_EXAMPLES.add("droplets_active.py")
+if not module_available("napari"):
+    SKIP_EXAMPLES.add("droplets_interactive.py")
 if not module_available("numba_scipy"):
     SKIP_EXAMPLES.add("droplets_active.py")
 
@@ -24,10 +26,12 @@ if not module_available("numba_scipy"):
 @pytest.mark.no_cover
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
 @pytest.mark.parametrize("path", EXAMPLE_PATH.glob("**/*.py"))
-def test_notebooks(path):
+def test_example(path):
     """runs an example script given by path"""
+    if path.name.startswith("_"):
+        pytest.skip("skip examples starting with an underscore")
     if any(name in str(path) for name in SKIP_EXAMPLES):
-        pytest.skip(f"Skip test {path} since module is missing")
+        pytest.skip(f"Skip test {path}")
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PACKAGEPATH) + ":" + env.get("PYTHONPATH", "")
