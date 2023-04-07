@@ -93,6 +93,7 @@ class State(Parameterized, DictState):
         if data is not NoData:
             self.data = data
 
+        self.dim = attributes.pop("dim")
         self.parameters = self._parse_parameters(
             attributes["parameters"], include_deprecated=True, check_validity=True
         )
@@ -112,6 +113,7 @@ class State(Parameterized, DictState):
         necessary for restoring the class using :meth:`StateBase.from_data`.
         """
         attrs = super()._state_attributes_store
+        attrs["dim"] = self.dim
 
         if "parameters" in attrs:
             # serialize the individual parameters
@@ -241,12 +243,24 @@ class State(Parameterized, DictState):
             return False
         return all(self.elements[key] == other.elements[key] for key in self.elements)
 
-    # def copy(self) -> State:
-    #     """copy the state"""
-    #     return self.__class__(
-    #         {name: element.copy() for name, element in self},
-    #         parameters=copy.deepcopy(self.parameters),
-    #     )
+    @property
+    def grid(self) -> GridBase:
+        """:class:`~pde.grids.base.GridBase`: a grid representing the entire state"""
+        grid = None
+        for element in self.elements.values():
+            # try to find a suitable grid
+            try:
+                candidate = element.grid  # type: ignore
+            except AttributeError:
+                pass
+            else:
+                if isinstance(candidate, GridBase) and candidate.dim == self.dim:
+                    if grid is None or candidate.volume > grid.volume:
+                        grid = candidate
+
+        if grid is None:
+            raise RuntimeError("Could not determine suitable grid")
+        return grid
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -372,8 +386,30 @@ class State(Parameterized, DictState):
             ax.set_ylim(*self.parameters["bounds"][1])
             ax.set_aspect(1)
 
+    def _get_napari_data(self, **kwargs) -> Dict[str, Dict[str, Any]]:
+        r"""returns data for plotting this state in napari
+
+        Args:
+            \**kwargs: all arguments are forwarded to `_get_napari_layer_data`
+
+        Returns:
+            dict: all the information necessary to plot this field
+        """
+        layers_data = {}
+        for name, element in self.elements.items():
+            try:
+                layer_data = element._get_napari_layer_data(**kwargs)
+            except NotImplementedError:
+                self._logger.warning(
+                    "Element %s does not support interactive plotting", name
+                )
+            else:
+                layers_data[name] = layer_data
+        return layers_data
+
     def plot_interactive(
         self,
+        *,
         grid: Optional[GridBase] = None,
         viewer_args: Optional[Dict[str, Any]] = None,
         **kwargs,
@@ -395,35 +431,16 @@ class State(Parameterized, DictState):
         if viewer_args is None:
             viewer_args = {}
 
-        # try finding the best field that could serve to define the space
-        layers_data = {}
-        for name, element in self.elements.items():
-            try:
-                layer_data = element._get_napari_layer_data()
-            except NotImplementedError:
-                self._logger.warning(
-                    "Element %s does not support interactive plotting", name
-                )
-            else:
-                layers_data[name] = layer_data
-
-            # try to find a suitable grid
-            try:
-                candidate = element.grid  # type: ignore
-            except AttributeError:
-                pass
-            else:
-                if isinstance(candidate, GridBase) and candidate.dim == self.dim:
-                    if grid is None or candidate.volume > grid.volume:
-                        grid = candidate
-
         # check whether we have enough information to proceed
         if grid is None:
-            raise RuntimeError("Could not determine suitable grid")
+            grid = self.grid
         if grid.dim != self.dim:
             raise RuntimeError(
                 "Grid dimension is not compatible (%d != %d)", grid.dim, self.dim
             )
+
+        # try finding the best field that could serve to define the space
+        layers_data = self._get_napari_data()
 
         # do the actual plotting
         with napari_viewer(grid, **viewer_args) as viewer:
