@@ -751,7 +751,6 @@ class SimulationSolver(SolverBase):
                 self.simulation.evolve(state, t, dt_step)
 
         elif backend == "numba":
-
             simulation_evolver = self.simulation.make_evolver_numba(state)
 
             def single_step(state: State, t: float, dt_step: float) -> None:

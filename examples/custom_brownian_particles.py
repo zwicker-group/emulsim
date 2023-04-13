@@ -12,7 +12,6 @@ import sim
 
 
 class BrownianParticlesActor(sim.ActorBase):
-
     diffusivity = 1
 
     def evolve(self, elements, t, dt):

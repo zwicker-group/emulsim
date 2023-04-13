@@ -24,6 +24,7 @@ class RandomFieldActor(sim.ActorBase):
 
     def make_evolver_numba(self, elements):
         """implementing the compiled version is optional"""
+
         # this function is optional and can be used to speed up calculations
         @nb.jit
         def evolver(elements_state, t: float, dt: float):

@@ -933,7 +933,6 @@ class SphericalDropletActor(ActorBase):
                         )
 
             else:  # Reactions are OFF
-
                 final_expression = 2 * D * (cEqOut - c_far) / L
 
             return final_expression  # type: ignore
@@ -1113,7 +1112,6 @@ class SphericalDropletActor(ActorBase):
                     return 2 * π * D * (cEqOut - c_far) / float(np.log1p(L / R))
 
             else:
-
                 if not module_available("numba_scipy"):
                     self._logger.error(
                         "Python package `numba_scipy` is not installed. This package "
@@ -1592,7 +1590,6 @@ class SphericalDropletActor(ActorBase):
             flux_out = np.empty(len(points))
 
             for i in range(len(points)):
-
                 cShell = field.get_concentration(points[i])
                 # Calculate the integrated fluxes at the droplet surface. The sign
                 # of the fluxes is such that positive values indicate outward fluxes
@@ -1624,7 +1621,6 @@ class SphericalDropletActor(ActorBase):
 
             # adjust the droplet position
             if self.parameters["drift_enabled"] and droplet.radius > 0:
-
                 # Note: Currently amount_total_in has no influence on the droplet position
                 # as amount_total_in is isotropic with respect to azimuthal and polar angle.
                 # Hence, amount_total_in contributes only in droplet growth.
