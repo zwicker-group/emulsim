@@ -137,11 +137,11 @@ def test_collection_pde():
     for _ in range(10):
         actor.evolve((element,), 0, 0.1)
 
-    np.testing.assert_allclose(element.fields.data, truth.data)
+    np.testing.assert_allclose(element.field.data, truth.data)
 
     # test numba implementation
     evolve = actor.make_evolver_numba((element2,))
     for _ in range(10):
         evolve((element2._data_numba,), 0, 0.1)
 
-    np.testing.assert_allclose(element2.fields.data, truth.data)
+    np.testing.assert_allclose(element2.field.data, truth.data)

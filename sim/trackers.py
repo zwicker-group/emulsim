@@ -271,15 +271,15 @@ class FieldTracker(TrackerBase):
         Returns:
             float: The first time the tracker needs to handle data
         """
-        if isinstance(state[self.element_name], FieldBase):
+        element = state[self.element_name]
+        if isinstance(element, FieldBase):
             field = state[self.element_name]
-        elif hasattr(state[self.element_name], "_field") and isinstance(
-            state[self.element_name]._field, FieldBase
-        ):
+        elif hasattr(element, "_field") and isinstance(element._field, FieldBase):
             field = state[self.element_name]._field
         else:
-            self._logger.warning(
-                f"Element `{self.element_name}` does not seem to contain a scalar field"
+            raise RuntimeError(
+                f"{element.__class__.__name__} `{self.element_name}` does not seem to "
+                "contain a scalar field"
             )
         return self.tracker.initialize(field, info)
 

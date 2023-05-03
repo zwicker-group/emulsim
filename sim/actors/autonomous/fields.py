@@ -393,7 +393,7 @@ class CollectionPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde._make_pde_rhs_numba(element.fields)  # type: ignore
+        pde_rhs = self.pde._make_pde_rhs_numba(element.field)  # type: ignore
 
         @jit
         def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
@@ -415,5 +415,5 @@ class CollectionPDEActor(ActorBase):
                 The time step used to evolve the element
         """
         (element,) = elements  # extract single element
-        rate = self.pde.evolution_rate(element.fields, t)  # type: ignore
-        element.fields.data += dt * rate.data  # type: ignore
+        rate = self.pde.evolution_rate(element.field, t)  # type: ignore
+        element.field.data += dt * rate.data  # type: ignore

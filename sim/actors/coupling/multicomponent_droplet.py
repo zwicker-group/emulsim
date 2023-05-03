@@ -464,7 +464,7 @@ class MulticomponentDropletActor(ActorBase):
 
         # determine data in the background field
         if data_id == 1:
-            data_field: FieldBase = fields.fields.copy(label=kind)
+            data_field: FieldBase = fields.field.copy(label=kind)
         else:
             data_field = ScalarField(fields.grid, label=kind)
         for cell_id in np.ndindex(*fields.grid.shape):
@@ -691,7 +691,7 @@ class MulticomponentDropletActor(ActorBase):
         bc = self.parameters["boundary_conditions"]
         j_back = [
             -mobility[i] * field.laplace(bc).data  # type: ignore
-            for i, field in enumerate(fields_el.fields)
+            for i, field in enumerate(fields_el.field)
         ]
 
         self.diagnostics.setdefault("amount_corrections", np.zeros(num_comps))
@@ -782,7 +782,7 @@ class MulticomponentDropletActor(ActorBase):
             fields_el.add_amounts(droplet.position, -Δamount - Sout)
 
         # update the background field
-        for i, field in enumerate(fields_el.fields):
+        for i, field in enumerate(fields_el.field):
             field.data -= dt * j_back[i]
             if has_reaction:
                 field.data += dt * s_out[i]

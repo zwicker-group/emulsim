@@ -613,8 +613,8 @@ class FieldCollectionElement(ArrayElementBase):
             fields = [ScalarField(self.grid, data)]
         else:
             fields = [ScalarField(self.grid, field_data) for field_data in data]
-        self._fields = FieldCollection(fields, label=self.parameters["label"])
-        self.data = self.fields.data
+        self._field = FieldCollection(fields, label=self.parameters["label"])
+        self.data = self.field.data
 
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
@@ -626,7 +626,7 @@ class FieldCollectionElement(ArrayElementBase):
     @property
     def num_fields(self) -> int:
         """int: the number of fields described by this collection"""
-        return len(self._fields)
+        return len(self._field)
 
     @classmethod
     def from_fields(cls, fields: FieldCollection) -> FieldCollectionElement:
@@ -652,9 +652,9 @@ class FieldCollectionElement(ArrayElementBase):
         return self.parameters["grid"]  # type: ignore
 
     @property
-    def fields(self) -> FieldCollection:
-        """:class:`~pde.fields.scalar.ScalarField`: the scalar field"""
-        return self._fields
+    def field(self) -> FieldCollection:
+        """:class:`~pde.fields.collection.FieldCollection`: all fields"""
+        return self._field
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -671,15 +671,15 @@ class FieldCollectionElement(ArrayElementBase):
         plot_args = self.parameters["plot_args"].copy()
         plot_args.update(kwargs)
         if self.dim == 1:
-            for field in self.fields:
+            for field in self.field:
                 field.plot(ax=ax, **plot_args)
         else:
-            self.fields[0].plot(ax=ax, **plot_args)
+            self.field[0].plot(ax=ax, **plot_args)
 
     @property
     def amounts(self) -> np.ndarray:
         """:class:`~numpy.ndarray`: the total material amount in each field"""
-        return np.array(self.fields.integrals)
+        return np.array(self.field.integrals)
 
     @property
     def total_amount(self) -> float:
@@ -694,7 +694,7 @@ class FieldCollectionElement(ArrayElementBase):
                 The coordinates of the single point or the list of points at
                 which the concentrations are returned
         """
-        return np.array([field.interpolate(points) for field in self.fields])
+        return np.array([field.interpolate(points) for field in self.field])
 
     def add_amounts(self, point: np.ndarray, amounts: np.ndarray):
         """add the given amounts to the fields
@@ -705,7 +705,7 @@ class FieldCollectionElement(ArrayElementBase):
             amounts (:class:`~numpy.ndarray`):
                 The total amount added to each field
         """
-        for field, amount in zip(self.fields, amounts):
+        for field, amount in zip(self.field, amounts):
             field.insert(point, amount)
 
     def make_get_concentrations_compiled(self) -> Callable:
@@ -718,7 +718,7 @@ class FieldCollectionElement(ArrayElementBase):
         """
         # we just need one interpolator for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        interpolate = self._fields[0].make_interpolator()
+        interpolate = self._field[0].make_interpolator()
         num_fields = self.num_fields
 
         @register_jitable
@@ -741,7 +741,7 @@ class FieldCollectionElement(ArrayElementBase):
         """
         # we just need one inserter for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        inserter_single = self.fields[0].grid.make_inserter_compiled()
+        inserter_single = self.field[0].grid.make_inserter_compiled()
         num_fields = self.num_fields
 
         @register_jitable
