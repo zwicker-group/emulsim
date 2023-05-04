@@ -27,6 +27,10 @@ def test_state_general(dim, capsys):
     assert s is not s2
     assert s == s2
 
+    # test basic error estimate
+    error_estimator = s._make_error_estimator()
+    assert error_estimator(s._data_numba, s2._data_numba) == 0
+
     # extract items
     names = list(s.elements.keys())
     for i, name in enumerate(names):

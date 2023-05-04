@@ -740,6 +740,7 @@ class SimulationSolver(SolverBase):
         self.info["dt_statistics"] = OnlineStatistics()  # keep statistics about dt
 
         # obtain auxiliary functions
+        error_estimator = state._make_error_estimator()
         adjust_dt = self._make_dt_adjuster()  # type: ignore
         tolerance = self.tolerance
         dt_min = self.dt_min
@@ -781,16 +782,8 @@ class SimulationSolver(SolverBase):
                 single_step(state2, t + 0.5 * dt_step, 0.5 * dt_step)
 
                 # calculate maximal error
-                error = 0.0
-                for data1, data2 in zip(state1._data_numba, state2._data_numba):
-                    error_item = np.abs(data1 - data2).max()
-                    if np.isnan(error_item):
-                        error = np.nan
-                        break
-                    else:
-                        error = max(error_item, error)
-
-                else:
+                error = error_estimator(state1._data_numba, state2._data_numba)
+                if np.isfinite(error):
                     # error is finite
                     error_rel = error / tolerance  # normalize error to given tolerance
 
