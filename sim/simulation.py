@@ -12,6 +12,7 @@ Provides a class representing the full simulation
 
 from __future__ import annotations
 
+import copy
 import logging
 import time
 import warnings
@@ -574,11 +575,16 @@ class Simulation:
         # run the actual simulation
         final_state: State = controller.run(self.state, dt)  # type: ignore
 
+        # copy diagnostic information to the Simulation instance
+        if hasattr(self, "diagnostics"):
+            self.diagnostics.update(controller.diagnostics)
+        else:
+            self.diagnostics = copy.copy(controller.diagnostics)
+
         if ret_info:
-            info = controller.info.copy()
-            info.pop("solver_class")  # remove redundant information
-            info["solver"] = solver.info.copy()
-            return final_state, info
+            # return a copy of the diagnostic information so it will not be overwritten
+            # by a repeated call to `solve()`.
+            return final_state, copy.deepcopy(self.diagnostics)
         else:
             return final_state
 
