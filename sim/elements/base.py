@@ -30,9 +30,10 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from numba import literal_unroll
 from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
@@ -44,6 +45,7 @@ from modelrunner.state import (
     StateBase,
     simplify_data,
 )
+from pde.tools.numba import jit
 
 SerializedAttributesType = Dict[str, str]
 SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
@@ -182,6 +184,10 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         """int: the number of degrees of freedom for this element"""
         ...
 
+    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between element data"""
+        raise NotImplementedError("Element does not implement error estimator")
+
     def plot(self, ax=None, *args, **kwargs):
         """plot the element"""
         pass
@@ -245,6 +251,29 @@ class ArrayElementBase(_ElementBase, ArrayState):
             itemsize = 1
         return int(arr.size * itemsize)
 
+    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between element data"""
+
+        arr = np.asanyarray(self._data_numba)
+        if arr.dtype.fields:
+            # iterate over all fields of this structured array
+            field_names = tuple(arr.dtype.fields.keys())
+
+            @jit
+            def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                error = 0
+                for field in literal_unroll(field_names):
+                    error = max(np.abs(data1[field] - data2[field]).max(), error)
+                return error
+
+        else:
+
+            @jit
+            def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                return np.abs(data1 - data2).max()  # type: ignore
+
+        return error_estimator  # type: ignore
+
 
 class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
     """Element storing data in multiple numpy array"""
@@ -277,6 +306,18 @@ class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
                 itemsize = 1
             dof += int(arr.size * itemsize)
         return dof
+
+    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between element data"""
+
+        @jit
+        def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+            error = 0
+            for arr1, arr2 in zip(data1, data2):
+                error = max(np.abs(arr1 - arr2).max())
+            return error
+
+        return error_estimator  # type: ignore
 
 
 #

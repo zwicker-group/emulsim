@@ -17,13 +17,15 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
+import numpy as np
 from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
 from modelrunner.state import DictState, NoData, simplify_data
 from pde.grids.base import DimensionError, GridBase
+from pde.tools.numba import jit
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import _ElementBase
@@ -333,6 +335,36 @@ class State(Parameterized, DictState):
             return self.get_total_quantity(property_name)
         else:
             return self.get_quantities(property_name)
+
+    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between state data"""
+
+        def chain(
+            element_id: int, inner: Optional[Callable[[Any, Any], float]] = None
+        ) -> Callable[[Any, Any], float]:
+            """recursive factory function for running all actors"""
+            # get the evolver function
+            element_error_estimator = self[element_id]._make_error_estimator()
+
+            @jit
+            def wrap(state1, state2) -> float:
+                # get error from inner functions
+                error = 0 if inner is None else inner(state1, state2)
+                # add estiamted error of current element
+                if np.isnan(error):
+                    return error
+                else:
+                    e = element_error_estimator(state1[element_id], state2[element_id])
+                    return max(error, e)  # type: ignore
+
+            if element_id < len(self) - 1:
+                # there are more items in the chain
+                return chain(element_id + 1, inner=wrap)
+            else:
+                # this is the outermost function
+                return wrap  # type: ignore
+
+        return jit(chain(0))  # type: ignore
 
     @plot_on_axes()
     def plot(
