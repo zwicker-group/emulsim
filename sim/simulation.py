@@ -579,7 +579,7 @@ class Simulation:
         if hasattr(self, "diagnostics"):
             self.diagnostics.update(controller.diagnostics)
         else:
-            self.diagnostics = copy.copy(controller.diagnostics)
+            self.diagnostics: Dict[str, Any] = copy.copy(controller.diagnostics)
 
         if ret_info:
             # return a copy of the diagnostic information so it will not be overwritten
