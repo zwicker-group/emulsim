@@ -6,15 +6,18 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
 from modelrunner.parameters import Parameter
 from modelrunner.state import NoData
+from pde.fields import FieldBase
+from pde.grids.base import GridBase
 
 from .base import ArrayElementBase
+from .fields import FieldElementBase
 
 
 class SphericalDropletsElement(ArrayElementBase):
@@ -84,6 +87,8 @@ class SphericalDropletsElement(ArrayElementBase):
         parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
         """
+        Create `SphericalDropletsElement` from a list of droplets
+
         Args:
             droplets (:class:`droplets.emulsions.Emulsion`):
                 The state of this element given as an emulsion.
@@ -98,6 +103,62 @@ class SphericalDropletsElement(ArrayElementBase):
         obj._state_init({"parameters": parameters})  # initialize generally
         obj._init_droplets(Emulsion(droplets, copy=copy))  # set droplet information
         return obj
+
+    @classmethod
+    def from_random(
+        cls,
+        num: int,
+        bounds: Union[FieldElementBase, FieldBase, GridBase],
+        radius: Union[float, Tuple[float, float]],
+        *,
+        remove_overlapping: bool = True,
+        rng: Optional[np.random.Generator] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> SphericalDropletsElement:
+        """
+        Create `SphericalDropletsElement` with random droplets
+
+        Args:
+            num (int):
+                The number of droplets
+            bounds:
+                Boundaries of the space in which droplets are placed. This can be any of
+                :class:`FieldElementBase`, :class:`FieldBase`, or :class:`GridBase`.
+            radius (float or tuple of float):
+                Radius of the droplets that are created. If two numbers are given, they
+                specify the bounds of a uniform distribution from which the radius of
+                each individual droplet is chosen.
+            remove_overlapping (bool):
+                Flag determining whether overlapping droplets are removed. If enabled,
+                the resulting element might contain less thatn `num` droplets.
+            rng (:class:`~numpy.random.Generator`):
+                Random number generator (default: :func:`~numpy.random.default_rng()`)
+            parameters (dict):
+                Additional parameters. Call
+                :meth:`~SphericalDropletsElement.show_parameters` for details.
+        """
+        # extract information about the bounds of the space
+        if hasattr(bounds, "bounds"):
+            axes_bounds = bounds.bounds
+        elif hasattr(bounds, "axes_bounds"):
+            axes_bounds = bounds.axes_bounds
+        else:
+            axes_bounds = np.atleast_2d(bounds)  # type: ignore
+
+        # create a random emulsion
+        emulsion = Emulsion.from_random(
+            num=num,
+            bounds=axes_bounds,
+            radius=radius,
+            remove_overlapping=remove_overlapping,
+        )
+
+        # turn the emulsion into a SphericalDropletsElement
+        return cls.from_droplets(
+            emulsion,
+            copy=False,
+            parameters=parameters,
+        )
 
     def __len__(self) -> int:
         return len(self.droplets)
