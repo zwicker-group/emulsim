@@ -184,7 +184,8 @@ class PointDropletActor(ActorBase):
             else:
                 raise NotImplementedError(
                     "Flux model `diffusion` only works in three dimensions "
-                    f"(current dimension is {self._cache['dim']})"
+                    f"(current dimension is {self._cache['dim']}). Use flux model "
+                    "`linear` instead."
                 )
 
         elif self.parameters["flux_model"] in {"linear", "expression"}:
