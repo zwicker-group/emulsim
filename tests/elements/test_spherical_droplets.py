@@ -6,6 +6,8 @@ Test spherical droplets elements functionality
 
 import pytest
 
+import numpy as np
+
 from droplets import SphericalDroplet
 
 from sim.elements import SphericalDropletsElement
@@ -22,3 +24,10 @@ def test_spherical_droplets_element(dim):
     # test basic error estimate
     error_estimator = element._make_error_estimator()
     assert error_estimator(element._data_numba, element._data_numba) == 0
+
+    # create random element
+    element = SphericalDropletsElement.from_random(
+        num=3, bounds=[(0, 1)] * dim, radius=1
+    )
+    assert element.dim == dim
+    np.testing.assert_allclose(element.data["radius"], 1)
