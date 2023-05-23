@@ -4,7 +4,7 @@ Provides actors that influence scalar fields
 .. autosummary::
    :nosignatures:
 
-   ~MeanfieldActor
+   ~LocalReactionsActor
    ~ScalarPDEActor
    ~DiffusionActor
    ~ReactionDiffusionActor
@@ -16,6 +16,7 @@ Provides actors that influence scalar fields
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
 
 import numba as nb
@@ -31,8 +32,8 @@ from ...elements import FieldCollectionElement, MeanfieldElement, ScalarFieldEle
 from ..base import ActorBase, ElementsType
 
 
-class MeanfieldActor(ActorBase):
-    """actor simulating mean field chemical reactions"""
+class LocalReactionsActor(ActorBase):
+    """actor simulating a local chemical reactions in a field"""
 
     parameters_default = [
         Parameter(
@@ -45,14 +46,14 @@ class MeanfieldActor(ActorBase):
         ),
     ]
 
-    element_classes = (MeanfieldElement,)
+    element_classes = ([MeanfieldElement, ScalarFieldElement],)
 
     def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
         Args:
             parameters (dict):
                 Parameters affecting the actor. Call
-                :meth:`~MeanfieldActor.show_parameters` for details.
+                :meth:`~LocalReactionsActor.show_parameters` for details.
         """
         super().__init__(parameters=parameters)
 
@@ -118,6 +119,19 @@ class MeanfieldActor(ActorBase):
         """
         (element,) = elements  # extract single element
         element.data[...] += dt * self._reaction(element.data, t)
+
+
+class MeanfieldActor(LocalReactionsActor):
+    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+        """
+        Args:
+            parameters (dict):
+                Parameters affecting the actor. Call
+                :meth:`~LocalReactionsActor.show_parameters` for details.
+        """
+        # MeanfieldActor was deprecated on 2023-05-23
+        warnings.warn("MeanfieldActor is now LocalReactionsActor", DeprecationWarning)
+        super().__init__(parameters=parameters)
 
 
 class ScalarPDEActor(ActorBase):

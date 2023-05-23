@@ -10,11 +10,11 @@ implementations:
 .. autosummary::
    :nosignatures:
 
-   
+
    ~base.ActorBase
    ~function.FunctionActor
    ~function.NumbaFunctionActor
-   
+
 
 **Autonomous actors** only affect a single element and thus describe the autonomous
 dynamics of this element when it is not coupled to other elements. 
@@ -27,7 +27,7 @@ dynamics of this element when it is not coupled to other elements.
    ~autonomous.brownian_motion.BrownianMotionActor
    ~autonomous.coalescence.CoalescenceDropletActor
    ~autonomous.emitters.EmittersActor 
-   ~autonomous.fields.MeanfieldActor
+   ~autonomous.fields.LocalReactionsActor
    ~autonomous.fields.ScalarPDEActor
    ~autonomous.fields.DiffusionActor
    ~autonomous.fields.ReactionDiffusionActor
