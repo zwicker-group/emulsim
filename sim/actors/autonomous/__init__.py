@@ -9,7 +9,7 @@ Provides actors that affect single elements in a simulation
    ~brownian_motion.BrownianMotionActor
    ~coalescence.CoalescenceDropletActor
    ~emitters.EmittersActor 
-   ~fields.MeanfieldActor
+   ~fields.LocalReactionsActor
    ~fields.ScalarPDEActor
    ~fields.DiffusionActor
    ~fields.ReactionDiffusionActor
@@ -26,7 +26,7 @@ from .emitters import EmittersActor
 from .fields import (
     CollectionPDEActor,
     DiffusionActor,
-    MeanfieldActor,
+    LocalReactionsActor,
     ReactionDiffusionActor,
     ScalarPDEActor,
 )

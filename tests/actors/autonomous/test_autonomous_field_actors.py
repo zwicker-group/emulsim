@@ -11,7 +11,7 @@ from pde.tools.misc import skipUnlessModule
 from sim.actors.autonomous.fields import (
     CollectionPDEActor,
     DiffusionActor,
-    MeanfieldActor,
+    LocalReactionsActor,
     ReactionDiffusionActor,
     ScalarPDEActor,
 )
@@ -54,38 +54,42 @@ def test_diffusion_vs_pde():
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
-@skipUnlessModule("phasesep")
-def test_meanfield_reactions():
-    """test basic methods of the simple mean field background"""
-    element = MeanfieldElement(1, {"bounds": [[0, 3]]})
-    assert element.concentration == 1
+@pytest.mark.parametrize("meanfield", [True, False])
+def test_local_reactions(meanfield):
+    """test basic methods of the simple reactions actor"""
+    if meanfield:
+        element = MeanfieldElement(1, {"bounds": [[0, 3]]})
+        assert element.concentration == 1
+    else:
+        element = ScalarFieldElement(1, {"grid": UnitGrid([3])})
+    assert np.allclose(element.data, 1)
     assert element.total_amount == 3
 
     parameters = {"reaction_flux": "2 + 1 * c + t"}
-    actor = MeanfieldActor(parameters=parameters)
+    actor = LocalReactionsActor(parameters=parameters)
     assert isinstance(actor.info, dict)
     assert actor.num_elements == 1
     assert 0 < actor.estimate_dt(element) < 1
 
     # numpy version
     actor.evolve((element,), 0, dt=1)
-    assert element.concentration == pytest.approx(4)
+    assert np.allclose(element.data, 4)
 
     actor.evolve((element,), 1, dt=1)
-    assert element.concentration == pytest.approx(11)
+    assert np.allclose(element.data, 11)
     actor.evolve((element,), 1, dt=0)
-    assert element.concentration == pytest.approx(11)
+    assert np.allclose(element.data, 11)
 
     # numba version
-    element.concentration = 1
+    element.data[...] = 1
     evolver = actor.make_evolver_numba((element,))
     evolver((element._data_numba,), 0, dt=1)
-    assert element.concentration == pytest.approx(4)
+    assert np.allclose(element.data, 4)
 
     evolver((element._data_numba,), 1, dt=1)
-    assert element.concentration == pytest.approx(11)
+    assert np.allclose(element.data, 11)
     evolver((element._data_numba,), 1, dt=0)
-    assert element.concentration == pytest.approx(11)
+    assert np.allclose(element.data, 11)
 
 
 @skipUnlessModule("phasesep")
