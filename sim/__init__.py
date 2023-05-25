@@ -21,6 +21,9 @@ except ImportError:
         __version__ = "unknown"
     del version, PackageNotFoundError  # clean name space
 
+# make key classes from modelrunner available
+from modelrunner.parameters import Parameter
+
 from .actors import *
 from .elements import *
 from .simulation import Simulation

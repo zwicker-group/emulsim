@@ -25,7 +25,6 @@ import numpy as np
 import scipy.special as sc
 
 from droplets.tools import spherical
-from modelrunner.parameters import Parameter
 from pde import ScalarField
 from pde.grids.base import DimensionError
 from pde.tools import expressions
@@ -33,6 +32,7 @@ from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
 from pde.tools.numba import jit
 
+from ... import Parameter
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
 

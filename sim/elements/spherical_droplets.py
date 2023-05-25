@@ -11,11 +11,11 @@ from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
-from modelrunner.parameters import Parameter
 from modelrunner.state import NoData
 from pde.fields import FieldBase
 from pde.grids.base import GridBase
 
+from .. import Parameter
 from .base import ArrayElementBase
 from .fields import FieldElementBase
 

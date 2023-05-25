@@ -22,7 +22,6 @@ import numba as nb
 import numpy as np
 from numba.extending import register_jitable
 
-from modelrunner.parameters import Parameter
 from modelrunner.state import NoData
 from pde.fields import FieldCollection, ScalarField
 from pde.grids.cartesian import CartesianGrid, GridBase
@@ -32,6 +31,7 @@ from pde.tools.numba import jit
 from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
 
+from .. import Parameter
 from .base import ArrayElementBase
 
 

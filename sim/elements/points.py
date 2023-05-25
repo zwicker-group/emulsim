@@ -9,10 +9,10 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from modelrunner.parameters import Parameter
 from modelrunner.state import NoData
 from pde.tools.plotting import plot_on_axes
 
+from .. import Parameter
 from .base import ArrayElementBase
 
 

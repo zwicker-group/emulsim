@@ -12,7 +12,6 @@ import numba as nb
 import numpy as np
 
 from droplets.tools import spherical
-from modelrunner.parameters import Parameter
 from pde import ScalarField
 from pde.fields.base import FieldBase
 from pde.grids.base import DimensionError
@@ -20,6 +19,7 @@ from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import TensorExpression
 from pde.tools.numba import jit
 
+from ... import Parameter
 from ...elements import FieldCollectionElement, MulticomponentDropletsElement
 from ..base import ActorBase
 
