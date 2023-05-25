@@ -28,8 +28,8 @@ git clone https://github.com/david-zwicker/py-sim.git
 pip install -r sim/requirements.txt
 ```
 
-Note that the public packages `py-pde` and `py-droplets` are included as submodules in
-the `submodules` folder. To update these, please run
+Note that the public packages `py-pde`, `py-droplets`, and `py-modelrunner` are included
+as submodules in the `submodules` folder. To update these, please run
 
 ```bash
 git submodule update --init --recursive
