@@ -16,11 +16,10 @@ install the following optional packages:
 	pip install h5py pandas pyfftw tqdm
 
 Moreover, :command:`ffmpeg` needs to be installed and for creating movies.    
-    
+
 
 Installing from source
 ^^^^^^^^^^^^^^^^^^^^^^
-
 
 Prerequisites
 -------------
@@ -29,17 +28,18 @@ The code builds on other python packages, which need to be installed for
 this package to function properly.
 The required packages are listed in the table below:
 
-===========  ========= =========
-Package      Version   Usage 
-===========  ========= =========
-matplotlib   >= 3.1.0  Visualizing results
-numpy        >=1.16    Array library used for storing data
-numba        >=0.43    Just-in-time compilation to accelerate numerics
-scipy        >=1.4     Miscellaneous scientific functions
-sympy        >=1.5     Dealing with user-defined mathematical expressions
-py-pde       >=0.13.3  Solving partial differential equations
-py-droplets  >=0.7     Represent droplets
-===========  ========= =========
+==============  ========= =========
+Package         Version   Usage 
+==============  ========= =========
+matplotlib      >=3.1.0   Visualizing results
+numpy           >=1.16    Array library used for storing data
+numba           >=0.43    Just-in-time compilation to accelerate numerics
+scipy           >=1.4     Miscellaneous scientific functions
+sympy           >=1.5     Dealing with user-defined mathematical expressions
+py-droplets     >=0.12    Represent droplets
+py-modelrunner  >=0.12    Solving partial differential equations
+py-pde          >=0.31    Solving partial differential equations
+==============  ========= =========
 
 
 
@@ -54,7 +54,7 @@ Optionally, the following packages should be installed to use some miscellaneous
 features:
 
 ===========  =========
-Package      Usage                                      
+Package      Usage
 ===========  =========
 h5py         Storing data in the hierarchical file format
 networkx     Representing simulation as a graph

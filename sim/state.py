@@ -20,7 +20,6 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
-from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
 from modelrunner.state import DictState, NoData, simplify_data
