@@ -4,6 +4,6 @@ numba>=0.56,<0.57
 numpy>=1.18.0,<1.24
 py-droplets>=0.12
 py-modelrunner>=0.12.4
-py-pde>=0.22.3
+py-pde>=0.31
 scipy>=1.4.0
 sympy>=1.5.0
