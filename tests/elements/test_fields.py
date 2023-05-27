@@ -69,8 +69,9 @@ def test_elements_numba(element, grid):
     assert np.allclose(result, np.full(2, 2))
 
     # test basic error estimate
-    error_estimator = element._make_error_estimator()
-    assert error_estimator(element._data_numba, element._data_numba) == 0
+    for backend in ["numpy", "numba"]:
+        error_estimator = element._make_error_estimator(backend=backend)
+        assert error_estimator(element._data_numba, element._data_numba) == 0
 
 
 def test_reservoir():

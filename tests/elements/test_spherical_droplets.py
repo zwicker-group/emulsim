@@ -21,8 +21,9 @@ def test_spherical_droplets_element(dim):
     assert element.degrees_of_freedom == 2 * (dim + 1)
 
     # test basic error estimate
-    error_estimator = element._make_error_estimator()
-    assert error_estimator(element._data_numba, element._data_numba) == 0
+    for backend in ["numpy", "numba"]:
+        error_estimator = element._make_error_estimator(backend=backend)
+        assert error_estimator(element._data_numba, element._data_numba) == 0
 
     # create random element
     element = SphericalDropletsElement.from_random(
