@@ -46,7 +46,10 @@ def test_simulation():
         simulation.plot_interacting_elements()
 
     # run simulation
-    simulation.run(t_range=10, tracker=None)
+    simulation.run(t_range=10, backend="numpy", tracker=None)
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 5
+    simulation.run(t_range=10, backend="numba", tracker=None)
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 30
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
@@ -68,6 +71,8 @@ def test_adaptive_simulation_simple(backend):
     result = simulation.state["field"].data
     simulation2.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation2.state["field"].data)
+    thresh = {"numpy": 5, "numba": 30}[backend]
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
@@ -91,6 +96,8 @@ def test_adaptive_simulation_complex(backend):
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation.state["field"].data)
+    thresh = {"numpy": 5, "numba": 15}[backend]
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
 def test_simulation_timing():

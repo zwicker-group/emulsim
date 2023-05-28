@@ -154,6 +154,12 @@ class State(Parameterized, DictState):
         """returns the data associated with the state in a form that numba can handle"""
         return tuple(state._data_numba for state in self.data.values())
 
+    @_data_numba.setter
+    def _data_numba(self, state_data: Tuple) -> None:
+        """sets the data of all states"""
+        for key, new_el_data in zip(self.data.keys(), state_data):
+            self.data[key]._data_numba[...] = new_el_data
+
     @property
     def elements(self) -> Dict[str, _ElementBase]:
         return self.data
@@ -335,35 +341,61 @@ class State(Parameterized, DictState):
         else:
             return self.get_quantities(property_name)
 
-    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between state data"""
+    def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between state data
 
-        def chain(
-            element_id: int, inner: Optional[Callable[[Any, Any], float]] = None
-        ) -> Callable[[Any, Any], float]:
-            """recursive factory function for running all actors"""
-            # get the evolver function
-            element_error_estimator = self[element_id]._make_error_estimator()
+        Args:
+            backend (str): The backend used to calculate the error
+        """
+        if backend == "numpy":
+            el_errs = [
+                el._make_error_estimator(backend="numpy") for el in self.values()
+            ]
 
-            @jit
-            def wrap(state1, state2) -> float:
-                # get error from inner functions
-                error = 0 if inner is None else inner(state1, state2)
-                # add estiamted error of current element
-                if np.isnan(error):
-                    return error
+            def state_error_estimator(state1: State, state2: State) -> float:
+                """estimate error for all elements"""
+                error = 0
+                for el_err, el1, el2 in zip(el_errs, state1, state2):
+                    e = el_err(el1, el2)
+                    if np.isnan(e):
+                        return e  # type: ignore
+                    else:
+                        error = max(error, e)
+                return error
+
+            return state_error_estimator
+
+        elif backend == "numba":
+
+            def chain(
+                element_id: int, inner: Optional[Callable[[Any, Any], float]] = None
+            ) -> Callable[[Any, Any], float]:
+                """recursive factory function for running all actors"""
+                # get the evolver function
+                el_err = self[element_id]._make_error_estimator(backend="numba")
+
+                @jit
+                def wrap(state1, state2) -> float:
+                    # get error from inner functions
+                    error = 0 if inner is None else inner(state1, state2)
+                    # add estiamted error of current element
+                    if np.isnan(error):
+                        return error
+                    else:
+                        e = el_err(state1[element_id], state2[element_id])
+                        return max(error, e)  # type: ignore
+
+                if element_id < len(self) - 1:
+                    # there are more items in the chain
+                    return chain(element_id + 1, inner=wrap)
                 else:
-                    e = element_error_estimator(state1[element_id], state2[element_id])
-                    return max(error, e)  # type: ignore
+                    # this is the outermost function
+                    return wrap  # type: ignore
 
-            if element_id < len(self) - 1:
-                # there are more items in the chain
-                return chain(element_id + 1, inner=wrap)
-            else:
-                # this is the outermost function
-                return wrap  # type: ignore
+            return jit(chain(0))  # type: ignore
 
-        return jit(chain(0))  # type: ignore
+        else:
+            raise NotImplementedError(f"Unknown backend `{backend}`")
 
     @plot_on_axes()
     def plot(

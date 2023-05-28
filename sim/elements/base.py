@@ -28,13 +28,13 @@ The inheritance diagram reads
 
 from __future__ import annotations
 
+import copy
 import math
 from abc import ABCMeta, abstractproperty
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numba import literal_unroll
-from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
 from modelrunner.state import (
@@ -120,7 +120,8 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         This property modifies the normal `_state_attributes` and adds information
         necessary for restoring the class using :meth:`StateBase.from_data`.
         """
-        attrs = super()._state_attributes_store
+        # make a deep copy since we might modify attributes in place
+        attrs = copy.deepcopy(super()._state_attributes_store)
 
         if "parameters" in attrs:
             # serialize the individual parameters
@@ -184,7 +185,7 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         """int: the number of degrees of freedom for this element"""
         ...
 
-    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
+    def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
         """return function that estimates the error between element data"""
         raise NotImplementedError("Element does not implement error estimator")
 
@@ -251,28 +252,42 @@ class ArrayElementBase(_ElementBase, ArrayState):
             itemsize = 1
         return int(arr.size * itemsize)
 
-    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between element data"""
+    def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between element data
 
+        Args:
+            backend (str): The backend used to calculate the error
+        """
         arr = np.asanyarray(self._data_numba)
-        if arr.dtype.fields:
-            # iterate over all fields of this structured array
-            field_names = tuple(arr.dtype.fields.keys())
 
-            @jit
+        if backend == "numpy":
+
             def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
-                error = 0
-                for field in literal_unroll(field_names):
-                    error = max(np.abs(data1[field] - data2[field]).max(), error)
-                return error
+                # we view the data as floats to also deal with structured arrays
+                return np.abs(data1.view(float) - data2.view(float)).max()  # type: ignore
+
+        elif backend == "numba":
+            if arr.dtype.fields:
+                # iterate over all fields of this structured array
+                field_names = tuple(arr.dtype.fields.keys())
+
+                @jit
+                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                    error = 0
+                    for field in literal_unroll(field_names):
+                        error = max(np.abs(data1[field] - data2[field]).max(), error)
+                    return error
+
+            else:
+
+                @jit
+                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                    return np.abs(data1 - data2).max()  # type: ignore
 
         else:
+            raise NotImplementedError(f"Unknown backend `{backend}`")
 
-            @jit
-            def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
-                return np.abs(data1 - data2).max()  # type: ignore
-
-        return error_estimator  # type: ignore
+        return error_estimator
 
 
 class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
@@ -307,17 +322,23 @@ class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
             dof += int(arr.size * itemsize)
         return dof
 
-    def _make_error_estimator(self) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between element data"""
+    def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
+        """return function that estimates the error between element data
 
-        @jit
+        Args:
+            backend (str): The backend used to calculate the error
+        """
+
         def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
             error = 0
             for arr1, arr2 in zip(data1, data2):
                 error = max(np.abs(arr1 - arr2).max())
             return error
 
-        return error_estimator  # type: ignore
+        if backend == "numba":
+            return jit(error_estimator)  # type: ignore
+        else:
+            return error_estimator
 
 
 #

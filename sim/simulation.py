@@ -720,7 +720,7 @@ class SimulationSolver(AdaptiveSolverBase):
         """
         # obtain auxiliary functions
         single_step = self._make_single_step(state)
-        error_estimator = state._make_error_estimator()
+        error_estimator = state._make_error_estimator(backend=self.backend)
         adjust_dt = self._make_dt_adjuster()
         tolerance = self.tolerance
         dt_min = self.dt_min
@@ -739,12 +739,16 @@ class SimulationSolver(AdaptiveSolverBase):
                 # use a smaller (but not too small) time step if close to t_end
                 dt_step = np.clip(dt_opt, dt_min, t_end - t)
 
+                # We cannot use state.copy() since then grids and other objects based
+                # on parameters will be re-created by the py-modelrunner infrastructure.
+                # This implies that caches are cleared at every copy, which is a huge
+                # performance problem. copy.copy() does not have this issue.
+                state1 = copy.copy(state)
                 # single step with current value for dt
-                state1 = state.copy()
                 single_step(state1, t, dt_step)
 
                 # double step with half the time step
-                state2 = state.copy()
+                state2 = copy.copy(state)
                 single_step(state2, t, 0.5 * dt_step)
                 single_step(state2, t + 0.5 * dt_step, 0.5 * dt_step)
 
