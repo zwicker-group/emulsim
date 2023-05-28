@@ -28,13 +28,13 @@ The inheritance diagram reads
 
 from __future__ import annotations
 
+import copy
 import math
 from abc import ABCMeta, abstractproperty
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numba import literal_unroll
-from numba.typed import Dict as NumbaDict
 
 from modelrunner.parameters import Parameter, Parameterized
 from modelrunner.state import (
@@ -120,7 +120,8 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         This property modifies the normal `_state_attributes` and adds information
         necessary for restoring the class using :meth:`StateBase.from_data`.
         """
-        attrs = super()._state_attributes_store
+        # make a deep copy since we might modify attributes in place
+        attrs = copy.deepcopy(super()._state_attributes_store)
 
         if "parameters" in attrs:
             # serialize the individual parameters
