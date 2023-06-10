@@ -219,10 +219,16 @@ class Simulation:
             pos = layout(graph)
         elif layout == "auto":
             try:
-                pos = nx.nx_pydot.pydot_layout(graph)
+                pos = nx.nx_pydot.graphviz_layout(graph)
             except ImportError:
-                self._logger.warning("Suboptimal layout since `pydot` is unavailable")
-                pos = nx.spring_layout(graph)
+                try:
+                    pos = nx.nx_pydot.pydot_layout(graph)
+                except ImportError:
+                    self._logger.warning(
+                        "Suboptimal layout since `pydot` is unavailable"
+                    )
+                    pos = nx.spring_layout(graph)
+
         else:
             pos = getattr(nx, layout + "_layout")(graph)
 
@@ -457,7 +463,7 @@ class Simulation:
             self._logger.info("Construct the main evolver with timing information")
             self.timings = np.zeros(len(self.actors))  # initialize timing information
             get_timings_arr = make_array_constructor(self.timings)
-            evolver_chain = chain(0)  # compile the recursive chain
+            evolver_chain = chain(0)  # collect the recursive chain
 
             @jit
             def evolver(state_data: Tuple[np.ndarray, ...], t: float, dt: float):
@@ -471,8 +477,11 @@ class Simulation:
         else:
             # construct the normal evolver using recursion
             self._logger.info("Construct the main evolver")
-            evolver_chain = chain(0)  # compile the recursive chain
-            evolver = jit(evolver_chain)
+            evolver = chain(0)  # collect the recursive chain
+
+        # compile the resulting evolver function
+        sig = (nb.typeof(state._data_numba), nb.double, nb.double)
+        evolver = jit(sig)(evolver)
 
         return evolver  # type: ignore
 
@@ -560,7 +569,7 @@ class Simulation:
             self._logger.info("Use cached solver")
             solver = self._cache["solver"]
         else:
-            # create a new solver
+            # create a new solver (and store it in the cache)
             solver = SimulationSolver(
                 self, backend=backend, use_cache=use_cache, **kwargs
             )
@@ -653,6 +662,8 @@ class SimulationSolver(AdaptiveSolverBase):
                 if backend == "auto":
                     backend = "numpy"  # fall back onto the numpy backend
             else:
+                # creating a step using the numba backend was successful
+                self.info["backend"] = "numba"
 
                 def single_step(state: State, t: float, dt: float) -> None:
                     """function that advances the state from t_start to t_end"""
@@ -660,6 +671,7 @@ class SimulationSolver(AdaptiveSolverBase):
 
         if backend == "numpy":
             # define the step using the numpy backend
+            self.info["backend"] = "numpy"
 
             def single_step(state: State, t: float, dt: float) -> None:
                 """function that advances the state from t_start to t_end"""
