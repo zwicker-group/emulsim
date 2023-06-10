@@ -5,12 +5,14 @@ Provides classes that track the state of the simulation
    :nosignatures:
 
    ~TrajectoryTracker
+   ~Trajectory
    ~DropletElementTracker
    ~FieldTracker
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import copy
 import logging
 from typing import Optional, Union
 
@@ -38,6 +40,7 @@ class TrajectoryTracker(TrackerBase):
         interval: IntervalData = 1,
         *,
         overwrite: bool = False,
+        info: Optional[InfoDict] = None,
     ):
         """
         Args:
@@ -47,10 +50,14 @@ class TrajectoryTracker(TrackerBase):
                 {ARG_TRACKER_INTERVAL}
             overwrite (bool):
                 If True, delete all pre-existing data in store.
+            info (dict):
+                Additional information that are written to the trajectory storage. To
+                document simulation parameters, `simulation.info` can be used here.
         """
         super().__init__(interval=interval)
         self.store = store
         self.overwrite = overwrite
+        self.info = info
 
     def initialize(  # type: ignore
         self, state: State, info: Optional[InfoDict] = None
@@ -65,8 +72,14 @@ class TrajectoryTracker(TrackerBase):
         if not isinstance(state, State):
             self._logger.warning("state is not of type `State`")
 
+        if self.info is None:
+            info_write = info
+        else:
+            info_write = copy.deepcopy(self.info)  # type: ignore
+            info_write.update(info)
+
         self._writer = TrajectoryWriter(
-            self.store, attrs=info, overwrite=self.overwrite
+            self.store, attrs=info_write, overwrite=self.overwrite
         )
 
         return super().initialize(state, info)  # type: ignore
@@ -92,6 +105,7 @@ class TrajectoryTracker(TrackerBase):
         self._writer.close()
 
 
+# subclass to change the docstring
 class Trajectory(_Trajectory):
     """Reads trajectories of states written with :class:`TrajectoryTracker`
 
@@ -102,7 +116,10 @@ class Trajectory(_Trajectory):
         times (:class:`~numpy.ndarray`): Time points at which data is available
     """
 
-    ...
+    @property
+    def info(self) -> InfoDict:
+        """dict: information that was stored with the trajectory"""
+        return self._state_attributes
 
 
 class DropletElementTracker(TrackerBase):

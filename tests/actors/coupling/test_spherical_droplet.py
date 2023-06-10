@@ -12,16 +12,10 @@ from pde import CartesianGrid, ScalarField, UnitGrid
 from pde.grids.base import DimensionError
 from pde.tools.misc import module_available, skipUnlessModule
 
+from helpers import assert_recarrays_allclose
 from sim import ReactionDiffusionActor, Simulation, State
 from sim.actors.coupling import spherical_droplet
 from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
-
-
-def recarrays_allclose(a, b):
-    """tests whether the entries of two structured arrays are all close"""
-    if a.dtype != b.dtype:
-        return False
-    return all(np.allclose(a[name], b[name]) for name in a.dtype.names)
 
 
 def test_spherical_polygon_area():
@@ -410,4 +404,5 @@ def test_multithreading():
     evolver1((droplets1._data_numba, field1._data_numba), 0, 0.001)
     evolver2((droplets2._data_numba, field2._data_numba), 0, 0.001)
 
+    assert_recarrays_allclose(droplets1.data, droplets2.data, atol=1e-5)
     np.testing.assert_allclose(field1.data, field2.data, rtol=0.1)
