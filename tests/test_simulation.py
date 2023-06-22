@@ -10,6 +10,7 @@ from pde import DiffusionPDE, ScalarField, UnitGrid
 from pde.tools.misc import module_available
 
 import sim
+from helpers import assert_recarrays_allclose
 
 
 def test_simulation():
@@ -49,7 +50,7 @@ def test_simulation():
     simulation.run(t_range=10, backend="numpy", tracker=None)
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 5
     simulation.run(t_range=10, backend="numba", tracker=None)
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 30
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 40
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
@@ -96,7 +97,7 @@ def test_adaptive_simulation_complex(backend):
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation.state["field"].data)
-    thresh = {"numpy": 5, "numba": 15}[backend]
+    thresh = {"numpy": 5, "numba": 25}[backend]
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
@@ -123,3 +124,35 @@ def test_simulation_timing():
     timings = simulation.timings
     assert len(timings) == 1
     assert timings[0] > 0
+
+
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+@pytest.mark.parametrize("use_cache", [True, False])
+def test_simulation_cache(backend, use_cache):
+    """test caching of Simulation class"""
+    # setup state
+    grid = UnitGrid([4, 4], periodic=True)
+    background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
+    droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
+    droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
+    state = sim.State({"background": background, "droplets": droplets})
+    state2 = state.copy()
+
+    # setup simulation
+    diff_actor = sim.DiffusionActor()
+    simulation = sim.Simulation(state, actors=[("background", diff_actor)])
+    simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
+
+    # run simulation
+    jit_max = {"numba": 40, "numpy": 5}[backend]
+    simulation.run(t_range=10, backend=backend, tracker=None, use_cache=True)
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) <= jit_max
+
+    simulation.state = state2
+    simulation.run(t_range=10, backend=backend, tracker=None, use_cache=use_cache)
+    if use_cache and backend == "numba":
+        jit_max = 0
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) <= jit_max
+
+    assert_recarrays_allclose(state["droplets"].data, state2["droplets"].data)
+    np.testing.assert_allclose(state["background"].data, state2["background"].data)

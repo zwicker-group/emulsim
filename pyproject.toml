@@ -66,11 +66,12 @@ profile = "black"
 src_paths = ["sim", "examples", "tests"]
 extend_skip_glob = ["submodules/*"]
 known_first_party = ["droplets", "modelrunner", "pde", "phasesep"]
-known_self = "sim"
+known_self = ["sim", "helpers"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "SELF", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
+norecursedirs="tests/helpers"
 filterwarnings = [
     'ignore:.*importing the ABCs from.*:DeprecationWarning',
     'ignore:.*IPython.utils.signatures backport for Python 2 is deprecated.*:DeprecationWarning',
