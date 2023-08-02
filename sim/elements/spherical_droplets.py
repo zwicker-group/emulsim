@@ -148,7 +148,7 @@ class SphericalDropletsElement(ArrayElementBase):
         # create a random emulsion
         emulsion = Emulsion.from_random(
             num=num,
-            bounds=axes_bounds,
+            grid_or_bounds=axes_bounds,
             radius=radius,
             remove_overlapping=remove_overlapping,
         )

@@ -22,6 +22,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
 import numba as nb
 import numpy as np
 
+from pde import ScalarField
 from pde.pdes.base import PDEBase
 from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
@@ -284,7 +285,9 @@ class ReactionDiffusionActor(ScalarPDEActor):
             "reaction_flux",
             "0",
             str,
-            "An expression for the reaction flux in the field.",
+            "An expression for the reaction flux in the field, which can depend on the "
+            "concentration (denoted by `c` or `phi`), spatial coordinates (denoted by "
+            "`x[i]`, where `i` is the dimension), and time `t`.",
         ),
         Parameter(
             "boundary_conditions",
@@ -292,6 +295,13 @@ class ReactionDiffusionActor(ScalarPDEActor):
             object,
             "Defines the boundary conditions on the field."
             + get_text_block("ARG_BOUNDARIES"),
+        ),
+        Parameter(
+            "expression_constants",
+            {},
+            dict,
+            "A dictionary defining values of constants that can be used in "
+            "expressions, e.g., the parameter `reaction_flux`.",
         ),
     ]
 
@@ -312,6 +322,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             "diffusivity": parameters["diffusivity"],
             "reaction_flux": parameters["reaction_flux"],
             "bc": parameters["boundary_conditions"],
+            "expression_constants": parameters["expression_constants"],
         }
         super().__init__(ReactionDiffusionPDE(pde_params), parameters)
 
@@ -326,15 +337,20 @@ class ReactionDiffusionActor(ScalarPDEActor):
             float: the time step
         """
         (element,) = elements  # extract single element
+        grid = element.grid
 
         # estimate the time step based on the chemical reaction
         if hasattr(self.pde, "_reaction"):
-            # pde seems to be an instance of ReactionDiffusionPDE
-            cs = np.linspace(0, 1, 32)
-            s_max = np.abs(self.pde._reaction(cs, t=0)).max()
+            # PDE seems to be an instance of ReactionDiffusionPDE
+            test_field = ScalarField(grid)
+            s_max = 0
+            for c in np.linspace(0, 1, 32):
+                test_field.data = c
+                rates = self.pde.reaction_rate(test_field)
+                s_max = max(s_max, np.max(np.abs(rates.data)))
             diffusivity = self.pde.diffusivity.value
         else:
-            # pde seems to be an instance of DiffusionPDE
+            # PDE seems to be an instance of DiffusionPDE
             s_max = 0
             diffusivity = self.pde.diffusivity
 
@@ -352,7 +368,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             # rate k = max(s).
 
         # estimate the time step required for diffusion
-        dx = element.grid.discretization.min()  # type: ignore
+        dx = grid.discretization.min()  # type: ignore
         dt_diffusion = 0.1 * dx**2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore
