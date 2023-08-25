@@ -40,6 +40,7 @@ elements.
 .. autosummary::
    :nosignatures:
 
+   ~coupling.nucleation.DropletNucleationActor
    ~coupling.fields.FieldCouplingActor
    ~coupling.fields.FieldBoundaryExchangeActor
    ~coupling.point_droplet.PointDropletActor

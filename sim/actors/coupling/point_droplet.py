@@ -264,9 +264,10 @@ class PointDropletActor(ActorBase):
         # calculate the equilibrium concentration for each droplet
         result = []
         for droplet_id, droplet in enumerate(droplets.droplets):
-            ceq = calc_eqout(droplet.position, droplet.radius, droplet_id)
-            if np.isfinite(ceq):
-                result.append(ceq)
+            if droplet.radius > 0:
+                ceq = calc_eqout(droplet.position, droplet.radius, droplet_id)
+                if np.isfinite(ceq):
+                    result.append(ceq)
 
         return np.array(result)
 

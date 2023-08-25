@@ -18,6 +18,7 @@ def test_spherical_droplets_element(dim):
     emulsion = [SphericalDroplet([0] * dim, 1), SphericalDroplet([1] * dim, 2)]
     element = SphericalDropletsElement.from_droplets(emulsion)
     assert element.dim == dim
+    assert element.droplet_count == 2
     assert element.degrees_of_freedom == 2 * (dim + 1)
 
     # test basic error estimate
@@ -27,7 +28,18 @@ def test_spherical_droplets_element(dim):
 
     # create random element
     element = SphericalDropletsElement.from_random(
-        num=3, bounds=[(0, 1)] * dim, radius=1
+        num=3, bounds=[(0, 1)] * dim, radius=1, remove_overlapping=False
     )
     assert element.dim == dim
+    assert element.droplet_count == 3
     np.testing.assert_allclose(element.data["radius"], 1)
+
+    # create random element
+    element = SphericalDropletsElement.from_random(
+        num=3, bounds=[(0, 1)] * dim, radius=1, maxcount=5, remove_overlapping=False
+    )
+    assert element.dim == dim
+    assert element.droplet_count == 3
+    assert len(element.droplets) == 5
+    np.testing.assert_allclose(element.data[:3]["radius"], 1)
+    np.testing.assert_allclose(element.data[3:]["radius"], 0)

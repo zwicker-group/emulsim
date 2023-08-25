@@ -14,7 +14,7 @@ Provides classes that track the state of the simulation
 
 import copy
 import logging
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
@@ -75,8 +75,8 @@ class TrajectoryTracker(TrackerBase):
         if self.info is None:
             info_write = info
         else:
-            info_write = copy.deepcopy(self.info)  # type: ignore
-            info_write.update(info)
+            info_write = copy.deepcopy(self.info)
+            info_write.update(info)  # type: ignore
 
         self._writer = TrajectoryWriter(
             self.store, attrs=info_write, overwrite=self.overwrite
@@ -168,7 +168,8 @@ class DropletElementTracker(TrackerBase):
             keep_vanished (bool):
                 Flag determining whether vanished droplets (with zero radius) are still
                 stored. The default is to filter these droplets. Enable this flag if
-                droplets can disappear and re-appear in the simulation.
+                droplets disappearing and re-appearing should be combined in a single
+                track.
             background_grid (:class:`pde.grids.base.GridBase`):
                 The grid on which the droplets are defined. This is stored in the
                 emulsion object to calculate distances and other geometric quantities.
@@ -199,8 +200,14 @@ class DropletElementTracker(TrackerBase):
             self.emulsions.grid = self.background_grid
 
         if self.store_droplet_tracks is not False:
-            tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
-            self.droplet_tracks = DropletTrackList(tracks)
+            # tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
+            if self.keep_vanished:
+                self._active_tracks: Dict[int, int] = {
+                    i: i for i in range(len(state[self.element_name]))
+                }
+            else:
+                self._active_tracks = {}
+            self.droplet_tracks = DropletTrackList()  # tracks)
 
         return super().initialize(state, info)  # type: ignore
 
@@ -227,11 +234,28 @@ class DropletElementTracker(TrackerBase):
 
         # append all droplets to existing tracks
         if self.store_droplet_tracks is not False:
-            for i, droplet in enumerate(droplets):
-                track = self.droplet_tracks[i]
-                is_active = track and track.last.radius > 0
-                if is_active or droplet.radius > 0 or self.keep_vanished:
-                    track.append(droplet, time=t)
+            if self.keep_vanished:
+                # extend all tracks, independent of droplet size
+                for i, droplet in enumerate(droplets):
+                    self.droplet_tracks[self._active_tracks[i]].append(droplet, time=t)
+            else:
+                # store information about all droplets with finite radius
+                for i, droplet in enumerate(droplets):
+                    if droplet.radius > 0:
+                        # droplet of finite size
+                        try:
+                            track_id = self._active_tracks[i]
+                        except KeyError:
+                            # start new track
+                            self._active_tracks[i] = len(self.droplet_tracks)
+                            self.droplet_tracks.append(DropletTrack([droplet], [t]))
+                        else:
+                            # extend exisiting track
+                            self.droplet_tracks[track_id].append(droplet, time=t)
+
+                    elif i in self._active_tracks:
+                        # droplet vanished =>  stop this track
+                        del self._active_tracks[i]
 
     def finalize(self, info: Optional[InfoDict] = None) -> None:
         """finalize the tracker, supplying additional information

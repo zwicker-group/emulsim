@@ -18,7 +18,6 @@ import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
-import numba as nb
 import numpy as np
 from numba.extending import register_jitable
 
@@ -114,7 +113,7 @@ class ReservoirElement(ArrayElementBase):
             at point `point` given the field state `data`.
         """
 
-        @nb.jit
+        @jit
         def get_concentration(data: np.ndarray, point: np.ndarray):
             return data[0]
 
@@ -129,7 +128,7 @@ class ReservoirElement(ArrayElementBase):
             to the field state given by `data` at point `point`.
         """
 
-        @nb.jit
+        @jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
             ...
 
@@ -409,7 +408,7 @@ class MeanfieldElement(FieldElementBase):
             at point `point` given the field state `data`.
         """
 
-        @nb.jit
+        @jit
         def get_concentration(data: np.ndarray, point: np.ndarray):
             return data[0]
 
@@ -425,7 +424,7 @@ class MeanfieldElement(FieldElementBase):
         """
         volume = self.volume
 
-        @nb.jit
+        @jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
             data += amount / volume
 
