@@ -54,17 +54,39 @@ class SphericalDropletsElement(ArrayElementBase):
             # initialize the droplet information in the class
             self._init_droplets(droplets)
 
-    def _init_droplets(self, droplets: Emulsion):
+    def _init_droplets(
+        self,
+        droplets: Emulsion,
+        *,
+        maxcount: Optional[int] = None,
+    ):
         """helper function that ensures that the droplet attribute is linked with `data`
 
         Args:
-            data:
-                The droplet data, either in form of :class:`Emulsion` or as a
-                :class:`~numpy.ndarray`.
+            droplets:
+                The droplet data in form of :class:`~droplets.emulsions.Emulsion`
+            maxcount (int):
+                If supplied, sets the maximal number of droplets that can be stored in
+                this element. If `maxcount > len(droplets)`, the additional entries are
+                intialized as zero.
         """
+        if len(droplets) == 0:
+            raise ValueError(
+                "Need a droplet to initialize element. This can be an vanished droplet "
+                "with zero radius."
+            )
+
+        if maxcount is not None:
+            # ensure that len(droplets) >= maxcount
+            if maxcount > len(droplets):
+                # append empty droplets to list
+                empty_droplet = droplets[0].copy(radius=0)
+                empty_droplet.data["position"] = 0
+                for _ in range(maxcount - len(droplets)):
+                    droplets.append(empty_droplet, copy=True)
+                assert len(droplets) == maxcount
+
         self.droplets = droplets  # set the given droplets as an attribute
-        if len(self.droplets) == 0:
-            raise ValueError("Need a droplet to get dimensionality of the element")
 
         # check whether all droplets are derived from the same class
         for droplet in droplets:
@@ -83,7 +105,9 @@ class SphericalDropletsElement(ArrayElementBase):
     def from_droplets(
         cls,
         droplets: Emulsion,
+        *,
         copy: bool = False,
+        maxcount: Optional[int] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
         """
@@ -95,13 +119,17 @@ class SphericalDropletsElement(ArrayElementBase):
             copy (bool):
                 Flag indicating whether the droplets are copied, so they are not
                 modified during the simulation.
+            maxcount (int):
+                If supplied, sets the maximal number of droplets that can be stored in
+                this element. If `maxcount > len(droplets)`, the additional entries are
+                intialized as zero.
             parameters (dict):
                 Additional parameters. Call
                 :meth:`~SphericalDropletsElement.show_parameters` for details.
         """
         obj = cls.__new__(cls)  # create class without calling its __init__
         obj._state_init({"parameters": parameters})  # initialize generally
-        obj._init_droplets(Emulsion(droplets, copy=copy))  # set droplet information
+        obj._init_droplets(Emulsion(droplets, copy=copy), maxcount=maxcount)
         return obj
 
     @classmethod
@@ -112,6 +140,7 @@ class SphericalDropletsElement(ArrayElementBase):
         radius: Union[float, Tuple[float, float]],
         *,
         remove_overlapping: bool = True,
+        maxcount: Optional[int] = None,
         rng: Optional[np.random.Generator] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
@@ -131,6 +160,10 @@ class SphericalDropletsElement(ArrayElementBase):
             remove_overlapping (bool):
                 Flag determining whether overlapping droplets are removed. If enabled,
                 the resulting element might contain less thatn `num` droplets.
+            maxcount (int):
+                If supplied, sets the maximal number of droplets that can be stored in
+                this element. If `maxcount > num`, the additional entries are
+                intialized as zero.
             rng (:class:`~numpy.random.Generator`):
                 Random number generator (default: :func:`~numpy.random.default_rng()`)
             parameters (dict):
@@ -151,12 +184,14 @@ class SphericalDropletsElement(ArrayElementBase):
             grid_or_bounds=axes_bounds,
             radius=radius,
             remove_overlapping=remove_overlapping,
+            rng=rng,
         )
 
         # turn the emulsion into a SphericalDropletsElement
         return cls.from_droplets(
             emulsion,
             copy=False,
+            maxcount=maxcount,
             parameters=parameters,
         )
 

@@ -4,6 +4,7 @@ Provides actors that affect multiple elements in a simulation.
 .. autosummary::
    :nosignatures:
 
+   ~nucleation.DropletNucleationActor
    ~fields.FieldCouplingActor
    ~fields.FieldBoundaryExchangeActor
    ~point_droplet.PointDropletActor
@@ -15,5 +16,6 @@ Provides actors that affect multiple elements in a simulation.
 
 from .fields import FieldBoundaryExchangeActor, FieldCouplingActor
 from .multicomponent_droplet import MulticomponentDropletActor
+from .nucleation import DropletNucleationActor
 from .point_droplet import PointDropletActor
 from .spherical_droplet import SphericalDropletActor

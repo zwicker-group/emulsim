@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 
-from modelrunner.parameters import Parameterized
+from modelrunner.parameters import Parameterized, ParameterListType
 from pde.tools.cache import objects_equal
 
 from ..elements.base import _ElementBase
@@ -31,6 +31,12 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     """tuple: defines the elements this actor handles and in what order they need to be
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
+
+    parameters_default: ParameterListType = []
+    """list: parameters (with default values) of this subclass
+
+    :meta private:
+    """
 
     def __init__(self, parameters: Optional[Dict[str, Any]] = None):
         """
