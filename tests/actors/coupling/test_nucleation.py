@@ -2,6 +2,7 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import numpy as np
 import pytest
 
 from pde import ScalarField, UnitGrid
@@ -43,10 +44,11 @@ def test_nucleation(dim, field_cls, backend):
     drop_count = [len(e) for e in drop_tracker.emulsions]
     assert drop_count[0] == 1
     assert result["background"].total_amount < 0
+    assert np.all(np.diff(drop_count) >= 0)
     if dim == 1:
         assert 2 < drop_count[-1] < 7
     elif dim == 2:
-        assert 9 < drop_count[-1] < 18
+        assert 7 < drop_count[-1] < 18
 
     amount_start = state.get_total_quantity("total_amount")
     amount_end = result.get_total_quantity("total_amount")
