@@ -33,7 +33,12 @@ def test_nucleation(dim, field_cls, backend):
     if field_cls is ScalarFieldElement:
         simulation.add_actor("background", DiffusionActor())
     nucleation_actor = DropletNucleationActor(
-        {"prefactor": 1e-3, "scale": 1e3, "initial_radius": 0.1}
+        {
+            "prefactor": 1e-3,
+            "scale": 1e3,
+            "initial_radius": 0.1,
+            "randomize_position": dim == 1,
+        }
     )
     simulation.add_actor(("droplets", "background"), nucleation_actor)
 
@@ -42,6 +47,7 @@ def test_nucleation(dim, field_cls, backend):
     result = simulation.run(t_range=1e3, tracker=drop_tracker, backend=backend)
 
     drop_count = [len(e) for e in drop_tracker.emulsions]
+    assert np.all(grid.contains_point(drop_tracker.emulsions[-1].data["position"]))
     assert drop_count[0] == 1
     assert result["background"].total_amount < 0
     assert np.all(np.diff(drop_count) >= 0)

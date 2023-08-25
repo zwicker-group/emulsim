@@ -9,6 +9,7 @@ from typing import Callable, Tuple
 import numpy as np
 
 from droplets.tools import spherical
+from pde import CartesianGrid
 from pde.grids.base import DimensionError
 from pde.tools.numba import jit
 
@@ -64,7 +65,14 @@ class DropletNucleationActor(ActorBase):
             r"Pre-factor :math:`\alpha` affecting the hight of the nucleation barrier "
             "and thus how strongly the super-saturation affects the nucleation rate.",
         ),
-        # TODO: Add option to randomize position within grid cell
+        Parameter(
+            "randomize_position",
+            False,
+            bool,
+            "Determines whether the position of a nucleated droplet will be randomized "
+            "within each cell. Disabling this feature may accelerate the simulation at "
+            "the expense of more regular droplet positioning.",
+        ),
     ]
 
     element_classes = (SphericalDropletsElement, FieldElementBase)
@@ -85,6 +93,20 @@ class DropletNucleationActor(ActorBase):
             )
 
         self._cache["dim"] = droplets.dim
+
+        grid = field.grid
+        if not isinstance(grid, CartesianGrid):
+            raise RuntimeError("`DropletNucleationActor` only supports cartesian grids")
+        if self.parameters["randomize_position"]:
+            dx = grid.discretization
+            cells_lower = grid.cell_coords - dx / 2
+            cells_upper = grid.cell_coords + dx / 2
+            self._cache["cell_bounds"] = np.concatenate(
+                [cells_lower[..., np.newaxis, :], cells_upper[..., np.newaxis, :]],
+                axis=-2,
+            )
+        else:
+            self._cache["cell_bounds"] = None
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
         """estimate the maximal time step for simulating this actor
@@ -133,6 +155,8 @@ class DropletNucleationActor(ActorBase):
         scale = self.parameters["scale"]
         initial_radius = self.parameters["initial_radius"]
         cEqIn = droplets.parameters["droplet_concentration"]
+        randomize_position = self.parameters["randomize_position"]
+        cell_bounds = self._cache["cell_bounds"]
 
         no_space_err = (
             "Cannot add droplet, since space in droplet element is exhausted "
@@ -162,10 +186,15 @@ class DropletNucleationActor(ActorBase):
                         if drop_id >= len(droplets_data):
                             raise RuntimeError(no_space_err)
 
-                    # add droplet to center of cell. TODO: randomize position in cell
+                    # add droplet within this cell
                     droplet_data = droplets_data[drop_id]
                     droplet_data.radius = initial_radius
-                    droplet_data.position[:] = cell_coords[idx]
+                    if randomize_position:
+                        lo, hi = cell_bounds[idx]
+                        for i in range(dim):
+                            droplet_data.position[i] = np.random.uniform(lo[i], hi[i])
+                    else:
+                        droplet_data.position[:] = cell_coords[idx]
 
                     # remove the amount from the scalar field
                     amount_out = cEqIn * volume(droplet_data.radius)
@@ -196,13 +225,16 @@ class DropletNucleationActor(ActorBase):
 
         # determine which cells nucleated a droplet
         if np.any(k > 1 / dt):
-            print("Nucleation rate too large")
+            self._logger.warning("Nucleation rate too large; reduce dt")
 
+        # determine grid cells that exhibit nucleation
         nucleation_cells = np.random.random(size=ΔV.shape) < k * dt
+        positions = field.grid.cell_coords[nucleation_cells]
+        if self.parameters["randomize_position"]:
+            cell_bounds = self._cache["cell_bounds"][nucleation_cells]
 
         drop_id = 0
-        positions = field.grid.cell_coords[nucleation_cells]
-        for position in positions:
+        for i, position in enumerate(positions):
             # find empty slot in droplets
             while True:
                 if emulsion[drop_id].radius == 0:
@@ -214,11 +246,13 @@ class DropletNucleationActor(ActorBase):
                         f"exhausted ({len(emulsion)} slots)."
                     )
 
-            # add droplet to center of cell. TODO: randomize position in cell
+            # add droplet within this cell
             droplet = emulsion[drop_id]
             droplet.data["radius"] = self.parameters["initial_radius"]
+            if self.parameters["randomize_position"]:
+                position = np.random.uniform(*cell_bounds[i])
             droplet.data["position"] = position
 
             # remove the amount from the scalar field
             amount_out = cEqIn * droplet.volume
-            field.add_amount(droplet.position, -amount_out)
+            field.add_amount(position, -amount_out)
