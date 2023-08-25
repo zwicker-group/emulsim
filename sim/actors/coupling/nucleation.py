@@ -225,7 +225,7 @@ class DropletNucleationActor(ActorBase):
 
         # determine which cells nucleated a droplet
         if np.any(k > 1 / dt):
-            print("Nucleation rate too large")
+            self._logger.warning("Nucleation rate too large; reduce dt")
 
         # determine grid cells that exhibit nucleation
         nucleation_cells = np.random.random(size=ΔV.shape) < k * dt
