@@ -8,10 +8,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from pde.tools.numba import random_seed
+
 
 @pytest.fixture(scope="function", autouse=True)
-def suppressing():
-    """helper function adjusting message reporting for all tests"""
+def general_test_setup_and_teardown():
+    """helper function preparing and cleaning tests"""
+    # initialize random number generators to have predicable tests
+    random_seed(0)
+
     # raise all underflow errors
     np.seterr(all="raise", under="ignore")
 
