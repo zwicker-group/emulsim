@@ -20,7 +20,7 @@ from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
 from modelrunner.state.trajectory import Trajectory as _Trajectory
 from modelrunner.state.trajectory import TrajectoryWriter
-from pde.fields.base import FieldBase, GridBase
+from pde.fields.base import FieldBase
 from pde.tools.docstrings import fill_in_docstring
 from pde.trackers.base import InfoDict, IntervalData, TrackerBase
 
@@ -145,7 +145,6 @@ class DropletElementTracker(TrackerBase):
         store_emulsions: Union[bool, str] = True,
         store_droplet_tracks: Union[bool, str] = True,
         keep_vanished: bool = False,
-        background_grid: Optional[GridBase] = None,
     ):
         """
         Args:
@@ -170,16 +169,12 @@ class DropletElementTracker(TrackerBase):
                 stored. The default is to filter these droplets. Enable this flag if
                 droplets disappearing and re-appearing should be combined in a single
                 track.
-            background_grid (:class:`pde.grids.base.GridBase`):
-                The grid on which the droplets are defined. This is stored in the
-                emulsion object to calculate distances and other geometric quantities.
         """
         super().__init__(interval=interval)
         self.element_name = element_name
         self.store_emulsions = store_emulsions
         self.store_droplet_tracks = store_droplet_tracks
         self.keep_vanished = keep_vanished
-        self.background_grid = background_grid
 
     def initialize(  # type: ignore
         self, state: State, info: Optional[InfoDict] = None
@@ -197,7 +192,6 @@ class DropletElementTracker(TrackerBase):
         # initialize the tracked data
         if self.store_emulsions is not False:
             self.emulsions = EmulsionTimeCourse()
-            self.emulsions.grid = self.background_grid
 
         if self.store_droplet_tracks is not False:
             # tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
