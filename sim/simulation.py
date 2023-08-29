@@ -92,10 +92,16 @@ class Simulation:
             actor_infos.append(info)
         return {"state": self.state.attributes, "actors": actor_infos}
 
-    def copy(self) -> Simulation:
-        """returns a copy the entire simulation"""
+    def copy(self, method: str) -> Simulation:
+        """returns a copy the entire simulation
+
+        Args:
+            method (str):
+                Determines whether a `clean`, `shallow`, or `data` copy is performed.
+                See :meth:`~modelrunner.state.base.StateBase.copy` for details.
+        """
         return self.__class__(
-            state=self.state.copy(),
+            state=self.state.copy(method=method),
             actors=[(elements, actor.copy()) for elements, actor in self.actors],
             check="ignore",  # do not raise warnings on copy
             profile=self.profile,
@@ -345,6 +351,7 @@ class Simulation:
             except NotImplementedError:
                 self._logger.info(f'Unknown time step for actor "{actor}"')
             else:
+                self._logger.debug(f'Time step for actor "{actor}": {dt}')
                 dts.append(dt)
 
         return min(dts)
@@ -730,14 +737,18 @@ class SimulationSolver(AdaptiveSolverBase):
             time `t_end`. The function call signature is `(state: State, t_start: float,
             t_end: float)`
         """
-        # obtain auxiliary functions
-        single_step = self._make_single_step(state)
-        error_estimator = state._make_error_estimator(backend=self.backend)
-        adjust_dt = self._make_dt_adjuster()
         tolerance = self.tolerance
         dt_min = self.dt_min
 
-        # determine the right function doing the heavylifting
+        # obtain auxiliary functions
+        single_step = self._make_single_step(state)
+        adjust_dt = self._make_dt_adjuster()
+        if self.backend == "numba":
+            error_estimator = state._make_error_estimator(backend="numba")
+        else:  # also support backend == "auto"
+            error_estimator = state._make_error_estimator(backend="numpy")
+
+        # define the stepper doing the time iteration and time step adjustment
         dt_opt = dt
         self.info["dt_statistics"] = dt_stats = OnlineStatistics()
 
@@ -751,18 +762,21 @@ class SimulationSolver(AdaptiveSolverBase):
                 # use a smaller (but not too small) time step if close to t_end
                 dt_step = np.clip(dt_opt, dt_min, t_end - t)
 
-                # We cannot use state.copy() since then grids and other objects based
-                # on parameters will be re-created by the py-modelrunner infrastructure.
-                # This implies that caches are cleared at every copy, which is a huge
-                # performance problem. copy.copy() does not have this issue.
-                state1 = copy.copy(state)
+                # We need to copy the state data while leaving the grids and other
+                # objects based on parameters intact. In particular, we need to make
+                # sure that caches are not cleared at every copy, which would be a huge
+                # performance problem. We thus use method=`data`, which implements these
+                # constraints
+                state1 = state.copy(method="data")
                 # single step with current value for dt
                 single_step(state1, t, dt_step)
 
                 # double step with half the time step
-                state2 = copy.copy(state)
+                state2 = state.copy(method="data")
                 single_step(state2, t, 0.5 * dt_step)
                 single_step(state2, t + 0.5 * dt_step, 0.5 * dt_step)
+
+                assert state1.data is not state2.data
 
                 # calculate maximal error
                 error = error_estimator(state1._data_numba, state2._data_numba)
@@ -779,6 +793,10 @@ class SimulationSolver(AdaptiveSolverBase):
                         self.info["dt_statistics"].add(dt_step)
                     if dt_stats is not None:
                         dt_stats.add(dt_step)
+
+                else:
+                    # error is infinite
+                    raise RuntimeError(f"error={error} in adaptive step")
 
                 if t < t_end:
                     # adjust the time step and continue

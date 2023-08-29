@@ -18,12 +18,12 @@ def test_active_particles():
     actor = ActiveParticleActor()
 
     assert actor.estimate_dt((element,)) > 0
-    ref = element.copy()
+    ref = element.copy(method="data")
     actor.evolve((element,), 0, 1)
     assert np.all(element.positions != ref.positions)
     np.testing.assert_array_equal(element.directions, ref.directions)
 
-    ref = element.copy()
+    ref = element.copy(method="data")
     evolver = actor.make_evolver_numba((element,))
     evolver((element._data_numba,), 0, 1)
     assert np.all(element.positions != ref.positions)
@@ -42,13 +42,13 @@ def test_active_particles_rotation_diffusion(dim):
     actor = ActiveParticleActor({"rotational_diffusion": 1})
 
     assert actor.estimate_dt((element,)) > 0
-    ref = element.copy()
+    ref = element.copy(method="data")
     actor.evolve((element,), 0, 1)
     assert np.all(element.positions != ref.positions)
     assert np.all(element.directions != ref.directions)
     assert np.linalg.norm(element.directions) == pytest.approx(dir_mag)
 
-    ref = element.copy()
+    ref = element.copy(method="data")
     evolver = actor.make_evolver_numba((element,))
     evolver((element._data_numba,), 0, 1)
     assert np.all(element.positions != ref.positions)

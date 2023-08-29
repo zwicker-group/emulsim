@@ -104,7 +104,7 @@ def test_basic(element):
     assert isinstance(repr(element), str)
     assert isinstance(element.attributes, dict)
 
-    e1 = element.copy()
+    e1 = element.copy(method="data")
     assert e1 is not element
     assert e1 == element
 

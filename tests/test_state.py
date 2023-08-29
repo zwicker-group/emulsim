@@ -2,11 +2,14 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import numpy as np
 import pytest
 
+import pde
 from elements.test_generic import generate_elements
 from pde.tools.numba import jit
 
+from sim.elements import ScalarFieldElement
 from sim.state import State
 
 
@@ -23,7 +26,7 @@ def test_state_general(dim, capsys):
     assert len(s.data) == len(s)
     assert s.degrees_of_freedom > 0
 
-    s2 = s.copy()
+    s2 = s.copy("clean")
     assert s is not s2
     assert s == s2
 
@@ -75,6 +78,44 @@ def test_state_errors():
     """test some safe-guarding of the State class"""
     with pytest.raises(ValueError):
         State({str(i): el for i, el in enumerate(generate_elements())})
+
+
+@pytest.mark.parametrize("element", generate_elements())
+def test_state_copy(element):
+    """test copying different states"""
+    s = State({"el": element})
+    s1 = s.copy(method="data")
+    s2 = s.copy(method="data")
+    assert s1 is not s2 is not s
+    assert s1.data is not s2.data is not s.data
+
+
+def test_field_element_copy():
+    """special tests on field elements, which have special requirements"""
+    field = pde.ScalarField.random_normal(pde.UnitGrid([4, 4]))
+    e1 = ScalarFieldElement.from_field(field)
+
+    # copy field element directly
+    e2 = e1.copy(method="data")
+    assert e1 == e2
+    assert e1.grid is e2.grid
+    assert e1._field is not e2._field
+    assert e1.data is not e2.data
+    assert e1.field.data is not e2.field.data
+    np.testing.assert_array_equal(e1.data, e2.data)
+
+    # copy field element inside state and check whether really only the data is copied
+    state = State({"field": e1})
+    s_c = state.copy(method="data")
+    e2 = s_c["field"]
+    assert e1 == e2
+    assert e1.grid is e2.grid
+    assert e1._field is not e2._field
+    assert e1.data is not e2.data
+    assert e1.field.data is not e2.field.data
+    assert e1.data is e1.field.data
+    assert e2.data is e2.field.data
+    np.testing.assert_array_equal(e1.data, e2.data)
 
 
 @pytest.mark.parametrize("dim", [1, 2])

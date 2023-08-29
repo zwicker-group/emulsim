@@ -4,12 +4,12 @@ Provides an actor nucleating droplets from a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 
 import numpy as np
 
 from droplets.tools import spherical
-from pde import CartesianGrid
+from pde import CartesianGrid, ScalarField
 from pde.grids.base import DimensionError
 from pde.tools.numba import jit
 
@@ -39,7 +39,7 @@ class DropletNucleationActor(ActorBase):
     parameters_default = [
         Parameter(
             "saturation_concentration",
-            1e-5,
+            0,
             float,
             "Saturation concentration above which nucleation can take place. The super-"
             "saturation is defined as the concentration of the field minus this value.",
@@ -126,6 +126,43 @@ class DropletNucleationActor(ActorBase):
         k = self.parameters["prefactor"] * np.exp(self.parameters["scale"] * Δc)
         return 1.0 / (k * cell_vol)  # type: ignore
 
+    def nucleation_rate(
+        self, field: Union[FieldElementBase, ScalarField]
+    ) -> ScalarField:
+        """return nucleation rate :math:`k` for a given field
+
+        Note that this nucleation rate is actually a nucleation rate density. The rate
+        with which a droplet is nucleated anywhere in the system thus given by the
+        integral :code:`rate.integral`, if `rate` is the field returned by this function.
+
+        Args:
+            field (:class:`FieldElementBase` or :class:`ScalarField`):
+                Scalar field element from which material is taken
+
+        Returns:
+            float: Estimated number of droplets that are nucleated
+        """
+        # calculate nucleation rates for each cell in the field grid
+        Δc = field.data - self.parameters["saturation_concentration"]
+        k = self.parameters["prefactor"] * np.exp(self.parameters["scale"] * Δc)
+        return ScalarField(field.grid, k, label="Nucleation rate")
+
+    def estimate_nucleation_count(
+        self, field: FieldElementBase, t_range: float
+    ) -> float:
+        """rough estimate of the number of nucleated droplets
+
+        Args:
+            field (:class:`FieldElementBase` or :class:`ScalarField`):
+                Scalar field element from which material is taken
+            t_range (float):
+                Duration of the simulation
+
+        Returns:
+            float: Estimated number of droplets that are nucleated
+        """
+        return t_range * self.nucleation_rate(field).integral  # type: ignore
+
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
     ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
@@ -157,6 +194,8 @@ class DropletNucleationActor(ActorBase):
         cEqIn = droplets.parameters["droplet_concentration"]
         randomize_position = self.parameters["randomize_position"]
         cell_bounds = self._cache["cell_bounds"]
+        if randomize_position:
+            cell_bounds = cell_bounds.reshape(size, 2, dim)
 
         no_space_err = (
             "Cannot add droplet, since space in droplet element is exhausted "
@@ -219,16 +258,19 @@ class DropletNucleationActor(ActorBase):
         cEqIn = droplets.parameters["droplet_concentration"]
 
         # calculate nucleation rates for each cell in the field grid
-        Δc = field.data - self.parameters["saturation_concentration"]
+        k = self.nucleation_rate(field)
         ΔV = field.grid.cell_volumes
-        k = self.parameters["prefactor"] * ΔV * np.exp(self.parameters["scale"] * Δc)
+        nucl_rate = ΔV * k.data
+        assert nucl_rate.shape == field.grid.shape
 
         # determine which cells nucleated a droplet
-        if np.any(k > 1 / dt):
-            self._logger.warning("Nucleation rate too large; reduce dt")
+        if nucl_rate.max() > 1 / dt:
+            self._logger.warning(
+                f"Nucleation rate too large ({nucl_rate.max()}; reduce dt ({dt})"
+            )
 
         # determine grid cells that exhibit nucleation
-        nucleation_cells = np.random.random(size=ΔV.shape) < k * dt
+        nucleation_cells = np.random.random(size=ΔV.shape) < nucl_rate * dt
         positions = field.grid.cell_coords[nucleation_cells]
         if self.parameters["randomize_position"]:
             cell_bounds = self._cache["cell_bounds"][nucleation_cells]

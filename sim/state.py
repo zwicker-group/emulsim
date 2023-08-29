@@ -160,6 +160,23 @@ class State(Parameterized, DictState):
         for key, new_el_data in zip(self.data.keys(), state_data):
             self.data[key]._data_numba[...] = new_el_data
 
+    def copy(self, method: str = "clean", data=None):
+        """create a copy of the state
+
+        Args:
+            method (str):
+                Determines whether a `clean`, `shallow`, or `data` copy is performed.
+                See :meth:`~modelrunner.state.base.StateBase.copy` for details.
+            data:
+                Data to be used instead of the one in the current state. This data is
+                used as is and not copied!
+
+        Returns:
+            A copy of the current state object
+        """
+        # the sole purpose of this method is to set a default copy method
+        return super().copy(method, data=data)
+
     @property
     def elements(self) -> Dict[str, _ElementBase]:
         return self.data
