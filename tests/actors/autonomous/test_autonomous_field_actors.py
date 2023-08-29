@@ -32,8 +32,8 @@ def test_diffusion_vs_pde():
     """compare the diffusion background with the PDF actor"""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
-    e2 = e1.copy()
-    e3 = e1.copy()
+    e2 = e1.copy(method="data")
+    e3 = e1.copy(method="data")
 
     a1 = DiffusionActor()
     a2 = ScalarPDEActor(DiffusionPDE())
@@ -97,7 +97,7 @@ def test_diffusion_vs_reaction_diffusion():
     """compare the diffusion background with the RD-background"""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
-    e2 = e1.copy()
+    e2 = e1.copy(method="data")
 
     a1 = DiffusionActor()
     a2 = ReactionDiffusionActor()
@@ -134,7 +134,7 @@ def test_collection_pde():
 
     # test numpy implementation
     element = FieldCollectionElement.from_fields(fields)
-    element2 = element.copy()
+    element2 = element.copy(method="data")
     assert element.num_fields == 2
     assert element.degrees_of_freedom == 20
     actor = CollectionPDEActor(eqs)

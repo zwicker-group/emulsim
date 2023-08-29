@@ -20,7 +20,7 @@ def test_box_actor_reflect(periodic):
 
     coords = np.array([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5])
     p1 = PointsElement(coords.reshape(-1, 1))
-    p2 = p1.copy()
+    p2 = p1.copy(method="data")
 
     if periodic:
         expected = np.array([1.5, 2.5, 1.5, 2.5, 1.5, 2.5, 1.5, 2.5, 1.5, 2.5])
@@ -43,7 +43,7 @@ def test_box_actor_reflect_arrows(periodic):
     coords = np.array([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5])
     p1 = ArrowsElement.from_position_direction(coords.reshape(-1, 1), 1)
     assert p1.dim == 1
-    p2 = p1.copy()
+    p2 = p1.copy(method="data")
 
     if periodic:
         coords_exp = np.array([1.5, 2.5, 1.5, 2.5, 1.5, 2.5, 1.5, 2.5, 1.5, 2.5])

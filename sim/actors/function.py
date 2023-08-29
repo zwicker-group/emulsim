@@ -125,7 +125,7 @@ class NumbaFunctionActor(ActorBase):
                 evolving `state_data`
         """
         # run a quick test to see whether the function supports the correct arguments
-        elements_data = tuple(el.copy().data for el in elements)
+        elements_data = tuple(el.copy(method="data").data for el in elements)
         self.func(elements_data, 10.0, 1e-3)  # test call with arbitrary t and dt
 
         # actually compile the function since it seemed to have passed the test

@@ -31,11 +31,11 @@ def test_fields_1(dim):
 
     actor = FieldCouplingActor({"fields": ["a"], "evolution_rates": {"a": "1 + t"}})
 
-    state = element.copy()
+    state = element.copy(method="data")
     actor.evolve((state,), 1, 2)
     assert np.allclose(state.data, 6)
 
-    state = element.copy()
+    state = element.copy(method="data")
     evolver = actor.make_evolver_numba((state,))
     evolver((state._data_numba,), 1, 2)
     assert np.allclose(state.data, 6)
@@ -56,14 +56,14 @@ def test_fields_2(dim):
 
     actor = FieldCouplingActor({"fields": ["a", "b"], "evolution_rates": {"a": "+b"}})
 
-    e1 = element1.copy()
-    e2 = element2.copy()
+    e1 = element1.copy(method="data")
+    e2 = element2.copy(method="data")
     actor.evolve((e1, e2), 0, 1)
     assert np.allclose(e1.data, element1.data + element2.data)
     assert np.allclose(e2.data, element2.data)
 
-    e1 = element1.copy()
-    e2 = element2.copy()
+    e1 = element1.copy(method="data")
+    e2 = element2.copy(method="data")
     evolver = actor.make_evolver_numba((e1, e2))
     evolver((e1._data_numba, e2._data_numba), 0, 1)
     assert np.allclose(e1.data, element1.data + element2.data)

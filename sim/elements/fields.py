@@ -448,6 +448,8 @@ class ScalarFieldElement(FieldElementBase):
         Parameter("label", "", str, "The name of the field"),
     ]
 
+    _field: ScalarField
+
     def __init__(
         self, data: NumberOrArray = 0, parameters: Optional[Dict[str, Any]] = None
     ):
@@ -460,7 +462,7 @@ class ScalarFieldElement(FieldElementBase):
                 importantly, the entry 'grid' determines the discretization grid
                 on which this field is defined.
         """
-        # this only defines a new default value
+        # this method only defines new default values
         super().__init__(data, parameters)  # type: ignore
 
     def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
@@ -478,9 +480,24 @@ class ScalarFieldElement(FieldElementBase):
                 f"for {self.grid.__class__.__name__}"
             )
 
-        self._field = ScalarField(self.grid, data, label=self.parameters["label"])
-        self.data = self._field.data
+        self.data = np.asarray(data)
         self.set_bounds(self.grid.axes_bounds)
+
+    @property
+    def data(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: Value at the valid grid points"""
+        return self._field.data
+
+    @data.setter
+    def data(self, data: np.ndarray) -> None:
+        # the main data needs to be stored inside `self._field`, because fields also
+        # have virtual points, whose data is controlled by boundary conditions.
+        # Consequently, we point the `data` attribute of the element to the valid data
+        # of the field data to keep everything in sync.
+        try:
+            self._field.data[:] = data
+        except AttributeError:
+            self._field = ScalarField(self.grid, data, label=self.parameters["label"])
 
     @classmethod
     def from_field(cls, field: ScalarField) -> ScalarFieldElement:
@@ -496,6 +513,32 @@ class ScalarFieldElement(FieldElementBase):
         assert isinstance(field, ScalarField)
         return cls(field.data, {"grid": field.grid, "label": field.label})
 
+    def copy(self, method: str, data=None):
+        """create a copy of the state
+
+        Args:
+            method (str):
+                Determines whether a `clean`, `shallow`, or `data` copy is performed.
+                See :meth:`~modelrunner.state.base.StateBase.copy` for details.
+            data:
+                Data to be used instead of the one in the current state. This data is
+                used as is and not copied!
+
+        Returns:
+            A copy of the current state object
+        """
+        if method == "data":
+            # copy the data by creating a shallow copy and copy the field data
+            # explicitely. This is important to keep the connection between the `_field`
+            # data attribute and the `data` itself
+            obj = super().copy("shallow")
+            obj._field = self._field.copy()
+            if data is not None:
+                obj.data = data
+        else:
+            obj = super().copy(method, data=data)
+        return obj
+
     @property
     def grid(self) -> CartesianGrid:
         """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid"""
@@ -509,7 +552,7 @@ class ScalarFieldElement(FieldElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size  # type: ignore
+        return self.data.size
 
     def plot(self, ax=None, **kwargs):
         """plot the field
@@ -592,6 +635,8 @@ class FieldCollectionElement(ArrayElementBase):
         Parameter("label", "", str, "The name of the field collection"),
     ]
 
+    _field: FieldCollection
+
     def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
@@ -607,20 +652,60 @@ class FieldCollectionElement(ArrayElementBase):
                 f"for {self.grid.__class__.__name__}"
             )
 
-        data = np.asarray(data)
-        if data.size == 1:
-            fields = [ScalarField(self.grid, data)]
-        else:
-            fields = [ScalarField(self.grid, field_data) for field_data in data]
-        self._field = FieldCollection(fields, label=self.parameters["label"])
-        self.data = self.field.data
-
+        self.data = np.asarray(data)
         self._cuboid = Cuboid.from_bounds(
             np.array(self.grid.axes_bounds, np.double), mutable=False
         )
         self.dim: int = self._cuboid.dim
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
+
+    @property
+    def data(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: Value at the valid grid points of all fields"""
+        return self._field.data
+
+    @data.setter
+    def data(self, data: np.ndarray) -> None:
+        # the main data needs to be stored inside `self._field`, because fields also
+        # have virtual points, whose data is controlled by boundary conditions.
+        # Consequently, we point the `data` attribute of the element to the valid data
+        # of the field data to keep everything in sync.
+        try:
+            self._field.data[:] = data
+        except AttributeError:
+            # need to create the actual field
+            if data.size == 1:
+                fields = [ScalarField(self.grid, data)]
+            else:
+                fields = [ScalarField(self.grid, field_data) for field_data in data]
+            self._field = FieldCollection(fields, label=self.parameters["label"])
+
+    def copy(self, method: str, data=None):
+        """create a copy of the state
+
+        Args:
+            method (str):
+                Determines whether a `clean`, `shallow`, or `data` copy is performed.
+                See :meth:`~modelrunner.state.base.StateBase.copy` for details.
+            data:
+                Data to be used instead of the one in the current state. This data is
+                used as is and not copied!
+
+        Returns:
+            A copy of the current state object
+        """
+        if method == "data":
+            # copy the data by creating a shallow copy and copy the field data
+            # explicitely. This is important to keep the connection between the `_field`
+            # data attribute and the `data` itself
+            obj = super().copy("shallow")
+            obj._field = self._field.copy()
+            if data is not None:
+                obj.data = data
+        else:
+            obj = super().copy(method, data=data)
+        return obj
 
     @property
     def num_fields(self) -> int:
@@ -658,7 +743,7 @@ class FieldCollectionElement(ArrayElementBase):
     @property
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
-        return self.data.size  # type: ignore
+        return self.data.size
 
     def plot(self, ax=None, **kwargs):
         """plot the field

@@ -851,14 +851,21 @@ class SphericalDropletActor(ActorBase):
         # determine minimal dt based on diffusion in shell
         shell_thickness = float(self._cache["shell_thickness"])
         if droplets.droplet_count > 0:
-            mean_radius = float(droplets.data["radius"].mean())
+            stats = droplets.droplets.get_size_statistics(incl_vanished=False)
+            mean_radius = float(stats["radius_mean"])
+            self._logger.info(
+                f"Base time step on shell thickness ({shell_thickness}) and mean "
+                f"droplet radius ({mean_radius})"
+            )
             length_scale = min(shell_thickness, mean_radius)
         else:
             length_scale = shell_thickness
 
         # ensure that characteristic length scale is not too small
         grid_size = max(bounds[1] - bounds[0] for bounds in field.grid.axes_bounds)
-        length_scale = max(length_scale, 1e-4 * grid_size)
+        if length_scale < 1e-4 * grid_size:
+            self._logger.info("Limit time step by grid size")
+            length_scale = 1e-4 * grid_size
 
         # calculate time scale from length scale and diffusivity
         return 0.1 * length_scale**2 / float(self.parameters["diffusivity"])

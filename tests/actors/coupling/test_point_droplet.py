@@ -47,7 +47,7 @@ def test_point_droplets_diffusion(dim):
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
 
-    droplets2 = droplets.copy()
+    droplets2 = droplets.copy(method="data")
     assert droplets2 is not droplets
     assert np.array_equal(droplets2.data, droplets.data)
 
@@ -78,7 +78,7 @@ def test_point_droplets_diffusion_coarsening(dim):
     coupling1 = PointDropletActor()
     ceq = coupling1.get_equilibrium_concentrations(droplets1).mean()
     field1.concentration = ceq
-    field2 = field1.copy()
+    field2 = field1.copy(method="data")
 
     total_amount = pytest.approx(field1.total_amount + droplets1.total_amount)
 
@@ -150,7 +150,7 @@ def test_point_droplets_linear(dim):
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
 
-    droplets2 = droplets.copy()
+    droplets2 = droplets.copy(method="data")
     assert droplets2 is not droplets
     assert np.array_equal(droplets2.data, droplets.data)
 

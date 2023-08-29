@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from droplets import SphericalDroplet
-from pde import DiffusionPDE, ScalarField, UnitGrid
-from pde.tools.misc import module_available
+from pde import CartesianGrid, DiffusionPDE, ScalarField, UnitGrid
+from pde.tools.misc import module_available, skipUnlessModule
 
 import sim
 from helpers import assert_recarrays_allclose
@@ -62,10 +62,10 @@ def test_adaptive_simulation_simple(backend):
     state = sim.State({"field": element})
 
     # prepare simulation
-    simulation = sim.Simulation(state.copy())
+    simulation = sim.Simulation(state.copy(method="data"))
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
-    simulation2 = simulation.copy()
+    simulation2 = simulation.copy(method="data")
 
     # run simulation using fixed and adaptive time steps
     simulation.run(t_range=1, backend=backend, tracker=None)
@@ -76,28 +76,49 @@ def test_adaptive_simulation_simple(backend):
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
+@skipUnlessModule("phasesep")
+def test_adaptive_reaction_diffusion():
+    """test adaptive reaction-diffusion simulation"""
+    # set up state
+    grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+    field = ScalarField.random_uniform(grid)
+    element = sim.ScalarFieldElement.from_field(field)
+    state = sim.State({"field": element})
+
+    # prepare simulation
+    simulation = sim.Simulation(state)
+    simulation.add_actor(
+        "field", sim.ReactionDiffusionActor({"reaction_flux": "0.01 - 0.1 * c"})
+    )
+    result = simulation.run(t_range=100, adaptive=True, tracker=None)
+
+    np.testing.assert_allclose(result["field"].data, 0.1, atol=1e-4)
+
+
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_adaptive_simulation_complex(backend):
     """test some adaptive simulations"""
+    thresh = {"numpy": 5, "numba": 25}[backend]
+
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
     # run simulation using fixed time steps
-    simulation = sim.Simulation(state.copy())
+    simulation = sim.Simulation(state.copy(method="data"))
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, tracker=None)
     result = simulation.state["field"].data
+    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
     # run simulation using adaptive time steps
-    simulation = sim.Simulation(state.copy())
+    simulation = sim.Simulation(state.copy(method="data"))
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation.state["field"].data)
-    thresh = {"numpy": 5, "numba": 25}[backend]
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
@@ -136,7 +157,7 @@ def test_simulation_cache(backend, use_cache):
     droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
     droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
     state = sim.State({"background": background, "droplets": droplets})
-    state2 = state.copy()
+    state2 = state.copy(method="clean")
 
     # setup simulation
     diff_actor = sim.DiffusionActor()

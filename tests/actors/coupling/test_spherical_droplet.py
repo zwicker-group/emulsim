@@ -121,7 +121,7 @@ def test_spherical_droplets(dim):
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
 
-    droplets2 = droplets.copy()
+    droplets2 = droplets.copy(method="data")
     assert droplets2 is not droplets
     assert np.array_equal(droplets2.data, droplets.data)
 
@@ -172,7 +172,7 @@ def test_spherical_droplets_const_shell_count(dim):
     assert droplets.total_amount != total_amount
     assert droplets.data[0].radius == radius
 
-    droplets2 = droplets.copy()
+    droplets2 = droplets.copy(method="data")
     assert droplets2 is not droplets
     assert np.array_equal(droplets2.data, droplets.data)
 
@@ -384,7 +384,7 @@ def test_multithreading():
     """simple consistency test for multiprocessing"""
     grid = UnitGrid([1])
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
-    field2 = field1.copy()
+    field2 = field1.copy(method="data")
 
     emulsion = Emulsion(
         [

@@ -46,7 +46,7 @@ def test_elements_numpy(element, grid):
     assert np.allclose(element.get_concentration([p, p]), np.full(2, 2))
 
     # test copying the element
-    element2 = element.copy()
+    element2 = element.copy(method="data")
     assert element2 is not element
     assert np.array_equal(element2.data, element.data)
 
@@ -101,7 +101,7 @@ def test_reservoir():
     assert np.allclose(result, np.full(2, 2))
 
     # test copying the element
-    element2 = element.copy()
+    element2 = element.copy(method="data")
     assert element2 is not element
     assert np.array_equal(element2.data, element.data)
 
