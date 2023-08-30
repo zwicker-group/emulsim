@@ -373,7 +373,11 @@ class State(Parameterized, DictState):
                 """estimate error for all elements"""
                 error = 0
                 for el_err, el1, el2 in zip(el_errs, state1, state2):
-                    e = el_err(el1, el2)
+                    # The extra cast to a float can be sometimes necessary. We had one
+                    # case where the error estimator of an ArrayState returned an record
+                    # array, which caused problems downstream. To catch such errors
+                    # early, we make an explicit cast here.
+                    e = float(el_err(el1, el2))
                     if np.isnan(e):
                         return e  # type: ignore
                     else:
