@@ -7,7 +7,7 @@ Test spherical droplets elements functionality
 import numpy as np
 import pytest
 
-from droplets import SphericalDroplet
+from droplets import Emulsion, SphericalDroplet
 
 from sim.elements import SphericalDropletsElement
 
@@ -43,3 +43,29 @@ def test_spherical_droplets_element(dim):
     assert len(element.droplets) == 5
     np.testing.assert_allclose(element.data[:3]["radius"], 1)
     np.testing.assert_allclose(element.data[3:]["radius"], 0)
+
+
+@pytest.mark.parametrize("dim", [1, 2])
+def test_spherical_droplets_element_empty(dim):
+    """test empty spherical droplets elements"""
+    d = SphericalDroplet([0] * dim, 1)
+
+    # really empty
+    el = SphericalDropletsElement.from_droplets(Emulsion([], dtype=d.data.dtype))
+    assert el.droplet_count == 0
+    assert el.data.size == 0
+
+    el = SphericalDropletsElement.empty(d, 0)
+    assert el.droplet_count == 0
+    assert el.data.size == 0
+
+    # additional space
+    el = SphericalDropletsElement.from_droplets(
+        Emulsion([], dtype=d.data.dtype), maxcount=3
+    )
+    assert el.droplet_count == 0
+    assert el.data.size == 3
+
+    el = SphericalDropletsElement.empty(d, 3)
+    assert el.droplet_count == 0
+    assert el.data.size == 3

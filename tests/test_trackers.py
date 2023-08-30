@@ -51,14 +51,13 @@ def test_element_trackers(tmp_path):
     simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
     # run simulation
-    drop_t = sim.DropletElementTracker("droplets", background_grid=grid)
+    drop_t = sim.DropletElementTracker("droplets")
     traj_t = sim.TrajectoryTracker(tmp_path / "trajectory")
     simulation.run(t_range=2.5, dt=0.1, backend="numpy", tracker=[drop_t, traj_t])
 
     # test EmulsionTimeCourse
     np.testing.assert_allclose(drop_t.emulsions.times, [0, 1, 2])
     assert [len(em) for em in drop_t.emulsions] == [2] * 3
-    assert drop_t.emulsions.grid == grid
 
     # test DropletTrackList
     assert len(drop_t.droplet_tracks) == 2

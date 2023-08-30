@@ -95,8 +95,8 @@ class CoalescenceDropletActor(ActorBase):
         """
         drop_el: MulticomponentDropletsElement = elements[0]  # type: ignore
         droplets = drop_el.droplets
-        positions = droplets.data["position"]  # type: ignore
-        radii = droplets.data["radius"]  # type: ignore
+        positions = droplets.data["position"]
+        radii = droplets.data["radius"]
 
         # sort all droplets by radius
         indices = np.argsort(radii)
