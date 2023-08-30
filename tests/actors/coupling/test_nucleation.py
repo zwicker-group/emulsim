@@ -5,6 +5,7 @@
 import numpy as np
 import pytest
 
+from droplets import Emulsion, SphericalDroplet
 from pde import ScalarField, UnitGrid
 
 from sim import DropletElementTracker, Simulation, State
@@ -23,9 +24,12 @@ def test_nucleation(dim, field_cls, backend):
     elif dim == 2:
         grid = UnitGrid([10, 10])
     background_el = field_cls.from_field(ScalarField(grid))
-    droplets_el = SphericalDropletsElement.from_random(
-        1, bounds=grid, radius=0.1, maxcount=100
-    )
+    drop = SphericalDroplet(grid.get_random_point(), radius=0.1)
+    drops = Emulsion([], dtype=drop.data.dtype)
+    droplets_el = SphericalDropletsElement.from_droplets(drops, maxcount=100)
+    # droplets_el = SphericalDropletsElement.from_random(
+    #     1, bounds=grid, radius=0.1, maxcount=100
+    # )
     state = State({"background": background_el, "droplets": droplets_el})
 
     # setup simulation
@@ -48,7 +52,7 @@ def test_nucleation(dim, field_cls, backend):
 
     drop_count = [len(e) for e in drop_tracker.emulsions]
     assert np.all(grid.contains_point(drop_tracker.emulsions[-1].data["position"]))
-    assert drop_count[0] == 1
+    assert drop_count[0] == 0
     assert result["background"].total_amount < 0
     assert np.all(np.diff(drop_count) >= 0)
     if dim == 1:

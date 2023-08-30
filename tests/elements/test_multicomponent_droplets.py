@@ -5,6 +5,7 @@
 import numpy as np
 import pytest
 
+from droplets import Emulsion
 from pde.tools.numba import jit
 
 from sim.elements import MulticomponentDroplet, MulticomponentDropletsElement
@@ -41,3 +42,34 @@ def test_multicomponent_droplets(dim, num_comps):
     merge_data(d1.data, d2.data, out=d3.data)
     np.testing.assert_allclose(d3.position, [1] * dim)
     np.testing.assert_allclose(d3.amounts, [3] * num_comps)
+
+
+@pytest.mark.parametrize("dim", [1, 2])
+@pytest.mark.parametrize("num_comps", [1, 2])
+def test_empty_multicomponent_droplets(dim, num_comps):
+    """test empty MulticomponentDropletsElement"""
+    d = MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps)
+
+    # really empty
+    el = MulticomponentDropletsElement.from_droplets(Emulsion([], dtype=d.data.dtype))
+    assert el.droplet_count == 0
+    assert el.data.size == 0
+    assert el.num_comps == num_comps
+
+    el = MulticomponentDropletsElement.empty(d, 0)
+    assert el.droplet_count == 0
+    assert el.data.size == 0
+    assert el.num_comps == num_comps
+
+    # additional space
+    el = MulticomponentDropletsElement.from_droplets(
+        Emulsion([], dtype=d.data.dtype), maxcount=3
+    )
+    assert el.droplet_count == 0
+    assert el.num_comps == num_comps
+    assert el.data.size == 3
+
+    el = MulticomponentDropletsElement.empty(d, 3)
+    assert el.droplet_count == 0
+    assert el.num_comps == num_comps
+    assert el.data.size == 3

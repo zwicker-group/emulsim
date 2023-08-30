@@ -48,8 +48,11 @@ class SphericalDropletsElement(ArrayElementBase):
 
         if data is not NoData:
             # extract the droplets from data if given
+            drop_list = [
+                self.droplet_class.from_data(data_row) for data_row in self.data
+            ]
             droplets = Emulsion(
-                [self.droplet_class.from_data(data_row) for data_row in self.data]  # type: ignore
+                drop_list, copy=False, dtype=self.data.dtype, force_consistency=True  # type: ignore
             )
             # initialize the droplet information in the class
             self._init_droplets(droplets)
@@ -70,20 +73,21 @@ class SphericalDropletsElement(ArrayElementBase):
                 this element. If `maxcount > len(droplets)`, the additional entries are
                 intialized as zero.
         """
-        if len(droplets) == 0:
+        if droplets.dtype is None:
             raise ValueError(
-                "Need a droplet to initialize element. This can be an vanished droplet "
-                "with zero radius."
+                "Need a valid emulsion to initialize element, i.e., there must be one "
+                "droplet (with potentially vanishing radius) or dtype must be set."
             )
 
         if maxcount is not None:
             # ensure that len(droplets) >= maxcount
             if maxcount > len(droplets):
                 # append empty droplets to list
-                empty_droplet = droplets[0].copy(radius=0)
-                empty_droplet.data["position"] = 0
+                empty_droplet = self.droplet_class.from_data(
+                    np.zeros(1, dtype=droplets.dtype)[0]
+                )
                 for _ in range(maxcount - len(droplets)):
-                    droplets.append(empty_droplet, copy=True)
+                    droplets.append(empty_droplet, copy=True)  # type: ignore
                 assert len(droplets) == maxcount
 
         self.droplets = droplets  # set the given droplets as an attribute
@@ -100,6 +104,34 @@ class SphericalDropletsElement(ArrayElementBase):
         # note that the conversion to a record array is necessary so the attribute
         # access works when code intended for numba is executed in pure python, e.g.,
         # for coverage determination
+
+    @classmethod
+    def empty(
+        cls,
+        droplet: SphericalDroplet,
+        maxcount: int,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> SphericalDropletsElement:
+        """create empty SphericalDropletsElement that can be filled with droplets later
+
+        Args:
+            droplet (:class:`~droplets.droplets.SphericalDroplet`):
+                Example of a droplet to define the kind of emulsion
+            maxcount (int):
+                Sets the maximal number of droplets that can be stored in this element.
+            parameters (dict):
+                Additional parameters. Call
+                :meth:`~SphericalDropletsElement.show_parameters` for details.
+
+        Returns:
+            :class:`SphericalDropletsElement`: The initialized element
+        """
+        obj = cls.__new__(cls)  # create class without calling its __init__
+        obj._state_init({"parameters": parameters})  # initialize generally
+        obj._init_droplets(
+            Emulsion([], copy=False, dtype=droplet.data.dtype), maxcount=maxcount
+        )
+        return obj
 
     @classmethod
     def from_droplets(
@@ -129,7 +161,11 @@ class SphericalDropletsElement(ArrayElementBase):
         """
         obj = cls.__new__(cls)  # create class without calling its __init__
         obj._state_init({"parameters": parameters})  # initialize generally
-        obj._init_droplets(Emulsion(droplets, copy=copy), maxcount=maxcount)
+        dtype = droplets.data.dtype if hasattr(droplets, "data") else None
+        obj._init_droplets(
+            Emulsion(droplets, copy=copy, dtype=dtype, force_consistency=True),
+            maxcount=maxcount,
+        )
         return obj
 
     @classmethod
@@ -184,6 +220,7 @@ class SphericalDropletsElement(ArrayElementBase):
             grid_or_bounds=axes_bounds,
             radius=radius,
             remove_overlapping=remove_overlapping,
+            droplet_class=cls.droplet_class,
             rng=rng,
         )
 

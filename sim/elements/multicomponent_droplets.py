@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
@@ -192,12 +192,10 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
     droplet_class = MulticomponentDroplet  # type: ignore
 
     @property
-    def num_comps(self) -> Optional[int]:
+    def num_comps(self) -> int:
         """int: the number of components inside each droplet"""
-        if len(self) > 0:
-            return int(self.droplets[0].num_comps)  # type: ignore
-        else:
-            return None
+        shape = self.data.dtype.fields["amounts"][0].shape
+        return int(shape[0]) if shape else 1
 
     @property
     def phis(self) -> np.ndarray:
