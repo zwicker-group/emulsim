@@ -50,26 +50,30 @@ def test_empty_multicomponent_droplets(dim, num_comps):
     """test empty MulticomponentDropletsElement"""
     d = MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps)
 
+    def check(el, size, num_comps=num_comps):
+        assert el.droplet_count == 0
+        assert el.data.size == size
+        assert el.dim == dim
+        assert el.num_comps == num_comps
+
     # really empty
     el = MulticomponentDropletsElement.from_droplets(Emulsion([], dtype=d.data.dtype))
-    assert el.droplet_count == 0
-    assert el.data.size == 0
-    assert el.num_comps == num_comps
+    check(el, 0)
 
-    el = MulticomponentDropletsElement.empty(d, 0)
-    assert el.droplet_count == 0
-    assert el.data.size == 0
-    assert el.num_comps == num_comps
+    el = MulticomponentDropletsElement.empty(0, droplet=d)
+    check(el, 0)
+
+    el = MulticomponentDropletsElement.empty(0, dim=dim)
+    check(el, 0, num_comps=1)
 
     # additional space
     el = MulticomponentDropletsElement.from_droplets(
         Emulsion([], dtype=d.data.dtype), maxcount=3
     )
-    assert el.droplet_count == 0
-    assert el.num_comps == num_comps
-    assert el.data.size == 3
+    check(el, 3)
 
-    el = MulticomponentDropletsElement.empty(d, 3)
-    assert el.droplet_count == 0
-    assert el.num_comps == num_comps
-    assert el.data.size == 3
+    el = MulticomponentDropletsElement.empty(3, droplet=d)
+    check(el, 3)
+
+    el = MulticomponentDropletsElement.empty(3, dim=dim)
+    check(el, 3, num_comps=1)

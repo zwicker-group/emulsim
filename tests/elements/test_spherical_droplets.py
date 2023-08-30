@@ -50,22 +50,32 @@ def test_spherical_droplets_element_empty(dim):
     """test empty spherical droplets elements"""
     d = SphericalDroplet([0] * dim, 1)
 
+    def check(el, size):
+        assert el.droplet_count == 0
+        assert el.data.size == size
+        assert el.dim == dim
+
     # really empty
     el = SphericalDropletsElement.from_droplets(Emulsion([], dtype=d.data.dtype))
-    assert el.droplet_count == 0
-    assert el.data.size == 0
+    check(el, 0)
 
-    el = SphericalDropletsElement.empty(d, 0)
-    assert el.droplet_count == 0
-    assert el.data.size == 0
+    el = SphericalDropletsElement.empty(0, droplet=d)
+    check(el, 0)
+
+    el = SphericalDropletsElement.empty(0, dim=dim)
+    check(el, 0)
 
     # additional space
     el = SphericalDropletsElement.from_droplets(
         Emulsion([], dtype=d.data.dtype), maxcount=3
     )
-    assert el.droplet_count == 0
-    assert el.data.size == 3
+    check(el, 3)
 
-    el = SphericalDropletsElement.empty(d, 3)
-    assert el.droplet_count == 0
-    assert el.data.size == 3
+    el = SphericalDropletsElement.empty(3, droplet=d)
+    check(el, 3)
+
+    el = SphericalDropletsElement.empty(3, dim=dim)
+    check(el, 3)
+
+    with pytest.raises(TypeError):
+        SphericalDropletsElement.empty(1)
