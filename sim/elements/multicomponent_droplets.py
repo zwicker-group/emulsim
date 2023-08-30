@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
@@ -27,7 +27,7 @@ class MulticomponentDroplet(SphericalDroplet):
         self,
         position: np.ndarray,
         radius: float,
-        amounts: np.ndarray,
+        amounts: Optional[np.ndarray] = None,
     ):
         """
         Args:
@@ -36,10 +36,14 @@ class MulticomponentDroplet(SphericalDroplet):
             radius (float):
                 Radius of the droplet
             amounts (:class:`~numpy.ndarray`):
-                The amounts of material of each component
+                The amounts of material of each component. If omitted, a single
+                component with vanishing amounts is assumed.
         """
         self._init_data(position=position, amounts=amounts)
-        self.data["amounts"] = amounts
+        if amounts is None:
+            self.data["amounts"] = np.zeros(1)
+        else:
+            self.data["amounts"] = amounts
         super().__init__(position=position, radius=radius)
 
     @classmethod
@@ -80,8 +84,9 @@ class MulticomponentDroplet(SphericalDroplet):
         # extract data
         amounts = kwargs.pop("amounts")
         if amounts is None:
-            assert TypeError("Require `amounts` argument")
-        num_comps = len(amounts)
+            num_comps = 1
+        else:
+            num_comps = len(amounts)
         assert num_comps >= 1
 
         # create dtype
@@ -189,7 +194,7 @@ class MulticomponentDroplet(SphericalDroplet):
 class MulticomponentDropletsElement(SphericalDropletsElement):
     """an element representing many multicomponent droplets"""
 
-    droplet_class = MulticomponentDroplet  # type: ignore
+    droplet_class = MulticomponentDroplet
 
     @property
     def num_comps(self) -> int:

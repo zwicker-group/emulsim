@@ -108,17 +108,26 @@ class SphericalDropletsElement(ArrayElementBase):
     @classmethod
     def empty(
         cls,
-        droplet: SphericalDroplet,
         maxcount: int,
+        *,
+        dim: Optional[int] = None,
+        droplet: Optional[SphericalDroplet] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> SphericalDropletsElement:
         """create empty SphericalDropletsElement that can be filled with droplets later
 
+        Since :class:`SphericalDropletsElement` needs to know what kind of droplets it
+        describes, this information needs to be supplied, either in form of an example
+        droplet (via the `droplet` argument) or via setting the dimension of space (via
+        the `dim` argument).
+
         Args:
-            droplet (:class:`~droplets.droplets.SphericalDroplet`):
-                Example of a droplet to define the kind of emulsion
             maxcount (int):
                 Sets the maximal number of droplets that can be stored in this element.
+            dim (int):
+                Dimensionality of the space to determine dtype of position
+            droplet (:class:`~droplets.droplets.SphericalDroplet`):
+                Example of a droplet to define the kind of emulsion
             parameters (dict):
                 Additional parameters. Call
                 :meth:`~SphericalDropletsElement.show_parameters` for details.
@@ -128,9 +137,19 @@ class SphericalDropletsElement(ArrayElementBase):
         """
         obj = cls.__new__(cls)  # create class without calling its __init__
         obj._state_init({"parameters": parameters})  # initialize generally
-        obj._init_droplets(
-            Emulsion([], copy=False, dtype=droplet.data.dtype), maxcount=maxcount
-        )
+
+        # determine example droplet to set the `dtype`
+        if droplet is None:
+            if dim is not None:
+                droplet = cls.droplet_class(np.zeros(dim), 0.0)
+            else:
+                raise TypeError("Either `droplet` or `dim` need to be set")
+        elif dim is not None:
+            assert droplet.dim == dim
+
+        # initialize empty emulsion
+        emulsion = Emulsion([], copy=False, dtype=droplet.data.dtype)
+        obj._init_droplets(emulsion, maxcount=maxcount)
         return obj
 
     @classmethod
