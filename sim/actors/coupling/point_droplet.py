@@ -76,6 +76,16 @@ class PointDropletActor(ActorBase):
             "the `flux_model` is `linear`. This can either be a number of an "
             "expression, which can depend on the radius `R` of the droplet.",
         ),
+        Parameter(
+            "mean_reaction_inside",
+            "0",
+            str,
+            "Mean reaction rate inside the droplet, which determines the production of "
+            "droplet material per unit volume. This can be an expression that depends "
+            "on the droplet radius `R`, its location `position`, or its identity `id` "
+            "(the index in the list of droplets). Use negative values to destroy "
+            "droplet material inside the droplet.",
+        ),
     ]
 
     element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])  # type: ignore
@@ -117,6 +127,14 @@ class PointDropletActor(ActorBase):
         )
         self._cache["exchange_rate"] = self._parse_expression(
             self.parameters["exchange_rate"], [["radius", "R"]]
+        )
+        self._cache["sBaseIn"] = self._parse_expression(
+            self.parameters["mean_reaction_inside"],
+            [
+                ["position", "pos", "x"],
+                ["radius", "R"],
+                ["i", "id"],
+            ],
         )
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
@@ -296,7 +314,12 @@ class PointDropletActor(ActorBase):
             # try compiling in case cEqOut is a function
             calc_cEqOut = jit(cEqOut)
         cBaseIn = droplets.parameters["droplet_concentration"]
-        #         sBaseIn = self.pde._reaction(c=cBaseIn, t=0)
+        sBaseInFunc = self._cache["sBaseIn"]
+        if hasattr(sBaseInFunc, "get_compiled"):
+            calc_sBaseIn = sBaseInFunc.get_compiled()
+        else:
+            # try compiling in case sBaseIn is a function
+            calc_sBaseIn = jit(sBaseInFunc)
 
         radius = spherical.make_radius_from_volume_compiled(self._cache["dim"])
         volume = spherical.make_volume_from_radius_compiled(self._cache["dim"])
@@ -332,7 +355,9 @@ class PointDropletActor(ActorBase):
             amount_out = -dt * flux_out
 
             # amount produced in the inside
-            sBaseIn = 0
+            sBaseIn = calc_sBaseIn(
+                droplet_data.position, droplet_data.radius, droplet_id
+            )
             V = volume(R)
             amount_in = dt * sBaseIn * V
 
@@ -396,6 +421,7 @@ class PointDropletActor(ActorBase):
         self._check_cache(elements)
         droplets, field = elements
         calc_cEqOut = self._cache["cEqOut"]
+        calc_sBaseIn = self._cache["sBaseIn"]
 
         for droplet_id, droplet in enumerate(droplets.droplets):
             if droplet.radius == 0:
@@ -414,8 +440,8 @@ class PointDropletActor(ActorBase):
             # amount taken up from the outside
             amount_out = -dt * flux_out
             # amount produced inside the droplet
-            # amount_total_in = params['dt'] * sBaseIn * droplet.volume
-            amount_in = 0
+            sBaseIn = calc_sBaseIn(droplet.position, droplet.radius, droplet_id)
+            amount_in = dt * sBaseIn * droplet.volume
 
             # update the droplet volume
             dV = (amount_in + amount_out) / cEqIn
