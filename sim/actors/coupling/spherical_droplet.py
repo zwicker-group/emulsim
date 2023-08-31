@@ -1,10 +1,13 @@
 """
 Provides a coupling of extended spherical droplets to a field
 
-This module also provides a class for managing a collection of spherical shells
-with different subdivisions into spherical sectors. Each sector is defined by a
-unit vector pointing to its center and an associated weight, which captures is
-local size compared to all other shell sectors.
+This module also provides a class for managing a collection of spherical shells with
+different subdivisions into spherical sectors. Each sector is defined by a unit vector
+pointing to its center and an associated weight, which captures is local size compared
+to all other shell sectors. These shell sectors are used to connect the diffusive fluxes
+right outside droplets to the background field; see the pulbication for details:
+`A. Kulkarni, E. Vidal-Henriquez, and D. Zwicker, Sci. Rep. 13, 733 
+<https://doi.org/10.1038/s41598-023-27630-3>`_.
 
 .. autosummary::
    :nosignatures:

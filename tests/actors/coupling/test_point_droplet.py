@@ -183,3 +183,36 @@ def test_point_droplets_linear_coarsening(dim):
 
     assert emulsion[0].radius < 0.1
     assert emulsion[1].radius > 0.2
+
+
+@pytest.mark.parametrize("compiled", [False, True])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_point_droplets_reactions_inside(dim, compiled):
+    """simple test of SphericalDropletAgents with reactions"""
+    grid = UnitGrid([3] * dim)
+    field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
+
+    d1 = SphericalDropletsElement.from_droplets([SphericalDroplet([1] * dim, 1)])
+    c1 = PointDropletActor({"flux_model": "diffusion" if dim == 3 else "linear"})
+
+    d2 = SphericalDropletsElement.from_droplets([SphericalDroplet([2] * dim, 1)])
+    c2 = PointDropletActor(
+        {
+            "flux_model": "diffusion" if dim == 3 else "linear",
+            "mean_reaction_inside": "-1",
+        }
+    )
+
+    state = State({"field": field, "d1": d1, "d2": d2})
+    sim = Simulation(state)
+    sim.add_actor(("d1", "field"), c1)
+    sim.add_actor(("d2", "field"), c2)
+
+    assert 0 < sim.estimate_dt(state) < 1000
+
+    if compiled:
+        evolver = sim.make_evolver_numba(state)
+        evolver(state._data_numba, 0, 0.5)
+    else:
+        sim.evolve(state, 0, 0.5)
+    assert d1.total_amount > d2.total_amount
