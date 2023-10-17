@@ -29,7 +29,6 @@ import scipy.special as sc
 
 from droplets.tools import spherical
 from pde import ScalarField
-from pde.grids.base import DimensionError
 from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
@@ -787,12 +786,8 @@ class SphericalDropletActor(ActorBase):
         """
         droplets, field = elements
 
-        if field.dim is not None and droplets.dim != field.dim:
-            raise DimensionError(
-                "Droplets have a different dimension than the background "
-                f"({droplets.dim} != {field.dim})"
-            )
-
+        if droplets.dim is not None:
+            field.check_coupling_dim(droplets.dim)
         self._cache["dim"] = droplets.dim
 
         # parse the equilibrium concentration and the reaction rates outside
@@ -823,6 +818,8 @@ class SphericalDropletActor(ActorBase):
                 self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
             )
         elif self.parameters["shell_sector_method"] == "count":
+            if droplets.dim is None:
+                raise ValueError("Need to specify the dimensionality of droplets")
             sector_count = self.parameters["shell_sector_count"]
             shells = ShellSectors.generate(droplets.dim, sector_count=sector_count)
         else:

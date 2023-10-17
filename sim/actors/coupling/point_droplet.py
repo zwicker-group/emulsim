@@ -10,7 +10,6 @@ from typing import Callable, List, Tuple, Union
 import numpy as np
 
 from droplets.tools import spherical
-from pde.grids.base import DimensionError
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 
@@ -73,7 +72,8 @@ class PointDropletActor(ActorBase):
             1.0,
             object,
             "Rate with which droplet material is exchanged with the dilute phase when "
-            "the `flux_model` is `linear`. This can either be a number of an "
+            "the `flux_model` is `linear`. Must be the total flux exchanged from the "
+            "droplet torward the background field. This can either be a number of an "
             "expression, which can depend on the radius `R` of the droplet.",
         ),
         Parameter(
@@ -114,13 +114,10 @@ class PointDropletActor(ActorBase):
         """
         droplets, field = elements
 
-        if field.dim is not None and droplets.dim != field.dim:
-            raise DimensionError(
-                "Droplets have a different dimension than the background "
-                f"({droplets.dim} != {field.dim})"
-            )
-
+        if droplets.dim is not None:
+            field.check_coupling_dim(droplets.dim)
         self._cache["dim"] = droplets.dim
+
         self._cache["cEqOut"] = self._parse_expression(
             self.parameters["equilibrium_concentration"],
             [["position", "pos", "x"], ["radius", "R"], ["i", "id"]],
@@ -149,16 +146,17 @@ class PointDropletActor(ActorBase):
         """
         self._check_cache(elements)
         droplets, field = elements
+        mean_radius = float(droplets.data["radius"].mean())
 
         if self.parameters["flux_model"] == "diffusion":
             # estimate time scale from diffusion across droplet
             D = float(self.parameters["diffusivity"])
-            mean_radius = float(droplets.data["radius"].mean())
             dt: float = 0.1 * mean_radius**2 / D
 
         elif self.parameters["flux_model"] == "linear":
             # estimate time scale from dissolution of droplet by flux
-            exchange_rate = float(self.parameters["exchange_rate"])
+            calc_exchange_rate = self._cache["exchange_rate"]
+            exchange_rate = calc_exchange_rate(mean_radius)
             ceqs = self.get_equilibrium_concentrations(droplets)
             if len(ceqs) == 0:
                 dt = math.nan  # cannot determine time step
