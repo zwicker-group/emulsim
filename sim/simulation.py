@@ -16,7 +16,18 @@ import copy
 import logging
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numba as nb
 import numpy as np
@@ -92,7 +103,7 @@ class Simulation:
             actor_infos.append(info)
         return {"state": self.state.attributes, "actors": actor_infos}
 
-    def copy(self, method: str) -> Simulation:
+    def copy(self, method: Literal["clean", "shallow", "data"]) -> Simulation:
         """returns a copy the entire simulation
 
         Args:

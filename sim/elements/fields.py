@@ -16,12 +16,11 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 from numba.extending import register_jitable
 
-from modelrunner.state import NoData
 from pde.fields import FieldCollection, ScalarField
 from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
@@ -31,7 +30,7 @@ from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
 
 from .. import Parameter
-from .base import ArrayElementBase
+from .base import ArrayElementBase, NoData
 
 
 class ReservoirElement(ArrayElementBase):
@@ -252,7 +251,7 @@ class MeanfieldElement(FieldElementBase):
         # this only defines a new default value
         super().__init__(data, parameters)  # type: ignore
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -264,7 +263,7 @@ class MeanfieldElement(FieldElementBase):
             data = np.zeros((1,), dtype=np.double)
         else:
             data = np.full((1,), data, dtype=np.double)
-        super()._state_init(attributes, data)
+        super()._init_state(attributes, data)
 
         if self.parameters["bounds"] is None:
             raise ValueError("`bounds` need to be specified in parameters")
@@ -465,22 +464,28 @@ class ScalarFieldElement(FieldElementBase):
         # this method only defines new default values
         super().__init__(data, parameters)  # type: ignore
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        super()._state_init(attributes)
+        super()._init_state(attributes)
 
         if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
                 "The simulations are only been implemented for Cartesian grids and not "
-                f"for {self.grid.__class__.__name__}"
+                f"for {self.grid}"
             )
 
-        self.data = np.asarray(data)
+        # the main data needs to be stored inside `self._field`, because fields also
+        # have virtual points, whose data is controlled by boundary conditions.
+        # Consequently, we point the `data` attribute of the element to the valid data
+        # of the field data to keep everything in sync.
+        self._field = ScalarField(
+            self.grid, np.asarray(data), label=self.parameters["label"]
+        )
         self.set_bounds(self.grid.axes_bounds)
 
     @property
@@ -490,14 +495,7 @@ class ScalarFieldElement(FieldElementBase):
 
     @data.setter
     def data(self, data: np.ndarray) -> None:
-        # the main data needs to be stored inside `self._field`, because fields also
-        # have virtual points, whose data is controlled by boundary conditions.
-        # Consequently, we point the `data` attribute of the element to the valid data
-        # of the field data to keep everything in sync.
-        try:
-            self._field.data[:] = data
-        except AttributeError:
-            self._field = ScalarField(self.grid, data, label=self.parameters["label"])
+        self._field.data[:] = data
 
     @classmethod
     def from_field(cls, field: ScalarField) -> ScalarFieldElement:
@@ -513,7 +511,7 @@ class ScalarFieldElement(FieldElementBase):
         assert isinstance(field, ScalarField)
         return cls(field.data, {"grid": field.grid, "label": field.label})
 
-    def copy(self, method: str, data=None):
+    def copy(self, method: Literal["clean", "shallow", "data"], data=None):
         """create a copy of the state
 
         Args:
@@ -637,14 +635,14 @@ class FieldCollectionElement(ArrayElementBase):
 
     _field: FieldCollection
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        super()._state_init(attributes)
+        super()._init_state(attributes)
 
         if not isinstance(self.grid, CartesianGrid):
             raise NotImplementedError(
@@ -681,7 +679,7 @@ class FieldCollectionElement(ArrayElementBase):
                 fields = [ScalarField(self.grid, field_data) for field_data in data]
             self._field = FieldCollection(fields, label=self.parameters["label"])
 
-    def copy(self, method: str, data=None):
+    def copy(self, method: Literal["clean", "shallow", "data"], data=None):
         """create a copy of the state
 
         Args:
@@ -900,14 +898,14 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         # this only defines a new default value
         super().__init__(data, parameters)
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        super()._state_init(attributes, data)
+        super()._init_state(attributes, data)
 
         if not 0 <= self.axis <= self.grid.num_axes:
             raise ValueError(f"`axis={self.axis}` is out of bounds")

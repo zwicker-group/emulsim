@@ -18,8 +18,9 @@ from typing import Dict, Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
-from modelrunner.state.trajectory import Trajectory as _Trajectory
-from modelrunner.state.trajectory import TrajectoryWriter
+from modelrunner.storage import ModeType, StorageID
+from modelrunner.storage import Trajectory as _Trajectory
+from modelrunner.storage import TrajectoryWriter
 from pde.fields.base import FieldBase
 from pde.tools.docstrings import fill_in_docstring
 from pde.trackers.base import InfoDict, IntervalData, TrackerBase
@@ -36,27 +37,32 @@ class TrajectoryTracker(TrackerBase):
     @fill_in_docstring
     def __init__(
         self,
-        store,
+        storage: StorageID,
         interval: IntervalData = 1,
         *,
-        overwrite: bool = False,
+        mode: Optional[ModeType] = None,
         info: Optional[InfoDict] = None,
     ):
         """
         Args:
-            store (MutableMapping or string):
-                Store or path to directory in file system or name of zip file.
+            storage (MutableMapping or string):
+                Store or path to directory in file system
             interval
                 {ARG_TRACKER_INTERVAL}
-            overwrite (bool):
-                If True, delete all pre-existing data in store.
+            mode (str or :class:`~modelrunner.storage.access_modes.AccessMode`):
+                The file mode with which the storage is accessed. Determines allowed
+                operations. The meaning of the special (default) value `None` depends on
+                whether the file given by `store` already exists. If yes, a RuntimeError
+                is raised, otherwise the choice corresponds to `mode="full"` and thus
+                creates a new trajectory. If the file exists, use `mode="truncate"` to
+                overwrite file or `mode="append"` to insert new data into the file.
             info (dict):
                 Additional information that are written to the trajectory storage. To
                 document simulation parameters, `simulation.info` can be used here.
         """
         super().__init__(interval=interval)
-        self.store = store
-        self.overwrite = overwrite
+        self.storage = storage
+        self.mode = mode
         self.info = info
 
     def initialize(  # type: ignore
@@ -78,9 +84,7 @@ class TrajectoryTracker(TrackerBase):
             info_write = copy.deepcopy(self.info)
             info_write.update(info)  # type: ignore
 
-        self._writer = TrajectoryWriter(
-            self.store, attrs=info_write, overwrite=self.overwrite
-        )
+        self._writer = TrajectoryWriter(self.storage, mode=self.mode, attrs=info_write)
 
         return super().initialize(state, info)  # type: ignore
 
@@ -119,7 +123,7 @@ class Trajectory(_Trajectory):
     @property
     def info(self) -> InfoDict:
         """dict: information that was stored with the trajectory"""
-        return self._state_attributes
+        return self.attrs
 
 
 class DropletElementTracker(TrackerBase):

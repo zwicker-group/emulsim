@@ -30,21 +30,35 @@ from __future__ import annotations
 
 import copy
 import math
+import warnings
 from abc import ABCMeta, abstractproperty
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 from numba import literal_unroll
 
 from modelrunner.parameters import Parameter, Parameterized
-from modelrunner.state import (
-    ArrayCollectionState,
-    ArrayState,
-    NoData,
-    ObjectState,
-    StateBase,
-    simplify_data,
+from modelrunner.storage import (
+    Attrs,
+    Location,
+    ModeType,
+    StorageGroup,
+    StorageID,
+    open_storage,
 )
+from modelrunner.storage.utils import decode_class, storage_actions
 from pde.tools.numba import jit
 
 SerializedAttributesType = Dict[str, str]
@@ -54,7 +68,48 @@ if TYPE_CHECKING:
     from ..actors.base import ActorBase
 
 
-class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
+class NoData:
+    """helper class that marks data omission"""
+
+    ...
+
+
+def _equals(left: Any, right: Any) -> bool:
+    """checks whether two objects are equal, also supporting :class:~numpy.ndarray`
+
+    Args:
+        left: one object
+        right: other object
+
+    Returns:
+        bool: Whether the two objects are equal
+    """
+    if type(left) is not type(right):
+        return False
+
+    if isinstance(left, str):
+        return bool(left == right)
+
+    if isinstance(left, np.ndarray):
+        return np.array_equal(left, right)
+
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(
+            _equals(left[key], right[key]) for key in left
+        )
+
+    if hasattr(left, "__iter__"):
+        return len(left) == len(right) and all(
+            _equals(l, r) for l, r in zip(left, right)
+        )
+
+    return bool(left == right)
+
+
+TElement = TypeVar("TElement", bound="_ElementBase")
+
+
+class _ElementBase(Parameterized, metaclass=ABCMeta):
     """(private) base class for representing simulation element
 
     Elements are generally characterized by a `data` attribute, which contains
@@ -74,23 +129,38 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
 
     dim: Optional[int]  # dimensionality of the space in which the element is embedded
 
-    _subclasses: Dict[str, _ElementBase] = {}  # type: ignore
+    _element_types: Dict[str, Type[_ElementBase]] = {}
     _compatible_actors: Sequence[ActorBase] = []
+    _format_version: int = 1
 
     data: Any  # defines the python access point
 
-    _state_attributes_attr_name = "attributes"
-    _state_data_attr_name = "data"
+    def __init__(self, data: Any, parameters: Optional[Dict[str, Any]] = None):
+        Parameterized.__init__(self, parameters, strict=True)
+        self._init_state({"parameters": parameters}, data)
 
-    def __init__(self, data, parameters: Optional[Dict[str, Any]] = None):
-        self._state_init({"parameters": parameters}, data)
+    def __init_subclass__(cls, **kwargs):  # @NoSelf
+        """register all subclasses to reconstruct them later"""
+        # register the subclasses
+        super().__init_subclass__(**kwargs)
+        if cls is not _ElementBase:
+            if cls.__name__ in _ElementBase._element_types:
+                warnings.warn(f"Redefining class {cls.__name__}")
+            _ElementBase._element_types[cls.__name__] = cls
+            storage_actions.register("read_item", cls, cls._from_stored_data)
+            storage_actions.register("write_item", cls, cls._write_to_storage)
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+        """initialize the state from attributes and (optionally) data
+
+        This function is the central intialization method for the element, which is
+        called by :meth:`__init__`, :meth:`__setstate__`, and :meth:`from_data`.
 
         Args:
-            attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            attributes (dict):
+                Additional (unserialized) attributes
+            data:
+                The data of the degerees of freedom of the physical system
         """
         # set the parameters
         parameters = attributes.pop("parameters", None)
@@ -98,11 +168,13 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
             parameters, include_deprecated=True, check_validity=True
         )
 
-        # initialize the attributes and data of StateBase
-        super()._state_init(attributes, data)
-
+        # raise exception if there are unused attributes
         if attributes:
             raise ValueError(f"Too many attributes: {attributes.keys()}")
+
+        # set the data
+        if data is not NoData:
+            self.data = data
 
     @property
     def _data_numba(self):
@@ -114,14 +186,18 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         return {"parameters": self.parameters}
 
     @property
-    def _state_attributes_store(self) -> Dict[str, Any]:
+    def _attributes_storage(self) -> Dict[str, Any]:
         """dict: Attributes in the form in which they will be written to storage
 
-        This property modifies the normal `_state_attributes` and adds information
-        necessary for restoring the class using :meth:`StateBase.from_data`.
+        This property modifies the normal `attributes` and adds information
+        necessary for restoring the class using :meth:`from_data`.
         """
-        # make a deep copy since we might modify attributes in place
-        attrs = copy.deepcopy(super()._state_attributes_store)
+        # make a copy since we add additional fields below
+        attrs = copy.deepcopy(self.attributes)
+
+        # add some additional information
+        attrs["_element_class"] = self.__class__.__name__
+        attrs["_format_version"] = self._format_version
 
         if "parameters" in attrs:
             # serialize the individual parameters
@@ -135,7 +211,7 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
                     if "serializer" in def_param_extra:
                         attrs["parameters"][key] = def_param_extra["serializer"](value)
                         continue
-                attrs["parameters"][key] = simplify_data(value)
+                attrs["parameters"][key] = value
 
         return attrs
 
@@ -165,12 +241,117 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
             The object containing the given attributes and data
         """
         cls._unpack_parameters(attributes["parameters"])
-        return super().from_data(attributes=attributes, data=data)
+
+        # copy attributes since they are modified in this function
+        attributes = attributes.copy()
+        cls_name = attributes.pop("_element_class", None)
+
+        if cls_name is None or cls.__name__ == cls_name:
+            # attributes contain right class name or no class information at all
+            # => instantiate current class with given data
+            format_version = attributes.pop("_format_version", 0)
+            if format_version != cls._format_version:
+                warnings.warn(
+                    f"File format version mismatch "
+                    f"({format_version} != {cls._format_version})"
+                )
+
+            # create a new object without calling __init__, which might be overwriten by
+            # the subclass and not follow our interface
+            obj = cls.__new__(cls)
+            obj._init_state(attributes, data)
+            return obj
+
+        elif cls is _ElementBase:
+            # use the base class as a point to load arbitrary subclasses
+            if cls_name == "_ElementBase":
+                raise RuntimeError("Cannot create _ElementBase instances")
+            state_cls = cls._element_types[cls_name]
+            return state_cls.from_data(attributes, data)
+
+        else:
+            raise ValueError(f"Incompatible state class {cls_name}")
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """return a representation of the current state
+
+        Note that this representation might contain views into actual data
+        """
+        attrs = self._attributes_storage
+        # remove private attributes used for persistent storage
+        attrs.pop("_element_class")
+        attrs.pop("_format_version")
+        return {"attributes": attrs, "data": self.data}
 
     def __setstate__(self, dictdata):
         """set all properties of the object from a stored representation"""
         self._unpack_parameters(dictdata["attributes"]["parameters"])
-        super().__setstate__(dictdata)
+        self._init_state(dictdata.get("attributes", {}), dictdata.get("data", NoData))
+
+    def copy(
+        self: TElement, method: Literal["clean", "shallow", "data"], data=None
+    ) -> TElement:
+        """create a copy of the state
+
+        There are several methods of copying the state:
+
+        `clean`:
+            Makes a copy of the state by gathering its contents using
+            :meth:`~StateBase.__getstate__`, makeing a copy of only the actual data and
+            then instantiating a new state class, using :meth:`~StateBase.__setstate__`
+            to restore the state. Since a new object is created, all data not captured
+            by `__getstate__` (like internal caches) are lost!
+        `shallow`:
+            Performs a shallow copy of all attributes of the class. This is simply
+            copying the entire :attr:`__dict__`
+        `data`:
+            Like `shallow`, but additionally makes a deep copy of the state data stored
+            in the :attr:`data`.
+
+        Args:
+            method (str):
+                Determines whether a `clean`, `shallow`, or `data` copy is performed.
+                See description above for details.
+            data:
+                Data to be used instead of the one in the current state. This data is
+                used as is and not copied!
+
+        Returns:
+            A copy of the current state object
+        """
+        # create a new object of the same class without any attributes
+        obj = self.__class__.__new__(self.__class__)
+
+        if method == "clean":
+            # make clean copy by re-initializing state with copy of relevant attributes
+            state = copy.deepcopy(self.__getstate__())  # copy current state
+            if data is not None:
+                state["data"] = data
+            # use __setstate__ to set data on new object
+            obj.__setstate__(state)
+
+        elif method == "shallow":
+            # (shallow) copy of all attributes of current state, including `data`
+            obj.__dict__ = self.__dict__.copy()
+            if data is not None:
+                obj.data = data
+
+        elif method == "data":
+            # (shallow) copy of all attributes of current state, except `data`, which is
+            # copied using a deep-copy
+            obj.__dict__ = self.__dict__.copy()
+            if data is None:
+                if isinstance(self, DictElementBase):
+                    # special implementation for copying elements in a dictionary
+                    obj.data = {k: v.copy(method="data") for k, v in self.data.items()}
+                else:
+                    obj.data = copy.deepcopy(self.data)
+            else:
+                obj.data = data
+
+        else:
+            raise ValueError(f"Unknown copy method {method}")
+        return obj
 
     def __str__(self):
         return f"{self.__class__.__name__}(...)"
@@ -180,6 +361,13 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
             f"{self.__class__.__name__}(data={self.data}, parameters={self.parameters})"
         )
 
+    def __eq__(self, other) -> bool:
+        if self.__class__ is not other.__class__:
+            return False
+        if self.attributes != other.attributes:
+            return False
+        return _equals(self.data, other.data)
+
     @abstractproperty
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
@@ -188,6 +376,169 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
     def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
         """return function that estimates the error between element data"""
         raise NotImplementedError("Element does not implement error estimator")
+
+    @classmethod
+    def _get_attrs_from_storage(
+        cls, storage: StorageGroup, loc: Location, *, check_version: bool = True
+    ) -> Attrs:
+        """read attributes from storage and optionally check format version
+
+        Args:
+            storage (str or :class:`~modelrunner.storage.StorageBase`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                Name of the location where the data will be stored.
+            check_version (bool):
+                A number indicating whether the format version should be checked
+
+        Raises:
+            `RuntimeError`: If format version is specified, but not matched
+
+        Returns:
+            dict: Attributes without the `_element_class` and `_format_version` item
+        """
+        # read relevant attributes of the state
+        attrs = storage.read_attrs(loc)
+
+        # check whether the data can be read
+        attrs.pop("_element_class", None)
+        version = attrs.pop("_format_version", None)
+        if check_version is not None and version != cls._format_version:
+            raise RuntimeError(f"Cannot read format version {version}")
+
+        if "parameters" in attrs:
+            cls._unpack_parameters(attrs["parameters"])
+
+        return attrs
+
+    @classmethod
+    def _from_stored_data(
+        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+    ):
+        """create the element from some storage
+
+        Args:
+            storage (:class:`StorageGroup`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                The location in the storage where the state is read
+            index (int, optional):
+                If the location contains a trajectory of the state, `index` must denote
+                the index determining which state should be created
+        """
+        ...
+        # determine the class to reconstruct the data from attribute
+
+        class_name = storage.read_attrs(loc).get("_element_class", None)
+        if class_name in _ElementBase._element_types:
+            element_cls = _ElementBase._element_types[class_name]
+        else:
+            element_cls = decode_class(class_name)  # type: ignore
+            if element_cls is None:
+                raise RuntimeError(f"Could not decode class `{class_name}`")
+
+        if element_cls == _ElementBase:
+            raise NotImplementedError(f"Cannot read `{cls.__name__}`")
+        else:
+            return element_cls._from_stored_data(storage, loc, index=index)
+
+    def _update_from_stored_data(
+        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+    ) -> None:
+        """update the state data (but not its attributes) from storage
+
+        Args:
+            storage (:class:`StorageGroup`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                The location in the storage where the state is read
+            index (int, optional):
+                If the location contains a trajectory of the state, `index` must denote
+                the index determining which state should be created
+        """
+        raise NotImplementedError(f"Cannot update `{self.__class__.__name__}`")
+
+    def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
+        """write the state to storage
+
+        Args:
+            storage (:class:`StorageGroup`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                The location in the storage where the state is written
+        """
+        raise NotImplementedError(f"Cannot write `{self.__class__.__name__}`")
+
+    def _create_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        """prepare a trajectory of the current state
+
+        Args:
+            storage (:class:`StorageGroup`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                The location in the storage where the trajectory is written
+        """
+        raise NotImplementedError(
+            f"Cannot create trajectory for `{self.__class__.__name__}`"
+        )
+
+    def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        """append the current state to a prepared trajectory
+
+        Args:
+            storage (:class:`StorageGroup`):
+                A storage opened with :func:`~modelrunner.storage.open_storage`
+            loc (str or list of str):
+                The location in the storage where the trajectory is written
+        """
+        raise NotImplementedError(
+            f"Cannot extend trajectory for `{self.__class__.__name__}`"
+        )
+
+    @classmethod
+    def from_file(cls, storage: StorageID, loc: Location = "state", **kwargs):
+        r"""load object from a file
+
+        Args:
+            storage (str or :class:`~modelrunner.storage.StorageBase`):
+                Path or instance describing the storage. The simplest choice is a path
+                to a file, where the data is written in a format deduced from the file
+                extension.
+            loc (str or list of str):
+                Name of the location where the data was stored.
+            **kwargs:
+                Arguments passed to :func:`~modelrunner.storage.open_storage`
+        """
+        kwargs.setdefault("mode", "read")
+        with open_storage(storage, **kwargs) as opened_storage:
+            return _ElementBase._from_stored_data(opened_storage, loc)
+
+    def to_file(
+        self,
+        storage: StorageID,
+        loc: Location = "state",
+        *,
+        mode: ModeType = "insert",
+        **kwargs,
+    ) -> None:
+        """write this object to a file
+
+        Args:
+            storage (str or :class:`~modelrunner.storage.StorageBase`):
+                Path or instance describing the storage. The simplest choice is a path
+                to a file, where the data is written in a format deduced from the file
+                extension.
+            loc (str or list of str):
+                Name of the location where the data will be stored.
+            mode (str or :class:`~modelrunner.storage.access_modes.AccessMode`):
+                The file mode with which the storage is accessed, which determines the
+                allowed operations. Common options are "read", "full", "append", and
+                "truncate".
+            **kwargs:
+                Arguments passed to :func:`~modelrunner.storage.open_storage`
+        """
+        with open_storage(storage, mode=mode, **kwargs) as opened_storage:
+            self._write_to_storage(opened_storage, loc=loc)
 
     def plot(self, ax=None, *args, **kwargs):
         """plot the element"""
@@ -202,17 +553,8 @@ class _ElementBase(Parameterized, StateBase, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class ObjectElementBase(_ElementBase, ObjectState):
+class ObjectElementBase(_ElementBase):
     """Element storing data in a python object"""
-
-    def __init__(self, data, parameters: Optional[Dict[str, Any]] = None):
-        """
-        Args:
-            data: The data describing the state
-            parameters: Additional parameters that affect the element
-        """
-        ObjectState.__init__(self, data)
-        self._state_init({"parameters": parameters})
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -222,8 +564,46 @@ class ObjectElementBase(_ElementBase, ObjectState):
         except AttributeError:
             return 1
 
+    @classmethod
+    def _from_stored_data(
+        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+    ) -> ObjectElementBase:
+        attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
 
-class ArrayElementBase(_ElementBase, ArrayState):
+        # create the state from the read data
+        data = storage.read_array(loc, index=index).item()
+        obj = cls.__new__(cls)
+        obj._init_state(attrs, data)
+        return obj
+
+    def _update_from_stored_data(
+        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+    ) -> None:
+        storage.read_array(loc, index=index, out=self.data)
+
+    def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
+        arr = np.empty((), dtype=object)
+        arr[()] = self.data
+        storage.write_array(
+            loc, arr, attrs=self._attributes_storage, cls=self.__class__
+        )
+
+    def _create_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        storage.create_dynamic_array(
+            loc,
+            shape=(),
+            dtype=object,
+            attrs=self._attributes_storage,
+            cls=self.__class__,
+        )
+
+    def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        arr = np.empty((), dtype=object)
+        arr[()] = self.data
+        storage.extend_dynamic_array(loc, arr)
+
+
+class ArrayElementBase(_ElementBase):
     """Element storing data in a numpy array"""
 
     def __init__(
@@ -236,7 +616,7 @@ class ArrayElementBase(_ElementBase, ArrayState):
             data: The data describing the state
             parameters: Additional parameters that affect the element
         """
-        self._state_init({"parameters": parameters}, data)
+        super().__init__(data, parameters)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -289,8 +669,42 @@ class ArrayElementBase(_ElementBase, ArrayState):
 
         return error_estimator
 
+    @classmethod
+    def _from_stored_data(
+        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+    ) -> ArrayElementBase:
+        attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
 
-class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
+        # create the state from the read data
+        data = storage.read_array(loc, index=index)
+        obj = cls.__new__(cls)
+        obj._init_state(attrs, data)
+        return obj
+
+    def _update_from_stored_data(
+        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+    ) -> None:
+        storage.read_array(loc, index=index, out=self.data)
+
+    def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
+        storage.write_array(
+            loc, self.data, attrs=self._attributes_storage, cls=self.__class__
+        )
+
+    def _create_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        storage.create_dynamic_array(
+            loc,
+            shape=self.data.shape,
+            dtype=self.data.dtype,
+            attrs=self._attributes_storage,
+            cls=self.__class__,
+        )
+
+    def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        storage.extend_dynamic_array(loc, self.data)
+
+
+class ArrayCollectionElementBase(_ElementBase):
     """Element storing data in multiple numpy array"""
 
     def __init__(
@@ -303,8 +717,7 @@ class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
             data: The data describing the state
             parameters: Additional parameters that affect the element
         """
-        ArrayCollectionState.__init__(self, data)
-        self._state_init({"parameters": parameters})
+        super().__init__(data, parameters)
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -341,39 +754,89 @@ class ArrayCollectionElementBase(_ElementBase, ArrayCollectionState):
             return error_estimator
 
 
-#
-# class DictElementBase(_ElementBase, DictState):
-#     """Element storing data in a dictionary of states"""
-#
-#     def __init__(
-#         self,
-#         data: Optional[Dict[str, StateBase]] = None,
-#         parameters: Optional[Dict[str, Any]] = None,
-#     ):
-#         """
-#         Args:
-#             data: The data describing the state
-#             parameters: Additional parameters that affect the element
-#         """
-#         Parameterized.__init__(self, parameters)
-#         DictState.__init__(self, data)
-#
-#     @property
-#     def _data_numba(self) -> Tuple:
-#         """returns the data associated with the state in a form that numba can handle"""
-#         return tuple(state._data_numba for state in self.data.values())
-#
-#     @property
-#     def degrees_of_freedom(self) -> int:
-#         """int: the number of degrees of freedom for this element"""
-#
-#         arr = np.asanyarray(self.data)
-#         if arr.dtype.fields:
-#             # array is a structured array or record array with fields
-#             itemsize = sum(
-#                 math.prod(fields[0].shape) for fields in arr.dtype.fields.values()
-#             )
-#         else:
-#             # array is a simple array
-#             itemsize = 1
-#         return int(arr.size * itemsize)
+class DictElementBase(_ElementBase):
+    """Element storing data in a dictionary of states"""
+
+    def __init__(
+        self,
+        data: Optional[Dict[str, _ElementBase]] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Args:
+            data: The data describing the state
+            parameters: Additional parameters that affect the element
+        """
+        super().__init__(data, parameters)
+
+    @property
+    def _attributes_storage(self) -> Dict[str, Any]:
+        attrs = super()._attributes_storage
+        attrs["_element_labels"] = list(self.data.keys())
+        return attrs
+
+    @property
+    def _data_numba(self) -> Tuple:
+        """returns the data associated with the state in a form that numba can handle"""
+        return tuple(state._data_numba for state in self.data.values())
+
+    @property
+    def degrees_of_freedom(self) -> int:
+        """int: the number of degrees of freedom for this element"""
+
+        arr = np.asanyarray(self.data)
+        if arr.dtype.fields:
+            # array is a structured array or record array with fields
+            itemsize = sum(
+                math.prod(fields[0].shape) for fields in arr.dtype.fields.values()
+            )
+        else:
+            # array is a simple array
+            itemsize = 1
+        return int(arr.size * itemsize)
+
+    @classmethod
+    def _from_stored_data(
+        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+    ) -> DictElementBase:
+        attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
+
+        # read the data
+        subgroup = storage.open_group(loc)
+        data = {
+            label: _ElementBase._from_stored_data(subgroup, label, index=index)
+            for label in attrs["_element_labels"]
+        }
+
+        # create the state from the read data
+        obj = cls.__new__(cls)
+        obj._init_state(attrs, data)
+        return obj
+
+    def _update_from_stored_data(
+        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+    ) -> None:
+        subgroup = storage.open_group(loc)
+        for key, substate in self.data.items():
+            substate._update_from_stored_data(subgroup, key, index=index)
+
+        storage.read_array(loc, index=index, out=self.data)
+
+    def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
+        subgroup = storage.create_group(
+            loc, attrs=self._attributes_storage, cls=self.__class__
+        )
+        for label, substate in self.data.items():
+            substate._write_to_storage(subgroup, label)
+
+    def _create_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        subgroup = storage.create_group(
+            loc, attrs=self._attributes_storage, cls=self.__class__
+        )
+        for label, substate in self.data.items():
+            substate._create_trajectory(subgroup, label=label)
+
+    def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
+        subgroup = storage.open_group(loc)
+        for label, substate in self.data.items():
+            substate._append_to_trajectory(subgroup, label)

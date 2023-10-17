@@ -9,11 +9,10 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from modelrunner.state import NoData
 from pde.tools.plotting import plot_on_axes
 
 from .. import Parameter
-from .base import ArrayElementBase
+from .base import ArrayElementBase, NoData
 
 
 class PointsElement(ArrayElementBase):
@@ -28,7 +27,7 @@ class PointsElement(ArrayElementBase):
         )
     ]
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -38,7 +37,7 @@ class PointsElement(ArrayElementBase):
         self._logger = logging.getLogger(self.__class__.__name__)
         # data = np.asanyarray(data)
 
-        super()._state_init(attributes, data)
+        super()._init_state(attributes, data)
 
         # ensure the right format of the input data
         if self.data.dtype.fields:
@@ -142,14 +141,14 @@ class ArrowsElement(PointsElement):
             :meth:`~PointsElement.show_parameters` for details.
     """
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        super()._state_init(attributes, data)
+        super()._init_state(attributes, data)
         assert self.data.dtype["direction"].shape == (self.dim,)
 
     @classmethod
