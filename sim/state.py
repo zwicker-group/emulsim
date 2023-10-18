@@ -48,6 +48,7 @@ class State(Parameterized, DictState):
         ),
     ]
 
+    _check_dimension: bool = True
     _state_attributes_attr_name = "attributes"
     _state_data_attr_name = "data"
 
@@ -194,14 +195,19 @@ class State(Parameterized, DictState):
             self._logger.warning("Overwriting element `%s` in state", name)
 
         # check dimensionality
-        if element.dim is None:
-            pass
-        elif self.dim is None:
-            self.dim = element.dim
-        elif self.dim != element.dim:
-            raise DimensionError(
-                f"Element dimension ({element.dim}) differs from state ({self.dim})"
-            )
+        if element.dim is not None:
+            if self.dim is None:
+                self.dim = element.dim
+            elif self.dim != element.dim:
+                if self._check_dimension:
+                    raise DimensionError(
+                        f"Element dimension ({element.dim}) differs from state "
+                        f"({self.dim})"
+                    )
+                else:
+                    # report the maximal dimension
+                    self.dim = max(self.dim, element.dim)
+
         self.elements[name] = element
 
     def get_index(self, name: str) -> int:

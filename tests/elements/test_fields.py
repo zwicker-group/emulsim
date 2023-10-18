@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from pde import CartesianGrid, FieldCollection, ScalarField, UnitGrid
+from pde.grids.base import DimensionError
 
 from sim.elements import (
     FieldCollectionElement,
@@ -121,6 +122,8 @@ def test_meanfield_basic(element):
     assert element.total_amount == 6
     assert element.grid == CartesianGrid([[0, 3]], 1)
     assert element.degrees_of_freedom == 1
+    for i in range(4):
+        element.check_coupling_dim(i)
 
 
 def test_scalarfield():
@@ -130,6 +133,10 @@ def test_scalarfield():
     assert element.grid == grid
     np.testing.assert_array_equal(element.data, 1)
     assert element.degrees_of_freedom == 10
+
+    element.check_coupling_dim(1)
+    with pytest.raises(DimensionError):
+        element.check_coupling_dim(2)
 
 
 @pytest.mark.parametrize("axis", [1, -1])
@@ -152,6 +159,10 @@ def test_boundaryfield(axis):
     bulk_coords = element.bulk_coordinates
     np.testing.assert_allclose(bulk_coords[:, 0], grid.cell_coords[:, 0, 0])
     np.testing.assert_allclose(bulk_coords[:, 1], 8)
+
+    element.check_coupling_dim(1)
+    with pytest.raises(DimensionError):
+        element.check_coupling_dim(2)
 
 
 @pytest.mark.parametrize("dim", [1, 2])

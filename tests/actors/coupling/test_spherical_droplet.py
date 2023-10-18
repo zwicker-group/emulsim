@@ -9,7 +9,6 @@ from scipy import spatial
 
 from droplets import Emulsion, SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
-from pde.grids.base import DimensionError
 from pde.tools.misc import module_available, skipUnlessModule
 
 from helpers import assert_recarrays_allclose
@@ -135,8 +134,9 @@ def test_spherical_droplets(dim):
         [SphericalDroplet([1] * droplet_dim, 1)]
     )
     coupling = spherical_droplet.SphericalDropletActor()
-    with pytest.raises(DimensionError):
-        coupling.make_evolver_numba((droplets, field))
+
+    # can still make the evolver since it is mean-field model
+    coupling.make_evolver_numba((droplets, field))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -186,8 +186,9 @@ def test_spherical_droplets_const_shell_count(dim):
         [SphericalDroplet([1] * droplet_dim, 1)]
     )
     coupling = spherical_droplet.SphericalDropletActor()
-    with pytest.raises(DimensionError):
-        coupling.make_evolver_numba((droplets, field))
+
+    # can still make the evolver since it is mean-field model
+    coupling.make_evolver_numba((droplets, field))
 
 
 @pytest.mark.parametrize("compiled", [False, True])

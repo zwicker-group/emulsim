@@ -8,6 +8,7 @@ Provides elements that represent extended, discretized fields
    ~ReservoirElement
    ~ScalarFieldElement
    ~FieldCollectionElement
+   ~ScalarBoundaryFieldElement
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -23,6 +24,7 @@ from numba.extending import register_jitable
 
 from modelrunner.state import NoData
 from pde.fields import FieldCollection, ScalarField
+from pde.grids.base import DimensionError
 from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
@@ -166,6 +168,21 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         """float: the average material concentration in the field"""
         return self.total_amount / self.volume
 
+    def check_coupling_dim(self, dim: int) -> None:
+        """checks the dimension of a coupled field
+
+        Args:
+            dim (int):
+                The dimension of the element that needs to be coupled to this field
+
+        Raises:
+            DimensionError: if the dimensions are incompatible
+        """
+        if dim != self.dim:
+            raise DimensionError(
+                f"Element has a different dimension than field ({dim} != {self.dim})"
+            )
+
     @abstractmethod
     def get_concentration(self, points):
         """determine concentration at the given points
@@ -246,8 +263,8 @@ class MeanfieldElement(FieldElementBase):
                 The initial concentration in the field
             parameters (dict):
                 Additional parameters determining how the element behaves. Most
-                importantly, the entry 'grid' determines the discretization grid
-                on which this field is defined.
+                importantly, the entry 'bounds' determines the box on which the field is
+                defined.
         """
         # this only defines a new default value
         super().__init__(data, parameters)  # type: ignore
@@ -272,19 +289,29 @@ class MeanfieldElement(FieldElementBase):
             self.set_bounds(self.parameters["bounds"])
 
     @classmethod
-    def from_field(cls, field: ScalarField) -> MeanfieldElement:
+    def from_field(
+        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+    ) -> MeanfieldElement:
         """create a mean field element from a scalar field
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
                 The scalar field that initializes the element
+            parameters (dict):
+                Additional parameters determining how the element behaves. Note that the
+                entry 'bounds' will be overwriten by the data from `field`.
 
         Returns:
             :class:`MeanfieldElement`: The initialized instance
         """
         assert isinstance(field, ScalarField)
+
+        if parameters is None:
+            parameters = {}
+        parameters["bounds"] = field.grid.axes_bounds
+
         data = float(field.average)  # type: ignore
-        return cls(data, {"bounds": field.grid.axes_bounds})
+        return cls(data, parameters)
 
     @cached_property()
     def grid(self) -> CartesianGrid:
@@ -330,6 +357,15 @@ class MeanfieldElement(FieldElementBase):
                 The new total amount
         """
         self.concentration = amount / self.volume
+
+    def check_coupling_dim(self, dim: int) -> None:
+        """checks the dimension of a coupled field
+
+        Args:
+            dim (int):
+                The dimension of the element that needs to be coupled to this field
+        """
+        # the MeanfieldElement is compatible with all fields
 
     def __repr__(self):
         return (
@@ -500,18 +536,30 @@ class ScalarFieldElement(FieldElementBase):
             self._field = ScalarField(self.grid, data, label=self.parameters["label"])
 
     @classmethod
-    def from_field(cls, field: ScalarField) -> ScalarFieldElement:
+    def from_field(
+        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+    ) -> ScalarFieldElement:
         """create a scalar field element from a scalar field
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
                 The scalar field that initializes the element
+            parameters (dict):
+                Additional parameters determining how the element behaves. Note that the
+                entries 'grid' and 'label' will be overwriten by the data from `field`.
 
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
         """
         assert isinstance(field, ScalarField)
-        return cls(field.data, {"grid": field.grid, "label": field.label})
+
+        if parameters is None:
+            parameters = {}
+        parameters["grid"] = field.grid
+        if field.label is not None:
+            parameters["label"] = field.label
+
+        return cls(field.data, parameters)
 
     def copy(self, method: str, data=None):
         """create a copy of the state
@@ -925,12 +973,16 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         return axis
 
     @classmethod
-    def from_field(cls, field: ScalarField) -> ScalarBoundaryFieldElement:
+    def from_field(
+        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+    ) -> ScalarBoundaryFieldElement:
         """create a scalar boundary element from a scalar field
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
                 The scalar field that initializes the element
+            parameters (dict):
+                Additional parameters determining how the element behaves.
 
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
@@ -985,6 +1037,22 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         else:
             raise TypeError
         return cls(data, parameters)
+
+    def check_coupling_dim(self, dim: int) -> None:
+        """checks the dimension of a coupled field
+
+        Args:
+            dim (int):
+                The dimension of the element that needs to be coupled to this field
+
+        Raises:
+            DimensionError: if the dimensions are incompatible
+        """
+        if dim != self.dim - 1:
+            raise DimensionError(
+                "Element has a different dimension than boundary field "
+                f"({dim} != {self.dim-1})"
+            )
 
     @cached_property()
     def bulk_coordinates(self) -> np.ndarray:
@@ -1043,6 +1111,10 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
                 from pde.tools.plotting import add_scaled_colorbar
 
                 add_scaled_colorbar(colormesh, ax=ax)
+
+        elif self.dim == 3:
+            # plot only the 2d boundary field, assuming that the 3d bulk is not shown
+            super().plot(ax=ax, colorbar=colorbar, **kwargs)
 
         else:
             raise NotImplementedError(f"Plotting dim={self.dim} not implemented")

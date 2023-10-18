@@ -9,7 +9,6 @@ from numpy.lib.recfunctions import structured_to_unstructured
 
 from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
-from pde.grids.base import DimensionError
 
 from sim import Simulation, State
 from sim.actors.coupling.point_droplet import PointDropletActor
@@ -54,7 +53,7 @@ def test_point_droplets_diffusion(dim):
     # test incompatible dimensions
     droplets = SphericalDropletsElement.from_droplets([SphericalDroplet([1], 1)])
     coupling = PointDropletActor()
-    with pytest.raises(DimensionError):
+    with pytest.raises(NotImplementedError):
         coupling.make_evolver_numba((droplets, field))
 
 
