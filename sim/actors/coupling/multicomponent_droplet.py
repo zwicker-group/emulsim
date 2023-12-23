@@ -49,88 +49,67 @@ def _make_regularizer(
     assert num_comps * vmin < sum_max
     sum_eps_max = sum_max - num_comps * vmin
 
-    def regularize(phi: np.ndarray) -> Callable[[np.ndarray], float]:
+    @jit
+    def regularize(phi: np.ndarray) -> np.ndarray:
         """regularize a state ensuring variables stay within bounds"""
-        if not isinstance(phi, (np.ndarray, nb.types.Array)):
-            raise TypeError
+        correction = np.zeros(num_comps)
 
         if phi.ndim == 1:
             # a single set of concentrations is given
 
-            def regularize_impl(phi: np.ndarray) -> np.ndarray:
-                """regularize a state ensuring variables stay within bounds"""
-                correction = np.zeros(num_comps)
+            # adjust each variable individually
+            for i in range(num_comps):
+                if phi[i] < vmin:
+                    correction[i] += vmin - phi[i]
+                    phi[i] = vmin
+                elif phi[i] > vmax:
+                    correction[i] += phi[i] - vmax
+                    phi[i] = vmax
 
-                # adjust each variable individually
+            # limit the sum of all variables
+            if np.isfinite(sum_max):
+                eps_sum = 0.0
                 for i in range(num_comps):
-                    if phi[i] < vmin:
-                        correction[i] += vmin - phi[i]
-                        phi[i] = vmin
-                    elif phi[i] > vmax:
-                        correction[i] += phi[i] - vmax
-                        phi[i] = vmax
-
-                # limit the sum of all variables
-                if np.isfinite(sum_max):
-                    eps_sum = 0.0
+                    eps_sum += phi[i] - vmin
+                if eps_sum > sum_eps_max:
+                    factor = sum_eps_max / eps_sum
                     for i in range(num_comps):
-                        eps_sum += phi[i] - vmin
-                    if eps_sum > sum_eps_max:
-                        factor = sum_eps_max / eps_sum
-                        for i in range(num_comps):
-                            phi[i] = vmin + factor * (phi[i] - vmin)
+                        phi[i] = vmin + factor * (phi[i] - vmin)
 
-                return correction
+            return correction
 
         else:
             # an array of concentrations is given
 
-            def regularize_impl(phi: np.ndarray) -> np.ndarray:
-                """regularize a state ensuring variables stay within bounds"""
-                correction = np.zeros(num_comps)
+            # adjust each variable individually
+            for i in range(num_comps):
+                for j in range(phi[0].size):
+                    if phi[i].flat[j] < vmin:
+                        correction[i] += vmin - phi[i].flat[j]
+                        phi[i, ...].flat[j] = vmin
+                    elif phi[i].flat[j] > vmax:
+                        correction[i] += phi[i].flat[j] - vmax
+                        phi[i, ...].flat[j] = vmax
 
-                # adjust each variable individually
-                for i in range(num_comps):
-                    for j in range(phi[0].size):
-                        if phi[i].flat[j] < vmin:
-                            correction[i] += vmin - phi[i].flat[j]
-                            phi[i, ...].flat[j] = vmin
-                        elif phi[i].flat[j] > vmax:
-                            correction[i] += phi[i].flat[j] - vmax
-                            phi[i, ...].flat[j] = vmax
-
-                # limit the sum of all variables
-                if np.isfinite(sum_max):
-                    for j in range(phi[0].size):
-                        eps_sum = 0.0
+            # limit the sum of all variables
+            if np.isfinite(sum_max):
+                for j in range(phi[0].size):
+                    eps_sum = 0.0
+                    for i in range(num_comps):
+                        eps_sum += phi[i].flat[j] - vmin
+                    if eps_sum > sum_eps_max:
+                        factor = sum_eps_max / eps_sum
                         for i in range(num_comps):
-                            eps_sum += phi[i].flat[j] - vmin
-                        if eps_sum > sum_eps_max:
-                            factor = sum_eps_max / eps_sum
-                            for i in range(num_comps):
-                                new_value = vmin + factor * (phi[i].flat[j] - vmin)
-                                phi[i, ...].flat[j] = new_value
+                            new_value = vmin + factor * (phi[i].flat[j] - vmin)
+                            phi[i, ...].flat[j] = new_value
 
-                # Note that we needed to use phi[i, ...] to write to the array also
-                # when it is 1d to circumvent a known bug:
-                # https://github.com/numpy/numpy/issues/16881
+            # Note that we needed to use phi[i, ...] to write to the array also
+            # when it is 1d to circumvent a known bug:
+            # https://github.com/numpy/numpy/issues/16881
 
-                return correction
+        return correction
 
-        return regularize_impl  # type: ignore
-
-    if nb.config.DISABLE_JIT:
-        # jitting is disabled => return generic python function
-
-        # we here simply supply a 2d array so the more generic implementation
-        # is chosen, which works for all cases in the case of numpy
-        return regularize(np.empty((num_comps, 2)))
-
-    else:
-        # jitting is enabled => return specialized, compiled function
-        return nb.generated_jit(nopython=True)(regularize)  # type: ignore
-
-    return regularize
+    return regularize  # type: ignore
 
 
 class MulticomponentDropletActor(ActorBase):
