@@ -18,11 +18,12 @@ from typing import Dict, Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
-from modelrunner.state.trajectory import Trajectory as _Trajectory
-from modelrunner.state.trajectory import TrajectoryWriter
+from modelrunner.storage import ModeType, StorageID
+from modelrunner.storage import Trajectory as _Trajectory
+from modelrunner.storage import TrajectoryWriter
 from pde.fields.base import FieldBase
 from pde.tools.docstrings import fill_in_docstring
-from pde.trackers.base import InfoDict, IntervalData, TrackerBase
+from pde.trackers.base import InfoDict, InterruptData, TrackerBase
 
 from .simulation import State
 
@@ -36,27 +37,33 @@ class TrajectoryTracker(TrackerBase):
     @fill_in_docstring
     def __init__(
         self,
-        store,
-        interval: IntervalData = 1,
+        storage: StorageID,
+        interrupts: InterruptData = 1,
         *,
-        overwrite: bool = False,
+        mode: Optional[ModeType] = None,
         info: Optional[InfoDict] = None,
+        interval=None,
     ):
         """
         Args:
-            store (MutableMapping or string):
-                Store or path to directory in file system or name of zip file.
-            interval
-                {ARG_TRACKER_INTERVAL}
-            overwrite (bool):
-                If True, delete all pre-existing data in store.
+            storage (MutableMapping or string):
+                Store or path to directory in file system
+            interrupts
+                {ARG_TRACKER_INTERRUPTS}
+            mode (str or :class:`~modelrunner.storage.access_modes.AccessMode`):
+                The file mode with which the storage is accessed. Determines allowed
+                operations. The meaning of the special (default) value `None` depends on
+                whether the file given by `store` already exists. If yes, a RuntimeError
+                is raised, otherwise the choice corresponds to `mode="full"` and thus
+                creates a new trajectory. If the file exists, use `mode="truncate"` to
+                overwrite file or `mode="append"` to insert new data into the file.
             info (dict):
                 Additional information that are written to the trajectory storage. To
                 document simulation parameters, `simulation.info` can be used here.
         """
-        super().__init__(interval=interval)
-        self.store = store
-        self.overwrite = overwrite
+        super().__init__(interrupts=interrupts, interval=interval)
+        self.storage = storage
+        self.mode = mode
         self.info = info
 
     def initialize(  # type: ignore
@@ -78,9 +85,7 @@ class TrajectoryTracker(TrackerBase):
             info_write = copy.deepcopy(self.info)
             info_write.update(info)  # type: ignore
 
-        self._writer = TrajectoryWriter(
-            self.store, attrs=info_write, overwrite=self.overwrite
-        )
+        self._writer = TrajectoryWriter(self.storage, mode=self.mode, attrs=info_write)
 
         return super().initialize(state, info)  # type: ignore
 
@@ -119,7 +124,7 @@ class Trajectory(_Trajectory):
     @property
     def info(self) -> InfoDict:
         """dict: information that was stored with the trajectory"""
-        return self._state_attributes
+        return self.attrs
 
 
 class DropletElementTracker(TrackerBase):
@@ -140,18 +145,19 @@ class DropletElementTracker(TrackerBase):
     def __init__(
         self,
         element_name: str,
-        interval: IntervalData = 1,
+        interrupts: InterruptData = 1,
         *,
         store_emulsions: Union[bool, str] = True,
         store_droplet_tracks: Union[bool, str] = True,
         keep_vanished: bool = False,
+        interval=None,
     ):
         """
         Args:
             element_name (str):
                 The name of the element containing the droplets
-            interval
-                {ARG_TRACKER_INTERVAL}
+            interrupts
+                {ARG_TRACKER_INTERRUPTS}
             store_emulsions (bool or str):
                 Determines whether to store data on emulsions in an instance of
                 :class:`~droplets.analysis.emulsions.EmulsionTimeCourse`. No data is
@@ -170,7 +176,7 @@ class DropletElementTracker(TrackerBase):
                 droplets disappearing and re-appearing should be combined in a single
                 track.
         """
-        super().__init__(interval=interval)
+        super().__init__(interrupts=interrupts, interval=interval)
         self.element_name = element_name
         self.store_emulsions = store_emulsions
         self.store_droplet_tracks = store_droplet_tracks
@@ -283,11 +289,7 @@ class FieldTracker(TrackerBase):
         """
         self.element_name = element_name
         self.tracker = tracker
-        try:
-            self.interrupt = tracker.interrupt
-        except AttributeError:
-            # fall-back to deprecated attribute (remove on 2023-03-15)
-            self.interval = tracker.interval  # type: ignore
+        self.interrupt = tracker.interrupt
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(  # type: ignore

@@ -16,7 +16,18 @@ import copy
 import logging
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numba as nb
 import numpy as np
@@ -92,7 +103,7 @@ class Simulation:
             actor_infos.append(info)
         return {"state": self.state.attributes, "actors": actor_infos}
 
-    def copy(self, method: str) -> Simulation:
+    def copy(self, method: Literal["clean", "shallow", "data"]) -> Simulation:
         """returns a copy the entire simulation
 
         Args:
@@ -533,25 +544,29 @@ class Simulation:
 
         Args:
             t_range (float or tuple of floats):
-                Sets the time range for which the simulation is run. If only a
-                single value `t_end` is given, the time range is assumed to be
-                `[0, t_end]`.
+                Sets the time range for which the simulation is run. If only a single
+                value `t_end` is given, the time range is assumed to be `[0, t_end]`.
             dt (float):
-                Time step of the explicit stepping. If `None`, the time step
-                will be chosen automatically using the method
-                :meth:`~Simulation.estimate_dt`.
+                Time step of the explicit stepping. If `None`, the time step will be
+                chosen automatically using the method :meth:`~Simulation.estimate_dt`.
             tracker:
-                Defines trackers that process the state of the simulation at
-                fixed time intervals. Multiple trackers can be specified as a
-                list. The default value simply displays a progress bar. To
-                disable trackers, set the value to `None`.
+                Defines trackers that process the state of the simulation at specified
+                times. A tracker is either an instance of
+                :class:`~pde.trackers.base.TrackerBase` or a string identifying a
+                tracker (possible identifiers can be obtained by calling
+                :func:`~pde.trackers.base.get_named_trackers`). Multiple trackers can be
+                specified as a list. The default tracker simply displays a progress bar.
+                More general trackers are defined in :mod:`~pde.trackers` and
+                :mod:`~sim.trackers`, where all options are explained in detail. In
+                particular, the time points where the tracker analyzes data can be
+                chosen when creating a tracker object explicitly.
             backend (str):
-                Determines how the function is created. Accepted  values are
-                'numpy` and 'numba'. Alternatively, 'auto' lets the code decide
-                for the most optimal backend.
+                Determines how the function is created. Accepted  values are 'numpy` and
+                'numba'. Alternatively, 'auto' lets the code decide for the most optimal
+                backend.
             ret_info (bool):
-                Flag determining whether diagnostic information about the solver
-                process should be returned.
+                Flag determining whether diagnostic information about the solver process
+                should be returned.
             use_cache (bool):
                 Indicates whether a stepper from the cache can also be used. This is
                 disabled by default since there is no check whether the simulation

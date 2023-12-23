@@ -17,20 +17,30 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
 from modelrunner.parameters import Parameter, Parameterized
-from modelrunner.state import DictState, NoData, simplify_data
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.numba import jit
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
-from .elements.base import _ElementBase
+from .elements.base import DictElementBase, NoData, _ElementBase
 
 
-class State(Parameterized, DictState):
+class State(DictElementBase):
     """defines the state of the simulation as a collection of elements"""
 
     parameters_default = [
@@ -52,7 +62,7 @@ class State(Parameterized, DictState):
     _state_attributes_attr_name = "attributes"
     _state_data_attr_name = "data"
 
-    data: Dict[str, _ElementBase]  # type: ignore
+    data: Dict[str, _ElementBase]
 
     def __init__(
         self,
@@ -68,8 +78,8 @@ class State(Parameterized, DictState):
             parameters (dict):
                 Parameters that affect the entire state
         """
-        # parse parameters and initialize self.parameters
-        Parameterized.__init__(self, parameters)
+        # parse parameters and initialize empty dictionary storage
+        super().__init__({}, parameters)
 
         # determine dimensionality of space
         if self.parameters["bounds"] is None:
@@ -77,15 +87,12 @@ class State(Parameterized, DictState):
         else:
             self.dim = len(self.parameters["bounds"])
 
-        # initialize empty dictionary storage
-        DictState.__init__(self, {})
-
         # add elements to the state
         if elements:
             for name, element in elements.items():
                 self.add_element(name, element)
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -95,7 +102,7 @@ class State(Parameterized, DictState):
         if data is not NoData:
             self.data = data
 
-        self.dim = attributes.pop("dim")
+        self.dim = attributes.pop("dim", None)
         self.parameters = self._parse_parameters(
             attributes["parameters"], include_deprecated=True, check_validity=True
         )
@@ -103,34 +110,14 @@ class State(Parameterized, DictState):
             raise ValueError(f"Too many attributes: {attributes.keys()}")
 
     @property
-    def attributes(self) -> Dict[str, Any]:
-        """dict: information about the state"""
-        return {"parameters": self.parameters}
-
-    @property
-    def _state_attributes_store(self) -> Dict[str, Any]:
+    def _attributes_storage(self) -> Dict[str, Any]:
         """dict: Attributes in the form in which they will be written to storage
 
         This property modifies the normal `_state_attributes` and adds information
         necessary for restoring the class using :meth:`StateBase.from_data`.
         """
-        attrs = super()._state_attributes_store
+        attrs = super()._attributes_storage
         attrs["dim"] = self.dim
-
-        if "parameters" in attrs:
-            # serialize the individual parameters
-            default_parameters = self.get_parameters(
-                include_hidden=True, include_deprecated=True, sort=False
-            )
-
-            for key, value in attrs["parameters"].items():
-                if key in default_parameters:
-                    def_param_extra = default_parameters[key].extra
-                    if "serializer" in def_param_extra:
-                        attrs["parameters"][key] = def_param_extra["serializer"](value)
-                        continue
-                attrs["parameters"][key] = simplify_data(value)
-
         return attrs
 
     @classmethod
@@ -161,7 +148,7 @@ class State(Parameterized, DictState):
         for key, new_el_data in zip(self.data.keys(), state_data):
             self.data[key]._data_numba[...] = new_el_data
 
-    def copy(self, method: str = "clean", data=None):
+    def copy(self, method: Literal["clean", "shallow", "data"] = "clean", data=None):
         """create a copy of the state
 
         Args:

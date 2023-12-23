@@ -25,11 +25,11 @@ simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
 # run simulation and store data periodically
 tracker = sim.TrajectoryTracker(
-    "trajectory.zarr", interval=2, overwrite=True, info=simulation.info
+    "trajectory.zip", interrupts=2, mode="truncate", info=simulation.info
 )
 simulation.run(t_range=10, tracker=tracker)
 
 # retrieve data and plot last state
-stored_data = sim.Trajectory("trajectory.zarr")
+stored_data = sim.Trajectory("trajectory.zip")
 print(stored_data.info)  # recover the auxillary information
 stored_data[-1].plot()  # plot the last time point of the stored data

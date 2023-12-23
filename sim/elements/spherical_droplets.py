@@ -11,12 +11,11 @@ from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
-from modelrunner.state import NoData
 from pde.fields import FieldBase
 from pde.grids.base import GridBase
 
 from .. import Parameter
-from .base import ArrayElementBase
+from .base import ArrayElementBase, NoData
 from .fields import FieldElementBase
 
 
@@ -37,14 +36,14 @@ class SphericalDropletsElement(ArrayElementBase):
 
     data: np.recarray
 
-    def _state_init(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
             attributes (dict): Additional (unserialized) attributes
             data: The data of the degerees of freedom of the physical system
         """
-        super()._state_init(attributes, data)
+        super()._init_state(attributes, data)
 
         if data is not NoData:
             # extract the droplets from data if given
@@ -136,7 +135,7 @@ class SphericalDropletsElement(ArrayElementBase):
             :class:`SphericalDropletsElement`: The initialized element
         """
         obj = cls.__new__(cls)  # create class without calling its __init__
-        obj._state_init({"parameters": parameters})  # initialize generally
+        obj._init_state({"parameters": parameters})  # initialize generally
 
         # determine example droplet to set the `dtype`
         if droplet is None:
@@ -179,7 +178,7 @@ class SphericalDropletsElement(ArrayElementBase):
                 :meth:`~SphericalDropletsElement.show_parameters` for details.
         """
         obj = cls.__new__(cls)  # create class without calling its __init__
-        obj._state_init({"parameters": parameters})  # initialize generally
+        obj._init_state({"parameters": parameters})  # initialize generally
         dtype = droplets.data.dtype if hasattr(droplets, "data") else None
         obj._init_droplets(
             Emulsion(droplets, copy=copy, dtype=dtype, force_consistency=True),
@@ -328,8 +327,8 @@ class SphericalDropletsElement(ArrayElementBase):
 
         elif self.dim == 3:
             # render 3d droplets as (closed) surfaces
-            vertices = np.empty((0, 3), np.double)
-            faces = np.empty((0, 3), np.uint)
+            vertices: np.ndarray = np.empty((0, 3), np.double)
+            faces: np.ndarray = np.empty((0, 3), np.uint)
             for droplet in self.droplets:
                 tri = droplet.get_triangulation(resolution=resolution)
                 offset = len(vertices)
