@@ -128,10 +128,11 @@ def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float
     Licensed under MIT License (see copy in root of this project)
 
     Args:
-        vertices (:class:`~numpy.ndarray`): List of vertices (using Cartesian
-            coordinates) that describe the corners of the polygon. The vertices
-            need to be oriented.
-        radius (float): Radius of the sphere
+        vertices (:class:`~numpy.ndarray`):
+            List of vertices (using Cartesian coordinates) that describe the corners of
+            the polygon. The vertices need to be oriented.
+        radius (float):
+            Radius of the sphere
     """
     # have to convert to unit sphere before applying the formula
     spherical_coordinates = points_cartesian_to_spherical(vertices)
@@ -183,10 +184,11 @@ class PointsOnSphere:
         """create uniformly distributed points on a sphere
 
         Args:
-            dim (int): The dimension of space
-            num_points (int, optional): The number of points to generate. Note
-                that for one-dimensional spheres (intervals), only exactly two
-                points can be generated
+            dim (int):
+                The dimension of space
+            num_points (int, optional):
+                The number of points to generate. Note that for one-dimensional spheres
+                (intervals), only exactly two points can be generated.
         """
         if dim == 1:
             # just have two directions in 2d
@@ -234,9 +236,9 @@ class PointsOnSphere:
         """return the weight of each point associated with the unit cell size
 
         Args:
-            balance_axes (bool): Flag determining whether the weights should be
-                chosen such that the weighted average of all points is the
-                zero vector
+            balance_axes (bool):
+                Flag determining whether the weights should be chosen such that the
+                weighted average of all points is the zero vector.
 
         Returns:
             :class:`~numpy.ndarray`: The weight associated with each point
@@ -289,7 +291,8 @@ class PointsOnSphere:
         """calculate the (spherical) distances between each point
 
         Returns:
-            :class:`~numpy.ndarray`: the distance of each point to each other
+            :class:`~numpy.ndarray`:
+                The distance of each point to each other
         """
         from scipy import spatial
 
@@ -325,9 +328,12 @@ class PointsOnSphere:
         """write the point coordinates to a xyz file
 
         Args:
-            path (str): location of the file where data is written
-            comment (str, optional): comment that is written to the second line
-            symbol (str, optional): denotes the symbol used for the atoms
+            path (str):
+                Location of the file where data is written
+            comment (str, optional):
+                Comment that is written to the second line
+            symbol (str, optional):
+                Denotes the symbol used for the atoms
         """
         with open(path, "w") as fp:
             fp.write("%d\n" % len(self.points))
@@ -391,7 +397,7 @@ class ShellSectors:
     @property
     def dim(self) -> int:
         """int: dimension of the space this shell is defined for"""
-        return self.vectors.shape[1]
+        return self.vectors.shape[1]  # type: ignore
 
     @property
     def sector_count(self) -> int:
@@ -454,7 +460,7 @@ class ShellCollection:
             info_dict (dict, optional):
                 A dictionary into which extra information will be stored
         """
-        max_radii_ = np.asarray(max_radii, dtype=np.double)
+        max_radii_: np.ndarray = np.asarray(max_radii, dtype=np.double)
 
         # order data by max_radii
         idx = np.argsort(max_radii_)

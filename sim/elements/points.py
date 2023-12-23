@@ -200,7 +200,7 @@ class ArrowsElement(PointsElement):
         """
         positions = np.atleast_2d(positions)
         num_points, dim = positions.shape
-        magnitude = np.array(direction_magnitude, np.double, ndmin=1)
+        magnitude: np.ndarray = np.array(direction_magnitude, np.double, ndmin=1)
 
         if dim == 1:
             directions = magnitude * np.random.choice([-1.0, 1.0], size=num_points)

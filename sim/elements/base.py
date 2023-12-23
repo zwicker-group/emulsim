@@ -582,7 +582,7 @@ class ObjectElementBase(_ElementBase):
         storage.read_array(loc, index=index, out=self.data)
 
     def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
-        arr = np.empty((), dtype=object)
+        arr: np.ndarray = np.empty((), dtype=object)
         arr[()] = self.data
         storage.write_array(
             loc, arr, attrs=self._attributes_storage, cls=self.__class__
@@ -598,7 +598,7 @@ class ObjectElementBase(_ElementBase):
         )
 
     def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
-        arr = np.empty((), dtype=object)
+        arr: np.ndarray = np.empty((), dtype=object)
         arr[()] = self.data
         storage.extend_dynamic_array(loc, arr)
 

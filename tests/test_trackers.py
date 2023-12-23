@@ -24,7 +24,7 @@ def test_field_tracker():
 
     # run simulation
     storage = MemoryStorage()
-    tracker = sim.FieldTracker("field", storage.tracker(interval=1))
+    tracker = sim.FieldTracker("field", storage.tracker(interrupts=1))
     result = simulation.run(t_range=3.00001, dt=0.1, backend="numpy", tracker=tracker)
 
     assert len(storage) == 4

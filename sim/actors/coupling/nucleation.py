@@ -181,7 +181,7 @@ class DropletNucleationActor(ActorBase):
         droplets, field = elements
 
         dim = self._cache["dim"]
-        size = np.product(field.grid.shape)
+        size = np.prod(field.grid.shape)
         ΔV = field.grid.cell_volumes.reshape(size)
         cell_coords = field.grid.cell_coords.reshape(size, dim)
         volume = spherical.make_volume_from_radius_compiled(dim)

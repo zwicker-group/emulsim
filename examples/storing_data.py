@@ -25,7 +25,7 @@ simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
 # run simulation and store data periodically
 tracker = sim.TrajectoryTracker(
-    "trajectory.zip", interval=2, mode="truncate", info=simulation.info
+    "trajectory.zip", interrupts=2, mode="truncate", info=simulation.info
 )
 simulation.run(t_range=10, tracker=tracker)
 

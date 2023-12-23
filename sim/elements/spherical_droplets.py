@@ -327,8 +327,8 @@ class SphericalDropletsElement(ArrayElementBase):
 
         elif self.dim == 3:
             # render 3d droplets as (closed) surfaces
-            vertices = np.empty((0, 3), np.double)
-            faces = np.empty((0, 3), np.uint)
+            vertices: np.ndarray = np.empty((0, 3), np.double)
+            faces: np.ndarray = np.empty((0, 3), np.uint)
             for droplet in self.droplets:
                 tri = droplet.get_triangulation(resolution=resolution)
                 offset = len(vertices)
