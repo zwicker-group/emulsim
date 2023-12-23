@@ -23,7 +23,7 @@ from modelrunner.storage import Trajectory as _Trajectory
 from modelrunner.storage import TrajectoryWriter
 from pde.fields.base import FieldBase
 from pde.tools.docstrings import fill_in_docstring
-from pde.trackers.base import InfoDict, IntervalData, TrackerBase
+from pde.trackers.base import InfoDict, InterruptData, TrackerBase
 
 from .simulation import State
 
@@ -38,17 +38,18 @@ class TrajectoryTracker(TrackerBase):
     def __init__(
         self,
         storage: StorageID,
-        interval: IntervalData = 1,
+        interrupts: InterruptData = 1,
         *,
         mode: Optional[ModeType] = None,
         info: Optional[InfoDict] = None,
+        interval=None,
     ):
         """
         Args:
             storage (MutableMapping or string):
                 Store or path to directory in file system
-            interval
-                {ARG_TRACKER_INTERVAL}
+            interrupts
+                {ARG_TRACKER_INTERRUPTS}
             mode (str or :class:`~modelrunner.storage.access_modes.AccessMode`):
                 The file mode with which the storage is accessed. Determines allowed
                 operations. The meaning of the special (default) value `None` depends on
@@ -60,7 +61,7 @@ class TrajectoryTracker(TrackerBase):
                 Additional information that are written to the trajectory storage. To
                 document simulation parameters, `simulation.info` can be used here.
         """
-        super().__init__(interval=interval)
+        super().__init__(interrupts=interrupts, interval=interval)
         self.storage = storage
         self.mode = mode
         self.info = info
@@ -144,18 +145,19 @@ class DropletElementTracker(TrackerBase):
     def __init__(
         self,
         element_name: str,
-        interval: IntervalData = 1,
+        interrupts: InterruptData = 1,
         *,
         store_emulsions: Union[bool, str] = True,
         store_droplet_tracks: Union[bool, str] = True,
         keep_vanished: bool = False,
+        interval=None,
     ):
         """
         Args:
             element_name (str):
                 The name of the element containing the droplets
-            interval
-                {ARG_TRACKER_INTERVAL}
+            interrupts
+                {ARG_TRACKER_INTERRUPTS}
             store_emulsions (bool or str):
                 Determines whether to store data on emulsions in an instance of
                 :class:`~droplets.analysis.emulsions.EmulsionTimeCourse`. No data is
@@ -174,7 +176,7 @@ class DropletElementTracker(TrackerBase):
                 droplets disappearing and re-appearing should be combined in a single
                 track.
         """
-        super().__init__(interval=interval)
+        super().__init__(interrupts=interrupts, interval=interval)
         self.element_name = element_name
         self.store_emulsions = store_emulsions
         self.store_droplet_tracks = store_droplet_tracks
@@ -287,11 +289,7 @@ class FieldTracker(TrackerBase):
         """
         self.element_name = element_name
         self.tracker = tracker
-        try:
-            self.interrupt = tracker.interrupt
-        except AttributeError:
-            # fall-back to deprecated attribute (remove on 2023-03-15)
-            self.interval = tracker.interval  # type: ignore
+        self.interrupt = tracker.interrupt
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(  # type: ignore

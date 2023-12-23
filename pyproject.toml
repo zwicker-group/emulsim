@@ -28,9 +28,9 @@ dependencies = [
     "networkx>=2",
     "numba>=0.56.0",
     "numpy>=1.22.0,<1.24",
-    "py-droplets>=0.18",
-    "py-modelrunner>=0.13",
-    "py-pde>=0.31.0",
+    "py-droplets>=0.19",
+    "py-modelrunner>=0.14",
+    "py-pde>=0.34.0",
     "scipy>=1.4.0",
     "sympy>=1.5.0",
 ]
