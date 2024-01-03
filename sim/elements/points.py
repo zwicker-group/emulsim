@@ -4,8 +4,10 @@ Provides an element that represents a collection of points
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -27,7 +29,7 @@ class PointsElement(ArrayElementBase):
         )
     ]
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -105,7 +107,7 @@ class PointsElement(ArrayElementBase):
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(ymin, ymax)
 
-    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+    def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         """returns data for plotting on a single napari layer
 
         Args:
@@ -141,7 +143,7 @@ class ArrowsElement(PointsElement):
             :meth:`~PointsElement.show_parameters` for details.
     """
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -156,8 +158,8 @@ class ArrowsElement(PointsElement):
         cls,
         positions: np.ndarray,
         directions: np.ndarray,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> "ArrowsElement":
+        parameters: dict[str, Any] | None = None,
+    ) -> ArrowsElement:
         """create element from separately specified positions and directions
 
         Args:
@@ -183,9 +185,9 @@ class ArrowsElement(PointsElement):
     def from_position_random_direction(
         cls,
         positions: np.ndarray,
-        direction_magnitude: Union[float, np.ndarray] = 1,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> "ArrowsElement":
+        direction_magnitude: float | np.ndarray = 1,
+        parameters: dict[str, Any] | None = None,
+    ) -> ArrowsElement:
         """create element from separately specified positions and directions
 
         Args:

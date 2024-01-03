@@ -4,7 +4,9 @@ Provides an actor coupling two or more fields
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import numpy as np
 
@@ -35,7 +37,7 @@ class FieldCouplingActor(ActorBase):
         ),
     ]
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -65,7 +67,7 @@ class FieldCouplingActor(ActorBase):
         for field in fields[1:]:
             grid.assert_grid_compatible(field.grid)  # type: ignore
 
-        rhs_expressions: Dict[int, ScalarExpression] = dict()
+        rhs_expressions: dict[int, ScalarExpression] = dict()
         field_names = self.parameters["fields"]
         signature = field_names + ["t"]
         for field_name, rhs in self.parameters["evolution_rates"].items():
@@ -78,7 +80,7 @@ class FieldCouplingActor(ActorBase):
 
     def make_evolver_numba(
         self, fields: ElementsType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -107,15 +109,15 @@ class FieldCouplingActor(ActorBase):
 
         def chain(
             expression_id: int,
-            inner: Callable[[Tuple[np.ndarray, ...], float, float], None],
-        ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+            inner: Callable[[tuple[np.ndarray, ...], float, float], None],
+        ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
             """recursive helper function for running all actors"""
             # run through all expressions
             field_id = expressions[expression_id]["field_id"]
             rhs = expressions[expression_id]["rhs"]
 
             @jit
-            def wrap(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+            def wrap(state_data: tuple[np.ndarray], t: float, dt: float) -> None:
                 inner(state_data, t, dt)
                 field_data = state_data[field_id]
                 field_data += dt * rhs(*state_data, t)
@@ -235,7 +237,7 @@ class FieldBoundaryExchangeActor(ActorBase):
             self._cache["grid_match"] = "exact"
 
             # determine the indices to access the bulk concentration close to boundary
-            indicies: List[Union[int, slice]] = []
+            indicies: list[int | slice] = []
             for i in range(bulk.dim):  # type: ignore
                 if i != axis:
                     indicies.append(slice(None, None))  # use the full axis (i.e., `:`)
@@ -265,7 +267,7 @@ class FieldBoundaryExchangeActor(ActorBase):
 
     def make_evolver_numba(
         self, fields: ElementsType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -292,7 +294,7 @@ class FieldBoundaryExchangeActor(ActorBase):
 
             @jit
             def evolver(
-                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+                elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
                 """evolve the flux between bulk and boundary"""
                 bulk_data, boundary_data = elements_data
@@ -319,7 +321,7 @@ class FieldBoundaryExchangeActor(ActorBase):
 
             @jit
             def evolver(
-                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+                elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
                 """evolve the flux between bulk and boundary"""
                 bulk_data, boundary_data = elements_data

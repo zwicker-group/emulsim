@@ -32,19 +32,7 @@ import copy
 import math
 import warnings
 from abc import ABCMeta, abstractproperty
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Sequence, TypeVar, Union
 
 import numpy as np
 from numba import literal_unroll
@@ -127,15 +115,15 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         Parameter("plot_args", {}, dict, "Extra arguments for plotting this element")
     ]
 
-    dim: Optional[int]  # dimensionality of the space in which the element is embedded
+    dim: int | None  # dimensionality of the space in which the element is embedded
 
-    _element_types: Dict[str, Type[_ElementBase]] = {}
+    _element_types: dict[str, type[_ElementBase]] = {}
     _compatible_actors: Sequence[ActorBase] = []
     _format_version: int = 1
 
     data: Any  # defines the python access point
 
-    def __init__(self, data: Any, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, data: Any, parameters: dict[str, Any] | None = None):
         Parameterized.__init__(self, parameters, strict=True)
         self._init_state({"parameters": parameters}, data)
 
@@ -150,7 +138,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             storage_actions.register("read_item", cls, cls._from_stored_data)
             storage_actions.register("write_item", cls, cls._write_to_storage)
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state from attributes and (optionally) data
 
         This function is the central intialization method for the element, which is
@@ -181,12 +169,12 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         return self.data
 
     @property
-    def attributes(self) -> Dict[str, Any]:
+    def attributes(self) -> dict[str, Any]:
         """dict: information about the element state, which does not change in time"""
         return {"parameters": self.parameters}
 
     @property
-    def _attributes_storage(self) -> Dict[str, Any]:
+    def _attributes_storage(self) -> dict[str, Any]:
         """dict: Attributes in the form in which they will be written to storage
 
         This property modifies the normal `attributes` and adds information
@@ -216,7 +204,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         return attrs
 
     @classmethod
-    def _unpack_parameters(cls, parameters: Dict[str, Any]) -> None:
+    def _unpack_parameters(cls, parameters: dict[str, Any]) -> None:
         """convert an attribute from a form that was stored"""
         default_parameters = cls.get_parameters(
             include_hidden=True, include_deprecated=True, sort=False
@@ -230,7 +218,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
                     parameters[key] = def_param_extra["unserializer"](parameters[key])
 
     @classmethod
-    def from_data(cls, attributes: Dict[str, Any], data=NoData) -> _ElementBase:
+    def from_data(cls, attributes: dict[str, Any], data=NoData) -> _ElementBase:
         """create instance of any state class from attributes and data
 
         Args:
@@ -272,7 +260,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         else:
             raise ValueError(f"Incompatible state class {cls_name}")
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """return a representation of the current state
 
         Note that this representation might contain views into actual data
@@ -413,7 +401,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def _from_stored_data(
-        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+        cls, storage: StorageGroup, loc: Location, *, index: int | None = None
     ):
         """create the element from some storage
 
@@ -443,7 +431,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             return element_cls._from_stored_data(storage, loc, index=index)
 
     def _update_from_stored_data(
-        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+        self, storage: StorageGroup, loc: Location, index: int | None = None
     ) -> None:
         """update the state data (but not its attributes) from storage
 
@@ -544,7 +532,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         """plot the element"""
         pass
 
-    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+    def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         """returns data for plotting on a single napari layer
 
         Returns:
@@ -566,7 +554,7 @@ class ObjectElementBase(_ElementBase):
 
     @classmethod
     def _from_stored_data(
-        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+        cls, storage: StorageGroup, loc: Location, *, index: int | None = None
     ) -> ObjectElementBase:
         attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
 
@@ -577,7 +565,7 @@ class ObjectElementBase(_ElementBase):
         return obj
 
     def _update_from_stored_data(
-        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+        self, storage: StorageGroup, loc: Location, index: int | None = None
     ) -> None:
         storage.read_array(loc, index=index, out=self.data)
 
@@ -608,8 +596,8 @@ class ArrayElementBase(_ElementBase):
 
     def __init__(
         self,
-        data: Optional[np.ndarray] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        data: np.ndarray | None = None,
+        parameters: dict[str, Any] | None = None,
     ):
         """
         Args:
@@ -671,7 +659,7 @@ class ArrayElementBase(_ElementBase):
 
     @classmethod
     def _from_stored_data(
-        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+        cls, storage: StorageGroup, loc: Location, *, index: int | None = None
     ) -> ArrayElementBase:
         attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
 
@@ -682,7 +670,7 @@ class ArrayElementBase(_ElementBase):
         return obj
 
     def _update_from_stored_data(
-        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+        self, storage: StorageGroup, loc: Location, index: int | None = None
     ) -> None:
         storage.read_array(loc, index=index, out=self.data)
 
@@ -709,8 +697,8 @@ class ArrayCollectionElementBase(_ElementBase):
 
     def __init__(
         self,
-        data: Optional[Tuple[np.ndarray, ...]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        data: tuple[np.ndarray, ...] | None = None,
+        parameters: dict[str, Any] | None = None,
     ):
         """
         Args:
@@ -759,8 +747,8 @@ class DictElementBase(_ElementBase):
 
     def __init__(
         self,
-        data: Optional[Dict[str, _ElementBase]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        data: dict[str, _ElementBase] | None = None,
+        parameters: dict[str, Any] | None = None,
     ):
         """
         Args:
@@ -770,13 +758,13 @@ class DictElementBase(_ElementBase):
         super().__init__(data, parameters)
 
     @property
-    def _attributes_storage(self) -> Dict[str, Any]:
+    def _attributes_storage(self) -> dict[str, Any]:
         attrs = super()._attributes_storage
         attrs["_element_labels"] = list(self.data.keys())
         return attrs
 
     @property
-    def _data_numba(self) -> Tuple:
+    def _data_numba(self) -> tuple:
         """returns the data associated with the state in a form that numba can handle"""
         return tuple(state._data_numba for state in self.data.values())
 
@@ -797,7 +785,7 @@ class DictElementBase(_ElementBase):
 
     @classmethod
     def _from_stored_data(
-        cls, storage: StorageGroup, loc: Location, *, index: Optional[int] = None
+        cls, storage: StorageGroup, loc: Location, *, index: int | None = None
     ) -> DictElementBase:
         attrs = cls._get_attrs_from_storage(storage, loc, check_version=True)
 
@@ -814,7 +802,7 @@ class DictElementBase(_ElementBase):
         return obj
 
     def _update_from_stored_data(
-        self, storage: StorageGroup, loc: Location, index: Optional[int] = None
+        self, storage: StorageGroup, loc: Location, index: int | None = None
     ) -> None:
         subgroup = storage.open_group(loc)
         for key, substate in self.data.items():

@@ -48,7 +48,7 @@ class LocalReactionsActor(ActorBase):
 
     element_classes = (FieldElementBase,)
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -60,7 +60,7 @@ class LocalReactionsActor(ActorBase):
         reaction_flux = self.parameters["reaction_flux"]
         self._reaction = ScalarExpression(reaction_flux, signature=["c", "t"])
 
-    def estimate_dt(self, elements: Tuple[FieldElementBase]) -> float:  # type: ignore
+    def estimate_dt(self, elements: tuple[FieldElementBase]) -> float:  # type: ignore
         """get the optimal time step for the simulation of the actor
 
         Args:
@@ -84,8 +84,8 @@ class LocalReactionsActor(ActorBase):
             return 0.1 / s_max  # type: ignore
 
     def make_evolver_numba(  # type: ignore
-        self, elements: Tuple[FieldElementBase]
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+        self, elements: tuple[FieldElementBase]
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolve the field from time `t` to `t + dt`
 
         Args:
@@ -99,14 +99,14 @@ class LocalReactionsActor(ActorBase):
         reation_flux = self._reaction.get_compiled()
 
         @jit
-        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+        def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve the diffusion equation explicitly"""
             (field_data,) = fields_data
             field_data += dt * reation_flux(field_data, t)
 
         return evolver  # type: ignore
 
-    def evolve(self, elements: Tuple[FieldElementBase], t: float, dt: float):  # type: ignore
+    def evolve(self, elements: tuple[FieldElementBase], t: float, dt: float):  # type: ignore
         """evolve the field from time `t` to `t + dt`
 
         Args:
@@ -122,7 +122,7 @@ class LocalReactionsActor(ActorBase):
 
 
 class MeanfieldActor(LocalReactionsActor):
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -139,7 +139,7 @@ class ScalarPDEActor(ActorBase):
 
     element_classes = (ScalarFieldElement,)
 
-    def __init__(self, pde: PDEBase, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, pde: PDEBase, parameters: dict[str, Any] | None = None):
         """initialize the actor and its PDE
 
         Args:
@@ -159,7 +159,7 @@ class ScalarPDEActor(ActorBase):
             self.pde = pde
 
     @property
-    def info(self) -> Dict[str, Any]:
+    def info(self) -> dict[str, Any]:
         """dict: information about the actor"""
         result = super().info
         result["pde"] = {"class": self.pde.__class__.__name__}
@@ -170,8 +170,8 @@ class ScalarPDEActor(ActorBase):
         return self.__class__(self.pde, self.parameters.copy())
 
     def make_evolver_numba(  # type: ignore
-        self, elements: Tuple[ScalarFieldElement]
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+        self, elements: tuple[ScalarFieldElement]
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolving the field from time `t` to `t + dt`
 
         Args:
@@ -186,14 +186,14 @@ class ScalarPDEActor(ActorBase):
         pde_rhs = self.pde._make_pde_rhs_numba(element._field)
 
         @jit
-        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+        def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve the PDE explicitly"""
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
         return evolver  # type: ignore
 
-    def evolve(self, elements: Tuple[ScalarFieldElement], t: float, dt: float):  # type: ignore
+    def evolve(self, elements: tuple[ScalarFieldElement], t: float, dt: float):  # type: ignore
         """evolve the field from time `t` to `t + dt`
 
         Args:
@@ -230,7 +230,7 @@ class DiffusionActor(ScalarPDEActor):
         ),
     ]
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -249,7 +249,7 @@ class DiffusionActor(ScalarPDEActor):
         )
         super().__init__(eq, parameters)
 
-    def estimate_dt(self, elements: Tuple[ScalarFieldElement]) -> float:  # type: ignore
+    def estimate_dt(self, elements: tuple[ScalarFieldElement]) -> float:  # type: ignore
         """get the optimal time step for the simulation of the actor
 
         Args:
@@ -304,7 +304,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
         ),
     ]
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -325,7 +325,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
         }
         super().__init__(ReactionDiffusionPDE(pde_params), parameters)
 
-    def estimate_dt(self, elements: Tuple[ScalarFieldElement]) -> float:  # type: ignore
+    def estimate_dt(self, elements: tuple[ScalarFieldElement]) -> float:  # type: ignore
         """get the optimal time step for the simulation of the actor
 
         Args:
@@ -378,7 +378,7 @@ class CollectionPDEActor(ActorBase):
 
     element_classes = (FieldCollectionElement,)
 
-    def __init__(self, pde: PDEBase, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, pde: PDEBase, parameters: dict[str, Any] | None = None):
         """initialize the actor and its PDE
 
         Args:
@@ -398,7 +398,7 @@ class CollectionPDEActor(ActorBase):
             self.pde = pde
 
     @property
-    def info(self) -> Dict[str, Any]:
+    def info(self) -> dict[str, Any]:
         """dict: information about the actor"""
         result = super().info
         result["pde"] = {"class": self.pde.__class__.__name__}
@@ -409,8 +409,8 @@ class CollectionPDEActor(ActorBase):
         return self.__class__(self.pde, self.parameters.copy())
 
     def make_evolver_numba(  # type: ignore
-        self, elements: Tuple[FieldCollectionElement]
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+        self, elements: tuple[FieldCollectionElement]
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolving the field from time `t` to `t + dt`
 
         Args:
@@ -425,14 +425,14 @@ class CollectionPDEActor(ActorBase):
         pde_rhs = self.pde._make_pde_rhs_numba(element.field)
 
         @jit
-        def evolver(fields_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+        def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve the PDE explicitly"""
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
         return evolver  # type: ignore
 
-    def evolve(self, elements: Tuple[FieldCollectionElement], t: float, dt: float):  # type: ignore
+    def evolve(self, elements: tuple[FieldCollectionElement], t: float, dt: float):  # type: ignore
         """evolve the field from time `t` to `t + dt`
 
         Args:

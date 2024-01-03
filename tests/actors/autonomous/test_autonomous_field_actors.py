@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from pde import PDE, CartesianGrid, DiffusionPDE, FieldCollection, ScalarField, UnitGrid
-from pde.tools.misc import skipUnlessModule
+from pde.tools.misc import module_available
 
 from sim.actors.autonomous.fields import (
     CollectionPDEActor,
@@ -92,7 +92,9 @@ def test_local_reactions(meanfield):
     assert np.allclose(element.data, 11)
 
 
-@skipUnlessModule("phasesep")
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 def test_diffusion_vs_reaction_diffusion():
     """compare the diffusion background with the RD-background"""
     field = ScalarField.random_uniform(UnitGrid([10]))
@@ -111,7 +113,9 @@ def test_diffusion_vs_reaction_diffusion():
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
-@skipUnlessModule("phasesep")
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 def test_reaction_diffusion_background():
     """test a diffusion background with a reaction"""
     field = ScalarField.random_uniform(UnitGrid([10]))

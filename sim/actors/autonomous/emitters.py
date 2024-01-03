@@ -4,6 +4,8 @@ Provides a simple actor that emit mass into a field a predefined positions
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
@@ -57,7 +59,7 @@ class EmittersActor(ActorBase):
 
     def make_evolver_numba(
         self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -76,7 +78,7 @@ class EmittersActor(ActorBase):
         strengths = np.broadcast_to(self.parameters["strengths"], (len(positions),))
 
         @jit
-        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
+        def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
             """evolve all emitters explicitly"""
             for position, strength in zip(positions, strengths):
                 add_amount(state_data[0], position, dt * strength)

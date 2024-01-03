@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Tuple
+from typing import Callable
 
 import numpy as np
 from numba.extending import register_jitable
@@ -27,7 +27,7 @@ class MulticomponentDroplet(SphericalDroplet):
         self,
         position: np.ndarray,
         radius: float,
-        amounts: Optional[np.ndarray] = None,
+        amounts: np.ndarray | None = None,
     ):
         """
         Args:
@@ -100,7 +100,7 @@ class MulticomponentDroplet(SphericalDroplet):
         return int(shape[0]) if shape else 1
 
     @property
-    def data_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
+    def data_bounds(self) -> tuple[np.ndarray, np.ndarray]:
         """tuple: lower and upper bounds on the parameters"""
         l, h = super().data_bounds
         n = self.dim + 2

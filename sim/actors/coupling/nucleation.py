@@ -4,7 +4,9 @@ Provides an actor nucleating droplets from a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple, Union
+from __future__ import annotations
+
+from typing import Callable, Tuple
 
 import numpy as np
 
@@ -126,9 +128,7 @@ class DropletNucleationActor(ActorBase):
         k = self.parameters["prefactor"] * np.exp(self.parameters["scale"] * Δc)
         return 1.0 / (k * cell_vol)  # type: ignore
 
-    def nucleation_rate(
-        self, field: Union[FieldElementBase, ScalarField]
-    ) -> ScalarField:
+    def nucleation_rate(self, field: FieldElementBase | ScalarField) -> ScalarField:
         """return nucleation rate :math:`k` for a given field
 
         Note that this nucleation rate is actually a nucleation rate density. The rate
@@ -165,7 +165,7 @@ class DropletNucleationActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -204,7 +204,7 @@ class DropletNucleationActor(ActorBase):
 
         @jit
         def evolver(
-            elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+            elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
             """check for nucleation in all grid cells"""
             droplets_data, field_data = elements_data

@@ -9,7 +9,7 @@ from scipy import spatial
 
 from droplets import Emulsion, SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
-from pde.tools.misc import module_available, skipUnlessModule
+from pde.tools.misc import module_available
 
 from helpers import assert_recarrays_allclose
 from sim import ReactionDiffusionActor, Simulation, State
@@ -274,7 +274,9 @@ def test_material_conservation(backend):
     assert res.get_total_quantity("total_amount") == pytest.approx(total_amount)
 
 
-@skipUnlessModule("phasesep")
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim):
     """a simple test for implementation of linearized fluxes for Active Emulsions under

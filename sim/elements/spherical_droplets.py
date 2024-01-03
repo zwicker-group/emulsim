@@ -6,7 +6,7 @@ Provides a simulation element representing spherical droplets
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -36,7 +36,7 @@ class SphericalDropletsElement(ArrayElementBase):
 
     data: np.recarray
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -60,7 +60,7 @@ class SphericalDropletsElement(ArrayElementBase):
         self,
         droplets: Emulsion,
         *,
-        maxcount: Optional[int] = None,
+        maxcount: int | None = None,
     ):
         """helper function that ensures that the droplet attribute is linked with `data`
 
@@ -109,9 +109,9 @@ class SphericalDropletsElement(ArrayElementBase):
         cls,
         maxcount: int,
         *,
-        dim: Optional[int] = None,
-        droplet: Optional[SphericalDroplet] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        dim: int | None = None,
+        droplet: SphericalDroplet | None = None,
+        parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
         """create empty SphericalDropletsElement that can be filled with droplets later
 
@@ -157,8 +157,8 @@ class SphericalDropletsElement(ArrayElementBase):
         droplets: Emulsion,
         *,
         copy: bool = False,
-        maxcount: Optional[int] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        maxcount: int | None = None,
+        parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
         """
         Create `SphericalDropletsElement` from a list of droplets
@@ -190,13 +190,13 @@ class SphericalDropletsElement(ArrayElementBase):
     def from_random(
         cls,
         num: int,
-        bounds: Union[FieldElementBase, FieldBase, GridBase],
-        radius: Union[float, Tuple[float, float]],
+        bounds: FieldElementBase | FieldBase | GridBase,
+        radius: float | tuple[float, float],
         *,
         remove_overlapping: bool = True,
-        maxcount: Optional[int] = None,
-        rng: Optional[np.random.Generator] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        maxcount: int | None = None,
+        rng: np.random.Generator | None = None,
+        parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
         """
         Create `SphericalDropletsElement` with random droplets
@@ -287,7 +287,7 @@ class SphericalDropletsElement(ArrayElementBase):
 
     def _get_napari_layer_data(
         self, point_like: bool = False, resolution: float = 1, **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """returns data for plotting on a single napari layer
 
         Args:

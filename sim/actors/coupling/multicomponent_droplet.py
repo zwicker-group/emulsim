@@ -6,7 +6,7 @@ Provides an actor coupling multicomponent droplets to background fields
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Tuple
 
 import numba as nb
 import numpy as np
@@ -213,9 +213,9 @@ class MulticomponentDropletActor(ActorBase):
     @classmethod
     def from_linear_reactions(
         cls,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         rates: np.ndarray,
-        production: Optional[np.ndarray] = None,
+        production: np.ndarray | None = None,
     ) -> MulticomponentDropletActor:
         """create functions suitable to describe linear reactions
 
@@ -254,7 +254,7 @@ class MulticomponentDropletActor(ActorBase):
                 phis: np.ndarray,
                 mus: np.ndarray,
                 t: float,
-                out: Optional[np.ndarray] = None,
+                out: np.ndarray | None = None,
             ) -> np.ndarray:
                 """function implementing the linear reactions"""
                 if out is None:
@@ -296,7 +296,7 @@ class MulticomponentDropletActor(ActorBase):
 
     def _make_calc_state_vars(
         self,
-    ) -> Callable[[np.ndarray], Tuple[float, np.ndarray, float]]:
+    ) -> Callable[[np.ndarray], tuple[float, np.ndarray, float]]:
         """create function calculating the state variables
 
         Returns:
@@ -310,7 +310,7 @@ class MulticomponentDropletActor(ActorBase):
         assert chis_red.shape == (num_comps, num_comps)
 
         @jit
-        def calc_state_vars(phis: np.ndarray) -> Tuple[float, np.ndarray, float]:
+        def calc_state_vars(phis: np.ndarray) -> tuple[float, np.ndarray, float]:
             """calculates thermodynamic state variables from composition"""
             assert phis.shape == (num_comps,)
             phi_sol = 1.0 - phis.sum(axis=0)
@@ -409,7 +409,7 @@ class MulticomponentDropletActor(ActorBase):
         droplets: MulticomponentDropletsElement,
         fields: FieldCollectionElement,
         kind: str,
-    ) -> Tuple[np.ndarray, FieldBase]:
+    ) -> tuple[np.ndarray, FieldBase]:
         """return a thermodynamic quantity in the droplets and the background field
 
         Args:
@@ -465,7 +465,7 @@ class MulticomponentDropletActor(ActorBase):
             the second axis distinguishes outside and inside.
         """
         droplets_el, fields_el = elements
-        result: List[Union[List[np.ndarray], np.ndarray]] = []
+        result: list[list[np.ndarray] | np.ndarray] = []
         for droplet in droplets_el.droplets:
             if droplet.radius > 0:
                 phi_out = fields_el.get_concentrations(droplet.position)
@@ -477,7 +477,7 @@ class MulticomponentDropletActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -520,7 +520,7 @@ class MulticomponentDropletActor(ActorBase):
 
         @jit
         def evolver(
-            elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+            elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
             """evolve all droplets and the fields explicitly"""
             droplets_data, fields_data = elements_data

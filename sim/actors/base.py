@@ -10,7 +10,7 @@ import inspect
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, List, Tuple, Type, Union
 
 import numpy as np
 
@@ -27,7 +27,7 @@ EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """represents a single actor, which affects one or more elements"""
 
-    element_classes: Tuple[ElementsSpec, ...] = tuple()
+    element_classes: tuple[ElementsSpec, ...] = tuple()
     """tuple: defines the elements this actor handles and in what order they need to be
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
@@ -38,7 +38,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     :meta private:
     """
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -46,8 +46,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 :meth:`~ActorBase.show_parameters` for details.
         """
         super().__init__(parameters)
-        self._cache: Dict[str, Any] = {}
-        self.diagnostics: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
+        self.diagnostics: dict[str, Any] = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
@@ -64,7 +64,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
     @classmethod
     def supports_elements(
         cls,
-        *elements: Union[_ElementBase, Type[_ElementBase]],
+        *elements: _ElementBase | type[_ElementBase],
         silent: bool = False,
     ) -> bool:
         """determines whether this actor supports the given elements
@@ -122,7 +122,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         return True
 
     @property
-    def info(self) -> Dict[str, Any]:
+    def info(self) -> dict[str, Any]:
         """dict: information about the actor"""
         return {"class": self.__class__.__name__, "parameters": self.parameters}
 
@@ -198,8 +198,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
 
 def find_actors(
-    *elements: Union[_ElementBase, Type[_ElementBase]], unordered: bool = False
-) -> List[Type[ActorBase]]:
+    *elements: _ElementBase | type[_ElementBase], unordered: bool = False
+) -> list[type[ActorBase]]:
     """finds actors compatible with the given elements
 
     Args:
@@ -219,7 +219,7 @@ def find_actors(
         elements_list = [elements]
 
     # check all actors
-    result: Set[Type[ActorBase]] = set()
+    result: set[type[ActorBase]] = set()
     for actor in ActorBase._subclasses.values():
         if issubclass(actor, ActorBase):
             for elements in elements_list:
