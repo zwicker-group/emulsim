@@ -81,7 +81,7 @@ REPLACEMENTS = collections.OrderedDict(
 # replacement rules based on regular expressions
 REPLACEMENTS_REGEX = {
     # remove full package path and only leave the module/class identifier
-    "sim\.(\w+\.)*": "",
+    r"sim\.(\w+\.)*": "",
 }
 
 

@@ -4,8 +4,10 @@ Provides an actor coupling point-like droplets to a field
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import math
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Tuple
 
 import numpy as np
 
@@ -91,7 +93,7 @@ class PointDropletActor(ActorBase):
     element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])  # type: ignore
 
     def _parse_expression(
-        self, expr: Union[Callable, str, float], signature: List[List[str]]
+        self, expr: Callable | str | float, signature: list[list[str]]
     ) -> Callable:
         """parse an expression for a parameter
 
@@ -289,7 +291,7 @@ class PointDropletActor(ActorBase):
 
     def _make_droplet_evolver_numba(
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray], int, np.ndarray, float, float], None]:
+    ) -> Callable[[tuple[np.ndarray], int, np.ndarray, float, float], None]:
         """create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
@@ -375,7 +377,7 @@ class PointDropletActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -394,7 +396,7 @@ class PointDropletActor(ActorBase):
 
         @jit
         def evolver(
-            elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+            elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
             """evolve all droplets explicitly"""
             droplets_data, field_data = elements_data

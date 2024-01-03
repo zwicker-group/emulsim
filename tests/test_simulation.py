@@ -7,7 +7,7 @@ import pytest
 
 from droplets import SphericalDroplet
 from pde import CartesianGrid, DiffusionPDE, ScalarField, UnitGrid
-from pde.tools.misc import module_available, skipUnlessModule
+from pde.tools.misc import module_available
 
 import sim
 from helpers import assert_recarrays_allclose
@@ -76,7 +76,9 @@ def test_adaptive_simulation_simple(backend):
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
-@skipUnlessModule("phasesep")
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 def test_adaptive_reaction_diffusion():
     """test adaptive reaction-diffusion simulation"""
     # set up state

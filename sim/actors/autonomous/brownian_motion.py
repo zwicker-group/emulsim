@@ -2,7 +2,9 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from __future__ import annotations
+
+from typing import Callable
 
 import numpy as np
 
@@ -63,7 +65,7 @@ class BrownianMotionActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -82,7 +84,7 @@ class BrownianMotionActor(ActorBase):
         if self._cache["has_radius"]:
 
             @jit
-            def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
+            def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
                 """evolve all points explicitly"""
                 (droplets_data,) = state_data
                 for droplet_data in droplets_data:
@@ -94,7 +96,7 @@ class BrownianMotionActor(ActorBase):
         else:
 
             @jit
-            def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
+            def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
                 """evolve all points explicitly"""
                 (droplets_data,) = state_data
                 scale = np.sqrt(dt * diffusivity(t))

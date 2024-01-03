@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Tuple
+from typing import Any, Callable, Literal, Sequence
 
 import numpy as np
 from numba.extending import register_jitable
@@ -40,7 +40,7 @@ class ReservoirElement(ArrayElementBase):
 
     dim = None  # works for any dimension
 
-    def __init__(self, data: float = 0, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, data: float = 0, parameters: dict[str, Any] | None = None):
         """
         Args:
             data (float):
@@ -139,7 +139,7 @@ class ReservoirElement(ArrayElementBase):
 class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
     """base class for field elements"""
 
-    def set_bounds(self, bounds: Sequence[Tuple[float, float]]) -> None:
+    def set_bounds(self, bounds: Sequence[tuple[float, float]]) -> None:
         """set the boundaries of the field
 
         Args:
@@ -229,7 +229,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         """plot the field"""
         ...
 
-    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+    def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         """returns data for plotting on a single napari layer
 
         Args:
@@ -255,7 +255,7 @@ class MeanfieldElement(FieldElementBase):
         )
     ]
 
-    def __init__(self, data: float = 0, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, data: float = 0, parameters: dict[str, Any] | None = None):
         """
         Args:
             data (float):
@@ -268,7 +268,7 @@ class MeanfieldElement(FieldElementBase):
         # this only defines a new default value
         super().__init__(data, parameters)  # type: ignore
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -289,7 +289,7 @@ class MeanfieldElement(FieldElementBase):
 
     @classmethod
     def from_field(
-        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+        cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> MeanfieldElement:
         """create a mean field element from a scalar field
 
@@ -486,7 +486,7 @@ class ScalarFieldElement(FieldElementBase):
     _field: ScalarField
 
     def __init__(
-        self, data: NumberOrArray = 0, parameters: Optional[Dict[str, Any]] = None
+        self, data: NumberOrArray = 0, parameters: dict[str, Any] | None = None
     ):
         """
         Args:
@@ -500,7 +500,7 @@ class ScalarFieldElement(FieldElementBase):
         # this method only defines new default values
         super().__init__(data, parameters)  # type: ignore
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -535,7 +535,7 @@ class ScalarFieldElement(FieldElementBase):
 
     @classmethod
     def from_field(
-        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+        cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> ScalarFieldElement:
         """create a scalar field element from a scalar field
 
@@ -683,7 +683,7 @@ class FieldCollectionElement(ArrayElementBase):
 
     _field: FieldCollection
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -932,7 +932,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
     ]
 
     def __init__(
-        self, data: NumberOrArray = 0, parameters: Optional[Dict[str, Any]] = None
+        self, data: NumberOrArray = 0, parameters: dict[str, Any] | None = None
     ):
         """
         Args:
@@ -946,7 +946,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         # this only defines a new default value
         super().__init__(data, parameters)
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -972,7 +972,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
 
     @classmethod
     def from_field(
-        cls, field: ScalarField, parameters: Optional[Dict[str, Any]] = None
+        cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> ScalarBoundaryFieldElement:
         """create a scalar boundary element from a scalar field
 
@@ -992,9 +992,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         cls,
         grid: CartesianGrid,
         axis: int,
-        upper: Optional[bool] = None,
+        upper: bool | None = None,
         data: NumberOrArray = 0,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
     ) -> ScalarBoundaryFieldElement:
         """create a scalar boundary element using a grid describing the full domain
 
@@ -1145,5 +1145,5 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
 
         return insert  # type: ignore
 
-    def _get_napari_layer_data(self, **kwargs) -> Dict[str, Any]:
+    def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         raise NotImplementedError

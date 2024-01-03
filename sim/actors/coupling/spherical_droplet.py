@@ -19,6 +19,8 @@ right outside droplets to the background field; see the pulbication for details:
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import itertools
 import warnings
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
@@ -179,7 +181,7 @@ class PointsOnSphere:
         self.dim = self.points.shape[-1]
 
     @classmethod
-    def make_uniform(cls, dim: int, num_points: Optional[int] = None):
+    def make_uniform(cls, dim: int, num_points: int | None = None):
         """create uniformly distributed points on a sphere
 
         Args:
@@ -338,15 +340,15 @@ class PointsOnSphere:
             fp.write("%d\n" % len(self.points))
             fp.write(comment + "\n")
             for point in self.points:
-                point_str = " ".join(("%.12g" % v for v in point))
-                line = "%s %s\n" % (symbol, point_str)
+                point_str = " ".join("%.12g" % v for v in point)
+                line = f"{symbol} {point_str}\n"
                 fp.write(line)
 
 
 class ShellSectors:
     """class representing the sectors of a single shell"""
 
-    def __init__(self, vectors: np.ndarray, weights: Optional[np.ndarray] = None):
+    def __init__(self, vectors: np.ndarray, weights: np.ndarray | None = None):
         """
         Args:
             vectors (list):
@@ -366,7 +368,7 @@ class ShellSectors:
         assert np.isclose(self.weights.sum(), 1.0)
 
     @classmethod
-    def generate(cls, dim: int, sector_count: int = 1) -> "ShellSectors":
+    def generate(cls, dim: int, sector_count: int = 1) -> ShellSectors:
         """generate a :class:`ShellSectors` for a simulation
 
         Args:
@@ -403,7 +405,7 @@ class ShellSectors:
         """int: number of sectors"""
         return self.vectors.shape[0]
 
-    def get_shell(self, radius: float) -> "ShellSectors":
+    def get_shell(self, radius: float) -> ShellSectors:
         """return shell corresponding to droplet of given radius
 
         Args:
@@ -417,7 +419,7 @@ class ShellSectors:
 
     def make_shell_data_getter(
         self,
-    ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
+    ) -> Callable[[float], tuple[np.ndarray, np.ndarray]]:
         """returns a function for obtaining a shell
 
         Returns:
@@ -432,7 +434,7 @@ class ShellSectors:
         weights = self.weights
 
         @jit
-        def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
+        def get_shell(radius: float) -> tuple[np.ndarray, np.ndarray]:
             """compiled helper function that extracts shell parameters"""
             return vectors, weights
 
@@ -448,7 +450,7 @@ class ShellCollection:
         self,
         shells: Sequence[ShellSectors],
         max_radii: Sequence[float],
-        info_dict: Optional[Dict[str, Any]] = None,
+        info_dict: dict[str, Any] | None = None,
     ):
         """
         Args:
@@ -471,7 +473,7 @@ class ShellCollection:
 
         # self-consistency checks
         assert len(self.shells) == len(self.max_radii)
-        assert len(set(s.dim for s in self.shells)) == 1
+        assert len({s.dim for s in self.shells}) == 1
 
         self.dim = self.shells[0].dim
         self.usage = [0] * len(self)
@@ -481,9 +483,9 @@ class ShellCollection:
     @classmethod
     def from_dictlist(
         cls,
-        dictlist: Sequence[Dict[str, Any]],
-        info_dict: Optional[Dict[str, Any]] = None,
-    ) -> "ShellCollection":
+        dictlist: Sequence[dict[str, Any]],
+        info_dict: dict[str, Any] | None = None,
+    ) -> ShellCollection:
         """create shell collection from a list of dictionaries
 
         Args:
@@ -508,8 +510,8 @@ class ShellCollection:
         dim: int,
         sector_size_max: float = 1,
         radius_max: float = np.inf,
-        info_dict: Optional[Dict[str, Any]] = None,
-    ) -> "ShellCollection":
+        info_dict: dict[str, Any] | None = None,
+    ) -> ShellCollection:
         """generate a :class:`ShellCollection` for a simulation
 
         Args:
@@ -625,7 +627,7 @@ class ShellCollection:
 
     def make_shell_data_getter(
         self,
-    ) -> Callable[[float], Tuple[np.ndarray, np.ndarray]]:
+    ) -> Callable[[float], tuple[np.ndarray, np.ndarray]]:
         """returns a function for obtaining a shell
 
         Returns:
@@ -637,12 +639,12 @@ class ShellCollection:
                 by the respective shell, so that the sum of all weights is unity
         """
         max_radii = self.max_radii
-        vectors: Tuple[np.ndarray, ...] = tuple(shell.vectors for shell in self.shells)
-        weights: Tuple[np.ndarray, ...] = tuple(shell.weights for shell in self.shells)
+        vectors: tuple[np.ndarray, ...] = tuple(shell.vectors for shell in self.shells)
+        weights: tuple[np.ndarray, ...] = tuple(shell.weights for shell in self.shells)
         num = len(max_radii)
 
         @jit
-        def get_shell(radius: float) -> Tuple[np.ndarray, np.ndarray]:
+        def get_shell(radius: float) -> tuple[np.ndarray, np.ndarray]:
             """compiled helper function that extracts shell parameters"""
             i = int(min(np.searchsorted(max_radii, radius), num - 1))  # type: ignore
             return vectors[i], weights[i]
@@ -820,7 +822,7 @@ class SphericalDropletActor(ActorBase):
         # generate the shell collection
         if self.parameters["shell_sector_method"] == "size":
             sector_size = self._cache["shell_sector_size"]
-            shells: Union[ShellCollection, ShellSectors] = ShellCollection.generate(
+            shells: ShellCollection | ShellSectors = ShellCollection.generate(
                 self._cache["dim"], sector_size_max=sector_size, radius_max=radius_max
             )
         elif self.parameters["shell_sector_method"] == "count":
@@ -1266,9 +1268,9 @@ class SphericalDropletActor(ActorBase):
     def plot_shell_points(
         self,
         elements: ActorElementType,
-        state_style: Optional[Dict[str, Any]] = None,
-        point_style: Optional[Dict[str, Any]] = None,
-        shell_style: Optional[Dict[str, Any]] = None,
+        state_style: dict[str, Any] | None = None,
+        point_style: dict[str, Any] | None = None,
+        shell_style: dict[str, Any] | None = None,
     ):
         r"""plot all shell points around the droplets of a given state
 
@@ -1336,7 +1338,7 @@ class SphericalDropletActor(ActorBase):
 
     def _make_droplet_evolver_numba(
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray], int, float, float, np.ndarray, np.ndarray], None]:
+    ) -> Callable[[tuple[np.ndarray], int, float, float, np.ndarray, np.ndarray], None]:
         """create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
@@ -1448,7 +1450,7 @@ class SphericalDropletActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the state from time `t` to `t + dt`
 
         Args:
@@ -1533,7 +1535,7 @@ class SphericalDropletActor(ActorBase):
 
             @jit(parallel=True)
             def evolver(
-                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+                elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
                 """evolve all droplets in parallel chunks"""
                 droplets_data, field_data = elements_data
@@ -1555,7 +1557,7 @@ class SphericalDropletActor(ActorBase):
             # update all droplets on the same thread
             @jit
             def evolver(
-                elements_data: Tuple[np.ndarray, np.ndarray], t: float, dt: float
+                elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
                 """evolve all droplets explicitly"""
                 droplets_data, field_data = elements_data

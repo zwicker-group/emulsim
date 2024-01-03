@@ -17,18 +17,7 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Iterable, Literal, Sequence
 
 import numpy as np
 
@@ -62,12 +51,12 @@ class State(DictElementBase):
     _state_attributes_attr_name = "attributes"
     _state_data_attr_name = "data"
 
-    data: Dict[str, _ElementBase]
+    data: dict[str, _ElementBase]
 
     def __init__(
         self,
-        elements: Optional[Dict[str, _ElementBase]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        elements: dict[str, _ElementBase] | None = None,
+        parameters: dict[str, Any] | None = None,
     ):
         """
         Args:
@@ -83,7 +72,7 @@ class State(DictElementBase):
 
         # determine dimensionality of space
         if self.parameters["bounds"] is None:
-            self.dim: Optional[int] = None  # cannot determine dimension at this point
+            self.dim: int | None = None  # cannot determine dimension at this point
         else:
             self.dim = len(self.parameters["bounds"])
 
@@ -92,7 +81,7 @@ class State(DictElementBase):
             for name, element in elements.items():
                 self.add_element(name, element)
 
-    def _init_state(self, attributes: Dict[str, Any], data=NoData) -> None:
+    def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """initialize the state with attributes and (optionally) data
 
         Args:
@@ -110,7 +99,7 @@ class State(DictElementBase):
             raise ValueError(f"Too many attributes: {attributes.keys()}")
 
     @property
-    def _attributes_storage(self) -> Dict[str, Any]:
+    def _attributes_storage(self) -> dict[str, Any]:
         """dict: Attributes in the form in which they will be written to storage
 
         This property modifies the normal `_state_attributes` and adds information
@@ -121,7 +110,7 @@ class State(DictElementBase):
         return attrs
 
     @classmethod
-    def from_data(cls, attributes: Dict[str, Any], data=None) -> State:
+    def from_data(cls, attributes: dict[str, Any], data=None) -> State:
         """create the state from attributes and data
 
         Args:
@@ -138,12 +127,12 @@ class State(DictElementBase):
         return obj  # type: ignore
 
     @property
-    def _data_numba(self) -> Tuple:
+    def _data_numba(self) -> tuple:
         """returns the data associated with the state in a form that numba can handle"""
         return tuple(state._data_numba for state in self.data.values())
 
     @_data_numba.setter
-    def _data_numba(self, state_data: Tuple) -> None:
+    def _data_numba(self, state_data: tuple) -> None:
         """sets the data of all states"""
         for key, new_el_data in zip(self.data.keys(), state_data):
             self.data[key]._data_numba[...] = new_el_data
@@ -166,7 +155,7 @@ class State(DictElementBase):
         return super().copy(method, data=data)
 
     @property
-    def elements(self) -> Dict[str, _ElementBase]:
+    def elements(self) -> dict[str, _ElementBase]:
         return self.data
 
     def add_element(self, name: str, element: _ElementBase):
@@ -208,7 +197,7 @@ class State(DictElementBase):
                 return i
         raise KeyError(f"`{name}` not in {self.__class__.__name__}")
 
-    def __getitem__(self, key: Union[int, str, Sequence[str]]):
+    def __getitem__(self, key: int | str | Sequence[str]):
         """extract element by numerical index or by name"""
         if isinstance(key, int):
             # handle numerical index
@@ -284,7 +273,7 @@ class State(DictElementBase):
         """int: the number of degrees of freedom of the simulation"""
         return sum(element.degrees_of_freedom for element in self.elements.values())
 
-    def get_quantities(self, property_name: str) -> Dict[str, Any]:
+    def get_quantities(self, property_name: str) -> dict[str, Any]:
         """returns quantities obtained from the elements
 
         Quantities are typically implemented as properties or attributes of the
@@ -382,7 +371,7 @@ class State(DictElementBase):
         elif backend == "numba":
 
             def chain(
-                element_id: int, inner: Optional[Callable[[Any, Any], float]] = None
+                element_id: int, inner: Callable[[Any, Any], float] | None = None
             ) -> Callable[[Any, Any], float]:
                 """recursive factory function for running all actors"""
                 # get the evolver function
@@ -415,8 +404,8 @@ class State(DictElementBase):
     def plot(
         self,
         ax,
-        element_args: Optional[Dict[str, Any]] = None,
-        invisible_elements: Optional[Iterable[str]] = None,
+        element_args: dict[str, Any] | None = None,
+        invisible_elements: Iterable[str] | None = None,
         **kwargs,
     ):
         r"""visualize the state
@@ -438,7 +427,7 @@ class State(DictElementBase):
             element_args = defaultdict(dict)
 
         if invisible_elements is None:
-            ignore_el: Set[str] = self.parameters["invisible_elements"]
+            ignore_el: set[str] = self.parameters["invisible_elements"]
         else:
             ignore_el = set(invisible_elements) | self.parameters["invisible_elements"]
 
@@ -463,7 +452,7 @@ class State(DictElementBase):
             ax.set_ylim(*self.parameters["bounds"][1])
             ax.set_aspect(1)
 
-    def _get_napari_data(self, **kwargs) -> Dict[str, Dict[str, Any]]:
+    def _get_napari_data(self, **kwargs) -> dict[str, dict[str, Any]]:
         r"""returns data for plotting this state in napari
 
         Args:
@@ -487,8 +476,8 @@ class State(DictElementBase):
     def plot_interactive(
         self,
         *,
-        grid: Optional[GridBase] = None,
-        viewer_args: Optional[Dict[str, Any]] = None,
+        grid: GridBase | None = None,
+        viewer_args: dict[str, Any] | None = None,
         **kwargs,
     ):
         """create an interactive plot of the field using :mod:`napari`

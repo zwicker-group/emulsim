@@ -2,7 +2,9 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from __future__ import annotations
+
+from typing import Callable
 
 import numba as nb
 import numpy as np
@@ -39,7 +41,7 @@ class ActiveParticleActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -58,7 +60,7 @@ class ActiveParticleActor(ActorBase):
             raise NotImplementedError
 
         @jit
-        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+        def evolver(state_data: tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve all points explicitly"""
             points = state_data[0]
 

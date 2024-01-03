@@ -2,7 +2,9 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Any, Callable, Dict, Optional, Tuple
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import numpy as np
 
@@ -30,7 +32,7 @@ class BoxActor(ActorBase):
 
     element_classes = ([PointsElement, ArrowsElement, SphericalDropletsElement],)
 
-    def __init__(self, parameters: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
             parameters (dict):
@@ -70,7 +72,7 @@ class BoxActor(ActorBase):
 
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -103,7 +105,7 @@ class BoxActor(ActorBase):
         point_like = self.parameters["point_like"]
 
         @jit
-        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float) -> None:
+        def evolver(state_data: tuple[np.ndarray], t: float, dt: float) -> None:
             """evolve all points explicitly"""
             points = state_data[0]  # data of the points
             for i in range(num_points):

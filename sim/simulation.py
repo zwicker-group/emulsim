@@ -16,18 +16,7 @@ import copy
 import logging
 import time
 import warnings
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Literal, Sequence, Tuple, Union
 
 import numba as nb
 import numpy as np
@@ -49,7 +38,7 @@ class Simulation:
     def __init__(
         self,
         state: State,
-        actors: Optional[Sequence[Tuple[ElementNamesType, ActorBase]]] = None,
+        actors: Sequence[tuple[ElementNamesType, ActorBase]] | None = None,
         *,
         check: str = "log",
         profile: bool = False,
@@ -76,12 +65,12 @@ class Simulation:
         """
         self.state = state
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.actors: List[Tuple[ElementNamesType, ActorBase]] = []
+        self.actors: list[tuple[ElementNamesType, ActorBase]] = []
         if actors is not None:
             for element_names, actor in actors:
                 self.add_actor(element_names, actor, check=check)
         self.profile = profile
-        self._cache: Dict[str, SimulationSolver] = {}
+        self._cache: dict[str, SimulationSolver] = {}
 
     def __repr__(self):
         """return instance as string"""
@@ -94,7 +83,7 @@ class Simulation:
         return f"{self.__class__.__name__}({self.state!s}, actors=[{actors_str}])"
 
     @property
-    def info(self) -> Dict[str, Any]:
+    def info(self) -> dict[str, Any]:
         """dict: information about the state"""
         actor_infos = []
         for element_names, actor in self.actors:
@@ -154,7 +143,7 @@ class Simulation:
         if check != "ignore":
             # run some checks before adding the actor
 
-            def show_msg(msg: str, exception: Type[BaseException]):
+            def show_msg(msg: str, exception: type[BaseException]):
                 """helper function showing the message according to chosen method"""
                 if check == "warn":
                     warnings.warn(msg)
@@ -217,7 +206,7 @@ class Simulation:
 
         return graph
 
-    def plot_as_graph(self, layout: Union[str, Callable] = "auto", **kwargs) -> None:
+    def plot_as_graph(self, layout: str | Callable = "auto", **kwargs) -> None:
         """represent the simulation in a graphical form
 
         Args:
@@ -298,7 +287,7 @@ class Simulation:
 
     def plot_interacting_elements(
         self,
-        layout: Union[str, Callable] = "auto",
+        layout: str | Callable = "auto",
         *,
         label_edges: bool = True,
         **kwargs,
@@ -342,7 +331,7 @@ class Simulation:
                 graph, pos, edge_labels=edge_labels, label_pos=0.5
             )
 
-    def estimate_dt(self, state: Optional[State] = None) -> float:
+    def estimate_dt(self, state: State | None = None) -> float:
         """get the optimal time step for the simulation
 
         Args:
@@ -355,7 +344,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        dts: List[float] = [np.inf]
+        dts: list[float] = [np.inf]
         for elements, actor in self.actors:
             try:
                 dt = actor.estimate_dt(state[elements])
@@ -368,8 +357,8 @@ class Simulation:
         return min(dts)
 
     def _make_evolve_state(
-        self, actor_id: int, state: Optional[State] = None
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], Union[float, None]]:
+        self, actor_id: int, state: State | None = None
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], float | None]:
         """factory function creating a function to evolve a single actor
 
         Args:
@@ -403,7 +392,7 @@ class Simulation:
 
             @jit(nb.float64(state_data_type, nb.float64, nb.float64))
             def evolve_state(
-                state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                state_data: tuple[np.ndarray, ...], t: float, dt: float
             ) -> float:
                 """evolve the states affected by this actor and record runtime"""
                 with nb.objmode(time_start="f8"):
@@ -417,7 +406,7 @@ class Simulation:
 
             @jit(nb.none(state_data_type, nb.float64, nb.float64))
             def evolve_state(
-                state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                state_data: tuple[np.ndarray, ...], t: float, dt: float
             ) -> None:
                 """evolve the states affected by this actor"""
                 states = get_element_states(state_data)
@@ -426,7 +415,7 @@ class Simulation:
         # return the evolver for this actor, which now will be properly closed
         return evolve_state  # type: ignore
 
-    def make_evolver_numba(self, state: Optional[State] = None) -> EvolverType:
+    def make_evolver_numba(self, state: State | None = None) -> EvolverType:
         """return a function evolving the state from time `t` to `t + dt`
 
         Args:
@@ -440,7 +429,7 @@ class Simulation:
         if state is None:
             state = self.state
 
-        def chain(actor_id: int, inner: Optional[Callable] = None) -> Callable:
+        def chain(actor_id: int, inner: Callable | None = None) -> Callable:
             """recursive factory function for running all actors"""
             # get the evolver function
             actor_evolver = self._make_evolve_state(actor_id, state=state)
@@ -449,7 +438,7 @@ class Simulation:
 
                 @jit
                 def wrap(
-                    state_data: Tuple[np.ndarray, ...],
+                    state_data: tuple[np.ndarray, ...],
                     t: float,
                     dt: float,
                     timings: np.ndarray,
@@ -462,7 +451,7 @@ class Simulation:
 
                 @jit
                 def wrap(
-                    state_data: Tuple[np.ndarray, ...], t: float, dt: float
+                    state_data: tuple[np.ndarray, ...], t: float, dt: float
                 ) -> None:
                     if inner is not None:
                         inner(state_data, t, dt)
@@ -484,7 +473,7 @@ class Simulation:
             evolver_chain = chain(0)  # collect the recursive chain
 
             @jit
-            def evolver(state_data: Tuple[np.ndarray, ...], t: float, dt: float):
+            def evolver(state_data: tuple[np.ndarray, ...], t: float, dt: float):
                 """wrapper to providing access to the timings array"""
                 timings = get_timings_arr()
                 evolver_chain(state_data, t, dt, timings)
@@ -532,14 +521,14 @@ class Simulation:
     def run(
         self,
         t_range: TRangeType,
-        dt: Optional[float] = None,
+        dt: float | None = None,
         tracker: TrackerCollectionDataType = ["progress"],
         *,
         backend: str = "auto",
         ret_info: bool = False,
         use_cache: bool = False,
         **kwargs,
-    ) -> Union[State, Tuple[State, Dict[str, Any]]]:
+    ) -> State | tuple[State, dict[str, Any]]:
         r"""run the simulation to advance the state in time
 
         Args:
@@ -608,7 +597,7 @@ class Simulation:
         if hasattr(self, "diagnostics"):
             self.diagnostics.update(controller.diagnostics)
         else:
-            self.diagnostics: Dict[str, Any] = copy.copy(controller.diagnostics)
+            self.diagnostics: dict[str, Any] = copy.copy(controller.diagnostics)
 
         if ret_info:
             # return a copy of the diagnostic information so it will not be overwritten
@@ -663,7 +652,7 @@ class SimulationSolver(AdaptiveSolverBase):
         super().__init__(None, backend=backend, adaptive=adaptive, tolerance=tolerance)  # type: ignore
         self.simulation = simulation
         self.use_cache = use_cache
-        self._cache_stepper: Dict[str, Callable] = {}
+        self._cache_stepper: dict[str, Callable] = {}
 
     def _make_single_step(self, state: State) -> Callable[[State, float, float], None]:
         """return function evolving state using adaptive time steps
@@ -825,7 +814,7 @@ class SimulationSolver(AdaptiveSolverBase):
         return adaptive_stepper
 
     def make_stepper(  # type: ignore
-        self, state: State, dt: Optional[float] = None
+        self, state: State, dt: float | None = None
     ) -> Callable[[State, float, float], float]:
         """return a stepper function using an explicit scheme
 
@@ -876,8 +865,8 @@ class SimulationSolver(AdaptiveSolverBase):
 
 
 def _make_get_element_states(
-    element_indices: Tuple[int, ...]
-) -> Callable[[Tuple[np.ndarray, ...]], Tuple[np.ndarray, ...]]:
+    element_indices: tuple[int, ...]
+) -> Callable[[tuple[np.ndarray, ...]], tuple[np.ndarray, ...]]:
     """creates helper function that extracts the states of the given elements
 
     Args:
@@ -891,7 +880,7 @@ def _make_get_element_states(
         i = element_indices[0]
 
         @jit
-        def get_element_states(state_data: Tuple[np.ndarray, ...]) -> Tuple[np.ndarray]:
+        def get_element_states(state_data: tuple[np.ndarray, ...]) -> tuple[np.ndarray]:
             return (state_data[i],)
 
     elif num_elements == 2:
@@ -899,8 +888,8 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: Tuple[np.ndarray, ...]
-        ) -> Tuple[np.ndarray, np.ndarray]:
+            state_data: tuple[np.ndarray, ...]
+        ) -> tuple[np.ndarray, np.ndarray]:
             return (state_data[i], state_data[j])
 
     elif num_elements == 3:
@@ -908,8 +897,8 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: Tuple[np.ndarray, ...]
-        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            state_data: tuple[np.ndarray, ...]
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
             return (state_data[i], state_data[j], state_data[k])
 
     elif num_elements == 4:
@@ -917,8 +906,8 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: Tuple[np.ndarray, ...]
-        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+            state_data: tuple[np.ndarray, ...]
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
             sd = state_data
             return (sd[i], sd[j], sd[k], sd[l])
 

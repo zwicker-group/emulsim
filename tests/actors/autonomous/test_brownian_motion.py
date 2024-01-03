@@ -2,11 +2,11 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-
 import numpy as np
+import pytest
 
 from droplets import SphericalDroplet
-from pde.tools.misc import skipUnlessModule
+from pde.tools.misc import module_available
 
 from sim.actors.autonomous import BrownianMotionActor
 from sim.elements import PointsElement, SphericalDropletsElement
@@ -29,7 +29,9 @@ def test_brownian_motion_points():
     assert np.all(element.data != ref.data)
 
 
-@skipUnlessModule("droplets")
+@pytest.mark.skipif(
+    not module_available("droplets"), reason="requires `droplets` module"
+)
 def test_brownian_motion_droplets():
     """simple test of Brownian motion of droplets"""
 

@@ -7,7 +7,7 @@ import pytest
 from numpy.lib.recfunctions import structured_to_unstructured as s2u
 
 import pde
-from pde.tools.misc import skipUnlessModule
+from pde.tools.misc import module_available
 from pde.tools.numba import jit
 
 from sim import Simulation, State
@@ -53,7 +53,9 @@ def test_make_regularizer(do_jit):
     np.testing.assert_allclose(phis, np.array([[0.1, 0.1, 0.45], [0.5, 0.8, 0.45]]))
 
 
-@skipUnlessModule("phasesep")
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 def test_multicomponent_thermodynamics():
     """test the implementation of the thermodynamics"""
     from phasesep import FloryHuggins2Components
@@ -245,7 +247,12 @@ def test_multicomponent_coarsening(backend):
     assert result["droplets"].data[1]["radius"] > 1
 
 
-@skipUnlessModule(["droplets", "phasesep"])
+@pytest.mark.skipif(
+    not module_available("droplets"), reason="requires `droplets` module"
+)
+@pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `phasesep` module"
+)
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
     """test active droplet simulation"""

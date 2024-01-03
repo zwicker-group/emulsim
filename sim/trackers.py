@@ -12,9 +12,10 @@ Provides classes that track the state of the simulation
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+from __future__ import annotations
+
 import copy
 import logging
-from typing import Dict, Optional, Union
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
@@ -40,8 +41,8 @@ class TrajectoryTracker(TrackerBase):
         storage: StorageID,
         interrupts: InterruptData = 1,
         *,
-        mode: Optional[ModeType] = None,
-        info: Optional[InfoDict] = None,
+        mode: ModeType | None = None,
+        info: InfoDict | None = None,
         interval=None,
     ):
         """
@@ -67,7 +68,7 @@ class TrajectoryTracker(TrackerBase):
         self.info = info
 
     def initialize(  # type: ignore
-        self, state: State, info: Optional[InfoDict] = None
+        self, state: State, info: InfoDict | None = None
     ) -> float:
         """
         Args:
@@ -100,7 +101,7 @@ class TrajectoryTracker(TrackerBase):
         """
         self._writer.append(state, time=t)
 
-    def finalize(self, info: Optional[InfoDict] = None) -> None:
+    def finalize(self, info: InfoDict | None = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:
@@ -147,8 +148,8 @@ class DropletElementTracker(TrackerBase):
         element_name: str,
         interrupts: InterruptData = 1,
         *,
-        store_emulsions: Union[bool, str] = True,
-        store_droplet_tracks: Union[bool, str] = True,
+        store_emulsions: bool | str = True,
+        store_droplet_tracks: bool | str = True,
         keep_vanished: bool = False,
         interval=None,
     ):
@@ -183,7 +184,7 @@ class DropletElementTracker(TrackerBase):
         self.keep_vanished = keep_vanished
 
     def initialize(  # type: ignore
-        self, state: State, info: Optional[InfoDict] = None
+        self, state: State, info: InfoDict | None = None
     ) -> float:
         """
         Args:
@@ -202,7 +203,7 @@ class DropletElementTracker(TrackerBase):
         if self.store_droplet_tracks is not False:
             # tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
             if self.keep_vanished:
-                self._active_tracks: Dict[int, int] = {
+                self._active_tracks: dict[int, int] = {
                     i: i for i in range(len(state[self.element_name]))
                 }
             else:
@@ -257,7 +258,7 @@ class DropletElementTracker(TrackerBase):
                         # droplet vanished =>  stop this track
                         del self._active_tracks[i]
 
-    def finalize(self, info: Optional[InfoDict] = None) -> None:
+    def finalize(self, info: InfoDict | None = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:
@@ -295,7 +296,7 @@ class FieldTracker(TrackerBase):
     def initialize(  # type: ignore
         self,
         state: State,
-        info: Optional[InfoDict] = None,
+        info: InfoDict | None = None,
     ) -> float:
         """initialize the tracker with information about the simulation
 
@@ -341,7 +342,7 @@ class FieldTracker(TrackerBase):
             )
         self.tracker.handle(field, t)
 
-    def finalize(self, info: Optional[InfoDict] = None) -> None:
+    def finalize(self, info: InfoDict | None = None) -> None:
         """finalize the tracker, supplying additional information
 
         Args:

@@ -2,7 +2,9 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from typing import Callable, Tuple
+from __future__ import annotations
+
+from typing import Callable
 
 import numpy as np
 from numba import literal_unroll
@@ -42,7 +44,7 @@ class CoalescenceDropletActor(ActorBase):
 
     def make_evolver_numba(
         self, elements: ElementsType
-    ) -> Callable[[Tuple[np.ndarray, ...], float, float], None]:
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
         """return a function evolve the field state from time `t` to `t + dt`
 
         Args:
@@ -58,7 +60,7 @@ class CoalescenceDropletActor(ActorBase):
         merge_data = droplet_class._make_merge_data()
 
         @jit
-        def evolver(state_data: Tuple[np.ndarray], t: float, dt: float):
+        def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
             """evolve all points explicitly"""
             (data,) = state_data
 
