@@ -67,7 +67,7 @@ def run_unit_tests(
     coverage: bool = False,
     nojit: bool = False,
     pattern: str = None,
-):
+) -> int:
     """run the unit tests
 
     Args:
@@ -76,6 +76,9 @@ def run_unit_tests(
         coverage (bool): Whether to determine the test coverage
         nojit (bool): Whether to disable numba jit compilation
         pattern (str): A pattern that determines which tests are ran
+
+    Returns:
+        int: The return code indicating success or failure
     """
     # modify current environment
     env = os.environ.copy()
@@ -124,7 +127,14 @@ def run_unit_tests(
     args.append("tests")
 
     # actually run the test
-    sp.check_call(args, env=env, cwd=PACKAGE_PATH)
+    retcode = sp.run(args, env=env, cwd=PACKAGE_PATH).returncode
+
+    # delete intermediate coverage files, which are sometimes left behind
+    if coverage:
+        for p in Path("..").glob(".coverage*"):
+            p.unlink()
+
+    return retcode
 
 
 def main():
