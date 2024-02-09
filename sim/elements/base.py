@@ -32,7 +32,8 @@ import copy
 import math
 import warnings
 from abc import ABCMeta, abstractproperty
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
 
 import numpy as np
 from numba import literal_unroll
@@ -49,8 +50,8 @@ from modelrunner.storage import (
 from modelrunner.storage.utils import decode_class, storage_actions
 from pde.tools.numba import jit
 
-SerializedAttributesType = Dict[str, str]
-SerializedDataType = Union[np.ndarray, Dict[str, np.ndarray]]
+SerializedAttributesType = dict[str, str]
+SerializedDataType = Union[np.ndarray, dict[str, np.ndarray]]
 
 if TYPE_CHECKING:
     from ..actors.base import ActorBase

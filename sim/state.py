@@ -17,7 +17,8 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Literal, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any, Callable, Literal
 
 import numpy as np
 

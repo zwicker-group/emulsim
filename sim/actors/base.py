@@ -10,7 +10,7 @@ import inspect
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, List, Tuple, Type, Union
+from typing import Any, Callable, Union
 
 import numpy as np
 
@@ -19,9 +19,9 @@ from pde.tools.cache import objects_equal
 
 from ..elements.base import _ElementBase
 
-ElementsType = Tuple[_ElementBase, ...]
-ElementsSpec = Union[Type[_ElementBase], List[Type[_ElementBase]]]
-EvolverType = Callable[[Tuple[np.ndarray, ...], float, float], None]
+ElementsType = tuple[_ElementBase, ...]
+ElementsSpec = Union[type[_ElementBase], list[type[_ElementBase]]]
+EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):

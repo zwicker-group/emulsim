@@ -16,7 +16,8 @@ import copy
 import logging
 import time
 import warnings
-from typing import Any, Callable, Literal, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Literal, Union
 
 import numba as nb
 import numpy as np
@@ -29,7 +30,7 @@ from pde.tools.numba import jit, make_array_constructor
 from .actors.base import ActorBase, EvolverType
 from .state import State
 
-ElementNamesType = Union[str, Tuple[str]]
+ElementNamesType = Union[str, tuple[str]]
 
 
 class Simulation:

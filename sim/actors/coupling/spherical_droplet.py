@@ -23,7 +23,8 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Callable
 
 import numba as nb
 import numpy as np
@@ -398,7 +399,7 @@ class ShellSectors:
     @property
     def dim(self) -> int:
         """int: dimension of the space this shell is defined for"""
-        return self.vectors.shape[1]  # type: ignore
+        return self.vectors.shape[1]
 
     @property
     def sector_count(self) -> int:
@@ -652,7 +653,7 @@ class ShellCollection:
         return get_shell  # type: ignore
 
 
-ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
+ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class SphericalDropletActor(ActorBase):

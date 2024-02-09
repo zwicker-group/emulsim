@@ -6,7 +6,7 @@ Provides an actor nucleating droplets from a field
 
 from __future__ import annotations
 
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 
@@ -19,7 +19,7 @@ from ... import Parameter
 from ...elements import FieldElementBase, SphericalDropletsElement
 from ..base import ActorBase
 
-ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
+ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class DropletNucleationActor(ActorBase):

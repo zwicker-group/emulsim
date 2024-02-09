@@ -2,7 +2,6 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-
 import numpy as np
 import pytest
 from numpy.lib.recfunctions import structured_to_unstructured
