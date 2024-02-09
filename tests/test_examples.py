@@ -17,7 +17,7 @@ PACKAGEPATH = Path(__file__).resolve().parents[1]
 EXAMPLE_PATH = PACKAGEPATH / "examples"
 
 # create set of examples that need to be skipped
-SKIP_EXAMPLES: Set[str] = set()
+SKIP_EXAMPLES: set[str] = set()
 if not module_available("phasesep"):
     SKIP_EXAMPLES.add("droplets_active.py")
 if not module_available("napari"):
@@ -26,7 +26,7 @@ if not module_available("numba_scipy"):
     SKIP_EXAMPLES.add("droplets_active.py")
 
 # get dictionary of files that need to be deleted after the examples ran
-CLEANUP: Dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}
+CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}
 
 
 @pytest.mark.no_cover

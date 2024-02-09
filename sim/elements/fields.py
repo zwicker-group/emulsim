@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Any, Callable, Literal, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable, Literal
 
 import numpy as np
 from numba.extending import register_jitable
@@ -130,8 +131,7 @@ class ReservoirElement(ArrayElementBase):
         """
 
         @jit
-        def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
-            ...
+        def add_amount(data: np.ndarray, point: np.ndarray, amount: float): ...
 
         return add_amount  # type: ignore
 

@@ -7,7 +7,7 @@ Provides an actor coupling point-like droplets to a field
 from __future__ import annotations
 
 import math
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 
@@ -19,7 +19,7 @@ from ... import Parameter
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
 from ..base import ActorBase
 
-ActorElementType = Tuple[SphericalDropletsElement, FieldElementBase]
+ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class PointDropletActor(ActorBase):

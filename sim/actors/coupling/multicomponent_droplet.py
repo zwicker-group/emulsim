@@ -6,7 +6,7 @@ Provides an actor coupling multicomponent droplets to background fields
 
 from __future__ import annotations
 
-from typing import Any, Callable, Tuple
+from typing import Any, Callable
 
 import numba as nb
 import numpy as np
@@ -23,7 +23,7 @@ from ... import Parameter
 from ...elements import FieldCollectionElement, MulticomponentDropletsElement
 from ..base import ActorBase
 
-ActorElementType = Tuple[MulticomponentDropletsElement, FieldCollectionElement]
+ActorElementType = tuple[MulticomponentDropletsElement, FieldCollectionElement]
 
 
 class SolventFractionError(RuntimeError):

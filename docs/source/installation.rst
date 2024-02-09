@@ -1,7 +1,7 @@
 Installation
 ############
 
-This `py-sim` package is developed for python 3.8+ and should run on all
+This `py-sim` package is developed for python 3.9+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
 Since the code is not yet published on `pip`, it needs to be installed from
@@ -31,14 +31,14 @@ The required packages are listed in the table below:
 ==============  ========= =========
 Package         Version   Usage 
 ==============  ========= =========
-matplotlib      >=3.1.0   Visualizing results
-numpy           >=1.16    Array library used for storing data
-numba           >=0.43    Just-in-time compilation to accelerate numerics
+matplotlib      >=3.1     Visualizing results
+numpy           >=1.22    Array library used for storing data
+numba           >=0.49    Just-in-time compilation to accelerate numerics
 scipy           >=1.4     Miscellaneous scientific functions
 sympy           >=1.5     Dealing with user-defined mathematical expressions
 py-droplets     >=0.19    Represent droplets
 py-modelrunner  >=0.14    Solving partial differential equations
-py-pde          >=0.34    Solving partial differential equations
+py-pde          >=0.39    Solving partial differential equations
 zarr            >=2.16    Storage of numerical data
 ==============  ========= =========
 
