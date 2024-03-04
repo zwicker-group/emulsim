@@ -46,7 +46,8 @@ def _make_regularizer(
     vmin = 0.0 + eps
     vmax = 1.0 - eps
     sum_max = 1.0 - eps
-    assert num_comps * vmin < sum_max
+    if num_comps * vmin >= sum_max:
+        raise ValueError("Inconsistent `vmin` and `sum_max`")
     sum_eps_max = sum_max - num_comps * vmin
 
     @jit
@@ -306,8 +307,15 @@ class MulticomponentDropletActor(ActorBase):
         num_comps = len(self.parameters["chis"])
         chis_sol = self._chis_solvent
         chis_red = self._chis_reduced
-        assert chis_sol.shape == (num_comps,)
-        assert chis_red.shape == (num_comps, num_comps)
+        if chis_sol.shape != (num_comps,):
+            raise ValueError(
+                f"Inconsistent _chis_solvent ({chis_sol.shape} != {(num_comps,)})"
+            )
+        if chis_red.shape != (num_comps, num_comps):
+            raise ValueError(
+                "Inconsistent _chis_reduced "
+                f"({chis_sol.shape} != {(num_comps, num_comps)})"
+            )
 
         @jit
         def calc_state_vars(phis: np.ndarray) -> tuple[float, np.ndarray, float]:

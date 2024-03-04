@@ -261,7 +261,10 @@ class DropletNucleationActor(ActorBase):
         k = self.nucleation_rate(field)
         ΔV = field.grid.cell_volumes
         nucl_rate = ΔV * k.data
-        assert nucl_rate.shape == field.grid.shape
+        if nucl_rate.shape != field.grid.shape:
+            raise ValueError(
+                f"Inconsistent shape ({nucl_rate.shape} != {field.grid.shape})"
+            )
 
         # determine which cells nucleated a droplet
         if nucl_rate.max() > 1 / dt:

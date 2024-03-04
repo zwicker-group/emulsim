@@ -151,7 +151,9 @@ class ArrowsElement(PointsElement):
             data: The data of the degerees of freedom of the physical system
         """
         super()._init_state(attributes, data)
-        assert self.data.dtype["direction"].shape == (self.dim,)
+        dir_shape = self.data.dtype["direction"].shape
+        if dir_shape != (self.dim,):
+            raise ValueError(f"Direction must have shape {(self.dim)}, got {dir_shape}")
 
     @classmethod
     def from_position_direction(
