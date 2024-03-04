@@ -52,7 +52,8 @@ class BrownianMotionActor(ActorBase):
                 The state of all the droplets and of the field
         """
         fields = elements[0].data.dtype.fields
-        assert "position" in fields
+        if "position" not in fields:
+            raise ValueError("Could not find field `positions` in element data")
         self._cache["has_radius"] = "radius" in fields
         if self._cache["has_radius"]:
             self._cache["diffusivity"] = ScalarExpression(
@@ -121,7 +122,8 @@ class BrownianMotionActor(ActorBase):
         (objs,) = elements  # extract single element
         diffusivity = self._cache["diffusivity"]
         dim = objs.dim
-        assert dim is not None
+        if dim is None:
+            raise ValueError("`dim` must not be None")
 
         if self._cache["has_radius"]:
             for droplet in objs.droplets:  # type: ignore

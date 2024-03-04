@@ -303,7 +303,8 @@ class MeanfieldElement(FieldElementBase):
         Returns:
             :class:`MeanfieldElement`: The initialized instance
         """
-        assert isinstance(field, ScalarField)
+        if not isinstance(field, ScalarField):
+            raise TypeError("`field` must be ScalarField")
 
         if parameters is None:
             parameters = {}
@@ -549,7 +550,8 @@ class ScalarFieldElement(FieldElementBase):
         Returns:
             :class:`ScalarFieldElement`: The initialized instance
         """
-        assert isinstance(field, ScalarField)
+        if not isinstance(field, ScalarField):
+            raise TypeError("`field` must be ScalarField")
 
         if parameters is None:
             parameters = {}
@@ -770,7 +772,8 @@ class FieldCollectionElement(ArrayElementBase):
             :class:`FieldCollectionElement`: The initialized instance
         """
         for f in fields:
-            assert isinstance(f, ScalarField)
+            if not isinstance(f, ScalarField):
+                raise TypeError("All fields must be ScalarField")
         return cls(
             data=fields.data,
             parameters={"grid": fields.grid, "label": fields.label},

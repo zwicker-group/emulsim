@@ -12,7 +12,7 @@ import numpy as np
 
 from droplets import Emulsion, SphericalDroplet
 from pde.fields import FieldBase
-from pde.grids.base import GridBase
+from pde.grids.base import DimensionError, GridBase
 
 from .. import Parameter
 from .base import ArrayElementBase, NoData
@@ -144,7 +144,8 @@ class SphericalDropletsElement(ArrayElementBase):
             else:
                 raise TypeError("Either `droplet` or `dim` need to be set")
         elif dim is not None:
-            assert droplet.dim == dim
+            if droplet.dim != dim:
+                raise DimensionError(f"Inconsistent dimension ({droplet.dim} != {dim})")
 
         # initialize empty emulsion
         emulsion = Emulsion([], copy=False, dtype=droplet.data.dtype)

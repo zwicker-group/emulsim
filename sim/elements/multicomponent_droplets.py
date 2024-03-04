@@ -87,7 +87,8 @@ class MulticomponentDroplet(SphericalDroplet):
             num_comps = 1
         else:
             num_comps = len(amounts)
-        assert num_comps >= 1
+        if num_comps < 1:
+            raise ValueError(f"Need at least one component, got {num_comps}")
 
         # create dtype
         dtype = super().get_dtype(**kwargs)

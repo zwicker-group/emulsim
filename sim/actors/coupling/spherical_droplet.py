@@ -32,6 +32,7 @@ import scipy.special as sc
 
 from droplets.tools import spherical
 from pde import ScalarField
+from pde.grids.coordinates import SphericalCoordinates
 from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
@@ -42,49 +43,7 @@ from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsEle
 from ..base import ActorBase
 
 π = float(np.pi)
-
-
-def points_cartesian_to_spherical(points: np.ndarray) -> np.ndarray:
-    """Convert points from Cartesian to spherical coordinates
-
-    Args:
-        points (:class:`~numpy.ndarray`): Points in Cartesian coordinates
-
-    Returns:
-        :class:`~numpy.ndarray`: Points (r, θ, φ) in spherical coordinates
-    """
-    points = np.atleast_1d(points)
-    assert points.shape[-1] == 3, "Points must have 3 coordinates"
-
-    ps_spherical = np.empty(points.shape)
-    # calculate radius in [0, infinity]
-    ps_spherical[..., 0] = np.linalg.norm(points, axis=-1)
-    # calculate θ in [0, pi]
-    ps_spherical[..., 1] = np.arccos(points[..., 2] / ps_spherical[..., 0])
-    # calculate φ in [0, 2 * pi]
-    ps_spherical[..., 2] = np.arctan2(points[..., 1], points[..., 0]) % (2 * π)
-    return ps_spherical
-
-
-def points_spherical_to_cartesian(points: np.ndarray) -> np.ndarray:
-    """Convert points from spherical to Cartesian coordinates
-
-    Args:
-        points (:class:`~numpy.ndarray`):
-            Points in spherical coordinates (r, θ, φ)
-
-    Returns:
-        :class:`~numpy.ndarray`: Points in Cartesian coordinates
-    """
-    points = np.atleast_1d(points)
-    assert points.shape[-1] == 3, "Points must have 3 coordinates"
-
-    sin_θ = np.sin(points[..., 1])
-    ps_cartesian = np.empty(points.shape)
-    ps_cartesian[..., 0] = points[..., 0] * np.cos(points[..., 2]) * sin_θ
-    ps_cartesian[..., 1] = points[..., 0] * np.sin(points[..., 2]) * sin_θ
-    ps_cartesian[..., 2] = points[..., 0] * np.cos(points[..., 1])
-    return ps_cartesian
+Coords = SphericalCoordinates()
 
 
 def haversine_distance(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
@@ -105,9 +64,9 @@ def haversine_distance(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
         :class:`~numpy.ndarray`: The distances between the points
     """
     # note that latitude φ is θ and longitude λ is φ in our notation
-    coords = points_cartesian_to_spherical(point1)
+    coords = Coords.pos_from_cart(point1)
     r1, φ1, λ1 = coords[..., 0], coords[..., 1], coords[..., 2]
-    coords = points_cartesian_to_spherical(point2)
+    coords = Coords.pos_from_cart(point2)
     r2, φ2, λ2 = coords[..., 0], coords[..., 1], coords[..., 2]
 
     # check whether both points lie on the same sphere
@@ -137,9 +96,9 @@ def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float
             Radius of the sphere
     """
     # have to convert to unit sphere before applying the formula
-    spherical_coordinates = points_cartesian_to_spherical(vertices)
+    spherical_coordinates = Coords.pos_from_cart(vertices)
     spherical_coordinates[..., 0] = 1.0
-    vertices = points_spherical_to_cartesian(spherical_coordinates)
+    vertices = Coords.pos_to_cart(spherical_coordinates)
 
     n = vertices.shape[0]
     # point we start from
@@ -249,7 +208,10 @@ class PointsOnSphere:
 
         points_flat = self.points.reshape(-1, self.dim)
         if self.dim == 1:
-            assert points_flat.shape == (2, 1)
+            if points_flat.shape != (2, 1):
+                raise ValueError(
+                    f"points_flat must have shape (2, 1), got {points_flat.shape}"
+                )
             weights = np.array([0.5, 0.5])
 
         elif self.dim == 2:
@@ -365,8 +327,10 @@ class ShellSectors:
         else:
             self.weights = np.asanyarray(weights)
 
-        assert len(self.weights) == len(self.vectors)
-        assert np.isclose(self.weights.sum(), 1.0)
+        if len(self.weights) != len(self.vectors):
+            raise ValueError("Length of `vectors` and `weights` must agree")
+        if not np.isclose(self.weights.sum(), 1.0):
+            raise ValueError("`weights` must sum to one")
 
     @classmethod
     def generate(cls, dim: int, sector_count: int = 1) -> ShellSectors:
@@ -391,7 +355,8 @@ class ShellSectors:
 
         else:  # higher dimensions
             shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
-            assert sector_count == len(shell.points)
+            if sector_count != len(shell.points):
+                raise ValueError("Wrong number of returned points")
 
         weights = shell.get_area_weights(balance_axes=True)
         return cls(shell.points, weights)
@@ -473,8 +438,10 @@ class ShellCollection:
             raise RuntimeError("Require at least one shell")
 
         # self-consistency checks
-        assert len(self.shells) == len(self.max_radii)
-        assert len({s.dim for s in self.shells}) == 1
+        if len(self.shells) != len(self.max_radii):
+            raise ValueError(f"Length of `shells` and `max_radii` must agree")
+        if len({s.dim for s in self.shells}) != 1:
+            raise ValueError("All shells must have the same dimension")
 
         self.dim = self.shells[0].dim
         self.usage = [0] * len(self)
@@ -567,7 +534,8 @@ class ShellCollection:
             while sector_count_approx <= max_sector_count:
                 sector_count = int(np.floor(sector_count_approx))
                 shell = PointsOnSphere.make_uniform(dim=dim, num_points=sector_count)
-                assert sector_count == len(shell.points)
+                if sector_count != len(shell.points):
+                    raise ValueError("Wrong number of returned points")
 
                 # get maximal radius of a sphere such that the average area for
                 # each vertex is equal to `sector_area_max`

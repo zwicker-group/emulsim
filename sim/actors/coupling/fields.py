@@ -11,6 +11,7 @@ from typing import Any, Callable
 import numpy as np
 
 from pde.grids import CartesianGrid
+from pde.grids.base import DimensionError
 from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 
@@ -196,10 +197,12 @@ class FieldBoundaryExchangeActor(ActorBase):
                 The state of the individual fields
         """
         bulk, boundary = fields
-        assert bulk.dim == boundary.dim
+        if bulk.dim != boundary.dim:
+            raise DimensionError(f"Bulk != boundary ({bulk.dim} != {boundary.dim})")
 
         bulk_grid, boundary_grid = bulk.grid, boundary.grid  # type: ignore
-        assert isinstance(bulk_grid, CartesianGrid)
+        if not isinstance(bulk_grid, CartesianGrid):
+            raise TypeError("Bulk must be defined on CartesianGrid")
         axis = boundary.axis  # type: ignore
         axis_position = boundary.parameters["axis_position"]
 
