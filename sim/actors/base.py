@@ -14,7 +14,7 @@ from typing import Any, Callable, Union
 
 import numpy as np
 
-from modelrunner.parameters import Parameterized, ParameterListType
+from modelrunner.model.parameters import Parameterized, ParameterListType
 from pde.tools.cache import objects_equal
 
 from ..elements.base import _ElementBase

@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
 
 import numpy as np
 
-from modelrunner.parameters import Parameter
+from modelrunner import Parameter
 from pde.tools.numba import jit
 
 from ...elements.fields import FieldElementBase

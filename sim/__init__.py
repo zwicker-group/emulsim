@@ -21,7 +21,7 @@ except ImportError:
     del PackageNotFoundError, version  # clean name space
 
 # make key classes from modelrunner available
-from modelrunner.parameters import Parameter
+from modelrunner import Parameter
 
 # import key classes from py-sim package into general namespace
 from .actors import *
