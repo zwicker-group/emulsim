@@ -1,10 +1,6 @@
 """
 Provides a class representing the full system state of multiple elements.
 
-The class inherits both from :class:`~modelrunner.state.DictState` (governing input and
-output) and :class:`~modelrunner.parameters.Parametrized` (to allow controlling
-parameters of the state, e.g., how it is being visualized):
-
 .. inheritance-diagram:: State
    :parts: 1
 
@@ -22,7 +18,7 @@ from typing import Any, Callable, Literal
 
 import numpy as np
 
-from modelrunner.parameters import Parameter, Parameterized
+from modelrunner import Parameter, Parameterized
 from pde.grids.base import DimensionError, GridBase
 from pde.tools.numba import jit
 from pde.tools.plotting import napari_add_layers, plot_on_axes

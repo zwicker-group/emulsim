@@ -1,12 +1,6 @@
 """
 Module defining the abstract base class of elements
 
-Elements combine the functionality of :class:`~modelrunner.parameters.Parameterized`,
-which allows them to define inheritable parameters and sub-classes of
-:class:`~modelrunner.state.StateBase`, which deals with input and output.
-There are state classes that represent data in a form of python object, a
-single numpy array, and a collection of numpy arrays:
-
 .. autosummary::
    :nosignatures:
 
@@ -38,7 +32,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
 import numpy as np
 from numba import literal_unroll
 
-from modelrunner.parameters import Parameter, Parameterized
+from modelrunner import Parameter, Parameterized
 from modelrunner.storage import (
     Attrs,
     Location,
@@ -104,12 +98,12 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
     Elements are generally characterized by a `data` attribute, which contains
     information about all degrees of freedom, and `parameters`, which contain additional
     information in form of a python dictionary. While the parameters are managed by the
-    mixin :class:`~modelrunner.parameters.Parameterized`, the form of the data depends
-    on the element and must thus be defined by concrete classes. These classes need to
-    define at least to access points into the data: An attribute `data`, which is the
-    main access point for normal python code, and an attribute `_data_numba`, which
-    is used by `numba` to access and alter the underlying data. In many cases, these two
-    attributes can point to the same object, e.g., a :class:`~numpy.ndarray`.
+    mixin :class:`~modelrunner.model.parameters.Parameterized`, the form of the data
+    depends on the element and must thus be defined by concrete classes. These classes
+    need to define at least to access points into the data: An attribute `data`, which
+    is the main access point for normal python code, and an attribute `_data_numba`,
+    which is used by `numba` to access and alter the underlying data. In many cases,
+    these two attributes can point to the same object, e.g., a :class:`~numpy.ndarray`.
     """
 
     parameters_default = [
