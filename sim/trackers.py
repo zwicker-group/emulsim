@@ -201,14 +201,15 @@ class DropletElementTracker(TrackerBase):
             self.emulsions = EmulsionTimeCourse()
 
         if self.store_droplet_tracks is not False:
-            # tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
             if self.keep_vanished:
+                tracks = [DropletTrack() for _ in range(len(state[self.element_name]))]
                 self._active_tracks: dict[int, int] = {
                     i: i for i in range(len(state[self.element_name]))
                 }
             else:
+                tracks = []
                 self._active_tracks = {}
-            self.droplet_tracks = DropletTrackList()  # tracks)
+            self.droplet_tracks = DropletTrackList(tracks)
 
         return super().initialize(state, info)  # type: ignore
 
