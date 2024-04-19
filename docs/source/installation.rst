@@ -8,14 +8,14 @@ Since the code is not yet published on `pip`, it needs to be installed from
 source as described below.
 
 
-In order to have all features of the package available, you might also want to 
+In order to have all features of the package available, you might also want to
 install the following optional packages:
 
 .. code-block:: bash
 
-	pip install h5py pandas pyfftw tqdm
+    pip install h5py pandas pyfftw tqdm
 
-Moreover, :command:`ffmpeg` needs to be installed and for creating movies.    
+Moreover, :command:`ffmpeg` needs to be installed and for creating movies.
 
 
 Installing from source
@@ -43,13 +43,12 @@ zarr            >=2.16    Storage of numerical data
 ==============  ========= =========
 
 
-
 These package can be installed via your operating system's package manager, e.g.
 using :command:`macports`, :command:`homebrew`, :command:`conda`, or
 :command:`pip`.
 The package versions given above are minimal requirements, although
 this is not tested systematically. Generally, it should help to install the
-latest version of the package.  
+latest version of the package.
 
 Optionally, the following packages should be installed to use some miscellaneous
 features:

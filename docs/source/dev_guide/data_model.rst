@@ -51,7 +51,7 @@ To customize the element, you can add model parameters to it by defining the cla
 attribute `parameters_default`.
 If you want to add attributes other than parameters, you need to overwrite the
 :attr:`~sim.elements.base._ElementBase.attributes` property and the class method
-:meth:`~sim.elements.base._ElementBase._state_init`, which initializes objects from a 
+:meth:`~sim.elements.base._ElementBase._init_state`, which initializes objects from a 
 supplied state.
 These aspects are explained in the code example below:
 
@@ -73,8 +73,8 @@ These aspects are explained in the code example below:
             attrs['name'] = self.name
             return attrs
 
-        def _state_init(self, attributes, data):
-            super()._state_init(attributes, data)
+        def _init_state(self, attributes, data):
+            super()._init_state(attributes, data)
             self.name = attributes.get("name", "No name")
 
 
