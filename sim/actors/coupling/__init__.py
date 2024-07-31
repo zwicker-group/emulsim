@@ -1,5 +1,4 @@
-"""
-Provides actors that affect multiple elements in a simulation.
+"""Provides actors that affect multiple elements in a simulation.
 
 .. autosummary::
    :nosignatures:

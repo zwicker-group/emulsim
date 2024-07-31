@@ -266,7 +266,7 @@ intersphinx_mapping = {
 
 
 def setup(app):
-    """entry point for this extension"""
+    """Entry point for this extension."""
     from pde.tools.parameters import sphinx_display_parameters
 
     app.connect("autodoc-process-docstring", sphinx_display_parameters)

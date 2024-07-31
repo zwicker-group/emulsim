@@ -1,5 +1,4 @@
-"""
-Provides a simple actor that emit mass into a field a predefined positions
+"""Provides a simple actor that emit mass into a field a predefined positions.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -18,7 +17,7 @@ from ..base import ActorBase, ElementsType
 
 
 class EmittersActor(ActorBase):
-    """represents actor that emit mass into a field at defined positions"""
+    """Represents actor that emit mass into a field at defined positions."""
 
     parameters_default = [
         Parameter(
@@ -46,7 +45,7 @@ class EmittersActor(ActorBase):
         return len(self.parameters["positions"])
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             element (:class:`~sim.elements.fields.FieldElementBase`):
@@ -60,7 +59,7 @@ class EmittersActor(ActorBase):
     def make_evolver_numba(
         self, elements: ElementsType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the field state from time `t` to `t + dt`
+        """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -79,14 +78,14 @@ class EmittersActor(ActorBase):
 
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
-            """evolve all emitters explicitly"""
+            """Evolve all emitters explicitly."""
             for position, strength in zip(positions, strengths):
                 add_amount(state_data[0], position, dt * strength)
 
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """evolve the field state from time `t` to `t + dt`
+        """Evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):

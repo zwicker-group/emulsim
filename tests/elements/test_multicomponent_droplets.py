@@ -14,7 +14,7 @@ from sim.elements import MulticomponentDroplet, MulticomponentDropletsElement
 @pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("num_comps", [1, 2])
 def test_multicomponent_droplets(dim, num_comps):
-    """test basic multicomponent droplets functions"""
+    """Test basic multicomponent droplets functions."""
     emulsion = [
         MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps),
         MulticomponentDroplet([1] * dim, 2, amounts=[2] * num_comps),
@@ -47,7 +47,7 @@ def test_multicomponent_droplets(dim, num_comps):
 @pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("num_comps", [1, 2])
 def test_empty_multicomponent_droplets(dim, num_comps):
-    """test empty MulticomponentDropletsElement"""
+    """Test empty MulticomponentDropletsElement."""
     d = MulticomponentDroplet([0] * dim, 1, amounts=[1] * num_comps)
 
     def check(el, size, num_comps=num_comps):

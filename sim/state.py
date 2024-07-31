@@ -1,5 +1,4 @@
-"""
-Provides a class representing the full system state of multiple elements.
+"""Provides a class representing the full system state of multiple elements.
 
 .. inheritance-diagram:: State
    :parts: 1
@@ -27,7 +26,7 @@ from .elements.base import DictElementBase, NoData, _ElementBase
 
 
 class State(DictElementBase):
-    """defines the state of the simulation as a collection of elements"""
+    """Defines the state of the simulation as a collection of elements."""
 
     parameters_default = [
         Parameter(
@@ -79,7 +78,7 @@ class State(DictElementBase):
                 self.add_element(name, element)
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -108,7 +107,7 @@ class State(DictElementBase):
 
     @classmethod
     def from_data(cls, attributes: dict[str, Any], data=None) -> State:
-        """create the state from attributes and data
+        """Create the state from attributes and data.
 
         Args:
             attributes (dict):
@@ -125,17 +124,18 @@ class State(DictElementBase):
 
     @property
     def _data_numba(self) -> tuple:
-        """returns the data associated with the state in a form that numba can handle"""
+        """Returns the data associated with the state in a form that numba can
+        handle."""
         return tuple(state._data_numba for state in self.data.values())
 
     @_data_numba.setter
     def _data_numba(self, state_data: tuple) -> None:
-        """sets the data of all states"""
+        """Sets the data of all states."""
         for key, new_el_data in zip(self.data.keys(), state_data):
             self.data[key]._data_numba[...] = new_el_data
 
     def copy(self, method: Literal["clean", "shallow", "data"] = "clean", data=None):
-        """create a copy of the state
+        """Create a copy of the state.
 
         Args:
             method (str):
@@ -156,7 +156,7 @@ class State(DictElementBase):
         return self.data
 
     def add_element(self, name: str, element: _ElementBase):
-        """adds an element to the simulation
+        """Adds an element to the simulation.
 
         Args:
             name (str):
@@ -184,7 +184,7 @@ class State(DictElementBase):
         self.elements[name] = element
 
     def get_index(self, name: str) -> int:
-        """returns the numerical index of a specific element
+        """Returns the numerical index of a specific element.
 
         Args:
             name (str): The name of the element
@@ -195,7 +195,7 @@ class State(DictElementBase):
         raise KeyError(f"`{name}` not in {self.__class__.__name__}")
 
     def __getitem__(self, key: int | str | Sequence[str]):
-        """extract element by numerical index or by name"""
+        """Extract element by numerical index or by name."""
         if isinstance(key, int):
             # handle numerical index
             size = len(self)
@@ -248,7 +248,7 @@ class State(DictElementBase):
 
     @property
     def grid(self) -> GridBase:
-        """:class:`~pde.grids.base.GridBase`: a grid representing the entire state"""
+        """:class:`~pde.grids.base.GridBase`: a grid representing the entire state."""
         grid = None
         for element in self.elements.values():
             # try to find a suitable grid
@@ -271,7 +271,7 @@ class State(DictElementBase):
         return sum(element.degrees_of_freedom for element in self.elements.values())
 
     def get_quantities(self, property_name: str) -> dict[str, Any]:
-        """returns quantities obtained from the elements
+        """Returns quantities obtained from the elements.
 
         Quantities are typically implemented as properties or attributes of the
         elements. If an element does not have a property, it is silently ignored and not
@@ -292,7 +292,7 @@ class State(DictElementBase):
         }
 
     def get_total_quantity(self, property_name: str) -> float:
-        """returns quantities summed over all elements
+        """Returns quantities summed over all elements.
 
         Quantities are typically implemented as properties or attributes. If
         an element does not have a property, it is silently ignored and not
@@ -310,7 +310,7 @@ class State(DictElementBase):
         return sum(self.get_quantities(property_name).values())  # type: ignore
 
     def get_quantity(self, property_name: str, total: bool = True):
-        """returns quantities obtained from the elements
+        """Returns quantities obtained from the elements.
 
         Quantities are typically implemented as properties or attributes. If
         an element does not have a property, it is silently ignored and not
@@ -338,7 +338,7 @@ class State(DictElementBase):
             return self.get_quantities(property_name)
 
     def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between state data
+        """Return function that estimates the error between state data.
 
         Args:
             backend (str): The backend used to calculate the error
@@ -349,7 +349,7 @@ class State(DictElementBase):
             ]
 
             def state_error_estimator(state1: State, state2: State) -> float:
-                """estimate error for all elements"""
+                """Estimate error for all elements."""
                 error = 0.0
                 for el_err, el1, el2 in zip(el_errs, state1, state2):
                     # The extra cast to a float can be sometimes necessary. We had one
@@ -370,7 +370,7 @@ class State(DictElementBase):
             def chain(
                 element_id: int, inner: Callable[[Any, Any], float] | None = None
             ) -> Callable[[Any, Any], float]:
-                """recursive factory function for running all actors"""
+                """Recursive factory function for running all actors."""
                 # get the evolver function
                 el_err = self[element_id]._make_error_estimator(backend="numba")
 
@@ -405,7 +405,7 @@ class State(DictElementBase):
         invisible_elements: Iterable[str] | None = None,
         **kwargs,
     ):
-        r"""visualize the state
+        r"""Visualize the state.
 
         Args:
             element_args (dict):
@@ -450,7 +450,7 @@ class State(DictElementBase):
             ax.set_aspect(1)
 
     def _get_napari_data(self, **kwargs) -> dict[str, dict[str, Any]]:
-        r"""returns data for plotting this state in napari
+        r"""Returns data for plotting this state in napari.
 
         Args:
             \**kwargs: all arguments are forwarded to `_get_napari_layer_data`
@@ -477,7 +477,7 @@ class State(DictElementBase):
         viewer_args: dict[str, Any] | None = None,
         **kwargs,
     ):
-        """create an interactive plot of the field using :mod:`napari`
+        """Create an interactive plot of the field using :mod:`napari`
 
         Args:
             grid (:~pde.grids.base.GridBase`):

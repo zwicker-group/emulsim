@@ -19,7 +19,7 @@ from sim.elements import (
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_fields_1(dim):
-    """simple test of single fields"""
+    """Simple test of single fields."""
     if dim == 0:
         grid = UnitGrid([3])
         element = MeanfieldElement(2, {"bounds": grid.axes_bounds})
@@ -42,7 +42,7 @@ def test_fields_1(dim):
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_fields_2(dim):
-    """simple test of two fields"""
+    """Simple test of two fields."""
     if dim == 0:
         grid = UnitGrid([3])
         element1 = MeanfieldElement(2, {"bounds": grid.axes_bounds})
@@ -71,7 +71,7 @@ def test_fields_2(dim):
 
 @pytest.mark.parametrize("resolution", [4, 2, 1])
 def test_field_boundary_coupling(resolution):
-    """simple test of the boundary coupling"""
+    """Simple test of the boundary coupling."""
     # set up state
     grid = UnitGrid([4, 4], periodic=True)
     if resolution == 1:

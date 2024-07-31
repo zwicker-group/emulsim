@@ -18,14 +18,14 @@ from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDroplets
 
 
 def test_spherical_polygon_area():
-    """test the function get_spherical_polygon_area"""
+    """Test the function get_spherical_polygon_area."""
     area = spherical_droplet.get_spherical_polygon_area
     sector_area = area([[0, 1.0, 0], [0, 0, 1.0], [-1.0, 0, 0]])
     assert sector_area == pytest.approx(np.pi / 2)
 
 
 def test_spherical_voronoi():
-    """test spatial.SphericalVoronoi"""
+    """Test spatial.SphericalVoronoi."""
     # random points on the sphere
     ps = np.random.random((32, 3)) - 0.5
     ps /= np.linalg.norm(ps, axis=1)[:, None]
@@ -42,7 +42,7 @@ def test_spherical_voronoi():
 
 @pytest.mark.parametrize("dim", range(1, 4))
 def test_points_on_sphere(dim, tmp_path):
-    """test spatial.SphericalVoronoi"""
+    """Test spatial.SphericalVoronoi."""
     shell = spherical_droplet.PointsOnSphere.make_uniform(dim=dim)
     assert shell.dim == dim
 
@@ -60,14 +60,14 @@ def test_points_on_sphere(dim, tmp_path):
 
 
 def test_points_on_sphere_2():
-    """special tests for 2 dimensions"""
+    """Special tests for 2 dimensions."""
     num = np.random.randint(3, 9)
     shell = spherical_droplet.PointsOnSphere.make_uniform(dim=2, num_points=num)
     assert num * shell.get_mean_separation() == pytest.approx(2 * np.pi)
 
 
 def test_shells_1d():
-    """test shell collection in 1 dimensions"""
+    """Test shell collection in 1 dimensions."""
     sc = spherical_droplet.ShellCollection.generate(dim=1)
     assert len(sc) == 1
     shell = sc.get_shell(1e3)
@@ -78,7 +78,7 @@ def test_shells_1d():
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_shells_general(dim):
-    """test shell collections in 2 and 3 dimensions"""
+    """Test shell collections in 2 and 3 dimensions."""
     sc = spherical_droplet.ShellCollection.generate(dim=dim)
 
     for shell in sc:
@@ -91,7 +91,7 @@ def test_shells_general(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets(dim):
-    """simple test of SphericalDropletAgents"""
+    """Simple test of SphericalDropletAgents."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -141,7 +141,7 @@ def test_spherical_droplets(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_const_shell_count(dim):
-    """simple test of SphericalDropletAgents"""
+    """Simple test of SphericalDropletAgents."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -194,7 +194,7 @@ def test_spherical_droplets_const_shell_count(dim):
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_inside(dim, compiled):
-    """simple test of SphericalDropletAgents with reactions"""
+    """Simple test of SphericalDropletAgents with reactions."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -222,7 +222,7 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_outside(dim, compiled):
-    """simple test of SphericalDropletAgents with reactions"""
+    """Simple test of SphericalDropletAgents with reactions."""
     if compiled and dim == 2 and not module_available("numba_scipy"):
         pytest.skip("Python module `numba_scipy` not installed")
 
@@ -252,7 +252,7 @@ def test_spherical_droplets_reactions_outside(dim, compiled):
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_material_conservation(backend):
-    """test whether the simulation conserves the total amount of material"""
+    """Test whether the simulation conserves the total amount of material."""
     grid = UnitGrid([4] * 3, periodic=True)
     field_data = ScalarField(grid, 1.5)
 
@@ -279,8 +279,8 @@ def test_material_conservation(backend):
 )
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim):
-    """a simple test for implementation of linearized fluxes for Active Emulsions under
-    mean-field conditions"""
+    """A simple test for implementation of linearized fluxes for Active Emulsions under
+    mean-field conditions."""
     if dim == 2 and not module_available("numba_scipy"):
         pytest.skip("Module `numba_scipy` not available")
 
@@ -321,7 +321,7 @@ def test_linearized_fluxes(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_coarsening(dim):
-    """simple test of coarsening"""
+    """Simple test of coarsening."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -350,7 +350,7 @@ def test_coarsening(dim):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_drift(dim, backend):
-    """test drift direction of droplets"""
+    """Test drift direction of droplets."""
     grid = UnitGrid([4] * dim)
     # initialize gradient along x-direction
     field_data = ScalarField.from_expression(grid, "x / 40")
@@ -384,7 +384,7 @@ def test_spherical_droplets_drift(dim, backend):
 
 
 def test_multithreading():
-    """simple consistency test for multiprocessing"""
+    """Simple consistency test for multiprocessing."""
     grid = UnitGrid([1])
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     field2 = field1.copy(method="data")

@@ -1,5 +1,4 @@
-"""
-Provides a flexible actor based on a user-supplied python function. 
+"""Provides a flexible actor based on a user-supplied python function.
 
 .. autosummary::
    :nosignatures:
@@ -24,7 +23,7 @@ from .base import ActorBase, ElementsType, EvolverType
 
 
 class FunctionActor(ActorBase):
-    """actor that uses a python function to evolve elements"""
+    """Actor that uses a python function to evolve elements."""
 
     def __init__(self, num_elements: int, func: Callable):
         """
@@ -55,11 +54,11 @@ class FunctionActor(ActorBase):
         self.func = func
 
     def copy(self) -> FunctionActor:
-        """returns a copy the actor"""
+        """Returns a copy the actor."""
         return self.__class__(self.num_elements, self.func)
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.base._ElementBase`):
@@ -78,7 +77,7 @@ class FunctionActor(ActorBase):
 
 
 class NumbaFunctionActor(ActorBase):
-    """actor that uses a compiled function to evolve the data of elements"""
+    """Actor that uses a compiled function to evolve the data of elements."""
 
     def __init__(self, num_elements: int, func: Callable):
         """
@@ -109,11 +108,11 @@ class NumbaFunctionActor(ActorBase):
         self.func = func
 
     def copy(self) -> NumbaFunctionActor:
-        """returns a copy the actor"""
+        """Returns a copy the actor."""
         return self.__class__(self.num_elements, self.func)
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             *elements (tuple of :class:`~sim.elements.base._ElementBase`):
@@ -136,7 +135,7 @@ class NumbaFunctionActor(ActorBase):
             raise NotImplementedError
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.base._ElementBase`):

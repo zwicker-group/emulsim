@@ -11,7 +11,7 @@ from sim.elements import MeanfieldElement
 
 
 def test_emitters():
-    """simple test of emitters"""
+    """Simple test of emitters."""
     grid = UnitGrid([3, 3])
     background = MeanfieldElement(parameters={"bounds": [[0, 3], [0, 3]]})
     assert background.concentration == pytest.approx(0)

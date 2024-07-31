@@ -17,7 +17,7 @@ from ..base import ActorBase, ElementsType
 
 
 class BoxActor(ActorBase):
-    """represents actor that contains particles in a box"""
+    """Represents actor that contains particles in a box."""
 
     parameters_default = [
         Parameter("bounds", [], np.array, "The bounds of the box"),
@@ -50,7 +50,7 @@ class BoxActor(ActorBase):
 
     @classmethod
     def from_grid(cls, grid: CartesianGrid):
-        """create BoxActor from a Cartesian grid
+        """Create BoxActor from a Cartesian grid.
 
         Args:
             grid (:class:`pde.grids.cartesian.CartesianGrid`):
@@ -59,7 +59,7 @@ class BoxActor(ActorBase):
         return cls({"bounds": grid.axes_bounds, "periodic": grid.periodic})
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
@@ -73,7 +73,7 @@ class BoxActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
     ) -> Callable[[tuple[np.ndarray], float, float], None]:
-        """return a function evolve the field state from time `t` to `t + dt`
+        """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):
@@ -106,7 +106,7 @@ class BoxActor(ActorBase):
 
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float) -> None:
-            """evolve all points explicitly"""
+            """Evolve all points explicitly."""
             points = state_data[0]  # data of the points
             for i in range(num_points):
                 pos = points[i].position
@@ -138,7 +138,7 @@ class BoxActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """evolve the field state from time `t` to `t + dt`
+        """Evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.points.PointsElement`):

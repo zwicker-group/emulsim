@@ -1,5 +1,4 @@
-"""
-Module defining the abstract base class of elements
+"""Module defining the abstract base class of elements.
 
 .. autosummary::
    :nosignatures:
@@ -52,13 +51,13 @@ if TYPE_CHECKING:
 
 
 class NoData:
-    """helper class that marks data omission"""
+    """Helper class that marks data omission."""
 
     ...
 
 
 def _equals(left: Any, right: Any) -> bool:
-    """checks whether two objects are equal, also supporting :class:~numpy.ndarray`
+    """Checks whether two objects are equal, also supporting :class:~numpy.ndarray`
 
     Args:
         left: one object
@@ -93,7 +92,7 @@ TElement = TypeVar("TElement", bound="_ElementBase")
 
 
 class _ElementBase(Parameterized, metaclass=ABCMeta):
-    """(private) base class for representing simulation element
+    """(private) base class for representing simulation element.
 
     Elements are generally characterized by a `data` attribute, which contains
     information about all degrees of freedom, and `parameters`, which contain additional
@@ -123,7 +122,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         self._init_state({"parameters": parameters}, data)
 
     def __init_subclass__(cls, **kwargs):  # @NoSelf
-        """register all subclasses to reconstruct them later"""
+        """Register all subclasses to reconstruct them later."""
         # register the subclasses
         super().__init_subclass__(**kwargs)
         if cls is not _ElementBase:
@@ -134,7 +133,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             storage_actions.register("write_item", cls, cls._write_to_storage)
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state from attributes and (optionally) data
+        """Initialize the state from attributes and (optionally) data.
 
         This function is the central intialization method for the element, which is
         called by :meth:`__init__`, :meth:`__setstate__`, and :meth:`from_data`.
@@ -200,7 +199,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def _unpack_parameters(cls, parameters: dict[str, Any]) -> None:
-        """convert an attribute from a form that was stored"""
+        """Convert an attribute from a form that was stored."""
         default_parameters = cls.get_parameters(
             include_hidden=True, include_deprecated=True, sort=False
         )
@@ -214,7 +213,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def from_data(cls, attributes: dict[str, Any], data=NoData) -> _ElementBase:
-        """create instance of any state class from attributes and data
+        """Create instance of any state class from attributes and data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -256,7 +255,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             raise ValueError(f"Incompatible state class {cls_name}")
 
     def __getstate__(self) -> dict[str, Any]:
-        """return a representation of the current state
+        """Return a representation of the current state.
 
         Note that this representation might contain views into actual data
         """
@@ -267,14 +266,14 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         return {"attributes": attrs, "data": self.data}
 
     def __setstate__(self, dictdata):
-        """set all properties of the object from a stored representation"""
+        """Set all properties of the object from a stored representation."""
         self._unpack_parameters(dictdata["attributes"]["parameters"])
         self._init_state(dictdata.get("attributes", {}), dictdata.get("data", NoData))
 
     def copy(
         self: TElement, method: Literal["clean", "shallow", "data"], data=None
     ) -> TElement:
-        """create a copy of the state
+        """Create a copy of the state.
 
         There are several methods of copying the state:
 
@@ -357,14 +356,14 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         ...
 
     def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between element data"""
+        """Return function that estimates the error between element data."""
         raise NotImplementedError("Element does not implement error estimator")
 
     @classmethod
     def _get_attrs_from_storage(
         cls, storage: StorageGroup, loc: Location, *, check_version: bool = True
     ) -> Attrs:
-        """read attributes from storage and optionally check format version
+        """Read attributes from storage and optionally check format version.
 
         Args:
             storage (str or :class:`~modelrunner.storage.StorageBase`):
@@ -398,7 +397,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
     def _from_stored_data(
         cls, storage: StorageGroup, loc: Location, *, index: int | None = None
     ):
-        """create the element from some storage
+        """Create the element from some storage.
 
         Args:
             storage (:class:`StorageGroup`):
@@ -428,7 +427,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
     def _update_from_stored_data(
         self, storage: StorageGroup, loc: Location, index: int | None = None
     ) -> None:
-        """update the state data (but not its attributes) from storage
+        """Update the state data (but not its attributes) from storage.
 
         Args:
             storage (:class:`StorageGroup`):
@@ -442,7 +441,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError(f"Cannot update `{self.__class__.__name__}`")
 
     def _write_to_storage(self, storage: StorageGroup, loc: Location) -> None:
-        """write the state to storage
+        """Write the state to storage.
 
         Args:
             storage (:class:`StorageGroup`):
@@ -453,7 +452,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError(f"Cannot write `{self.__class__.__name__}`")
 
     def _create_trajectory(self, storage: StorageGroup, loc: Location) -> None:
-        """prepare a trajectory of the current state
+        """Prepare a trajectory of the current state.
 
         Args:
             storage (:class:`StorageGroup`):
@@ -466,7 +465,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         )
 
     def _append_to_trajectory(self, storage: StorageGroup, loc: Location) -> None:
-        """append the current state to a prepared trajectory
+        """Append the current state to a prepared trajectory.
 
         Args:
             storage (:class:`StorageGroup`):
@@ -480,7 +479,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
     @classmethod
     def from_file(cls, storage: StorageID, loc: Location = "state", **kwargs):
-        r"""load object from a file
+        r"""Load object from a file.
 
         Args:
             storage (str or :class:`~modelrunner.storage.StorageBase`):
@@ -504,7 +503,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         mode: ModeType = "insert",
         **kwargs,
     ) -> None:
-        """write this object to a file
+        """Write this object to a file.
 
         Args:
             storage (str or :class:`~modelrunner.storage.StorageBase`):
@@ -524,11 +523,11 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             self._write_to_storage(opened_storage, loc=loc)
 
     def plot(self, ax=None, *args, **kwargs):
-        """plot the element"""
+        """Plot the element."""
         pass
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
-        """returns data for plotting on a single napari layer
+        """Returns data for plotting on a single napari layer.
 
         Returns:
             dict: all the information necessary to plot this element
@@ -537,7 +536,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
 
 class ObjectElementBase(_ElementBase):
-    """Element storing data in a python object"""
+    """Element storing data in a python object."""
 
     @property
     def degrees_of_freedom(self) -> int:
@@ -587,7 +586,7 @@ class ObjectElementBase(_ElementBase):
 
 
 class ArrayElementBase(_ElementBase):
-    """Element storing data in a numpy array"""
+    """Element storing data in a numpy array."""
 
     def __init__(
         self,
@@ -616,7 +615,7 @@ class ArrayElementBase(_ElementBase):
         return int(arr.size * itemsize)
 
     def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between element data
+        """Return function that estimates the error between element data.
 
         Args:
             backend (str): The backend used to calculate the error
@@ -688,7 +687,7 @@ class ArrayElementBase(_ElementBase):
 
 
 class ArrayCollectionElementBase(_ElementBase):
-    """Element storing data in multiple numpy array"""
+    """Element storing data in multiple numpy array."""
 
     def __init__(
         self,
@@ -719,7 +718,7 @@ class ArrayCollectionElementBase(_ElementBase):
         return dof
 
     def _make_error_estimator(self, backend: str) -> Callable[[Any, Any], float]:
-        """return function that estimates the error between element data
+        """Return function that estimates the error between element data.
 
         Args:
             backend (str): The backend used to calculate the error
@@ -738,7 +737,7 @@ class ArrayCollectionElementBase(_ElementBase):
 
 
 class DictElementBase(_ElementBase):
-    """Element storing data in a dictionary of states"""
+    """Element storing data in a dictionary of states."""
 
     def __init__(
         self,
@@ -760,7 +759,8 @@ class DictElementBase(_ElementBase):
 
     @property
     def _data_numba(self) -> tuple:
-        """returns the data associated with the state in a form that numba can handle"""
+        """Returns the data associated with the state in a form that numba can
+        handle."""
         return tuple(state._data_numba for state in self.data.values())
 
     @property

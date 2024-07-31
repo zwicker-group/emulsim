@@ -1,5 +1,4 @@
-"""
-Test points element functionality
+"""Test points element functionality.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -12,7 +11,7 @@ from sim.elements import ArrowsElement
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_arrows_element(dim):
-    """test basic arrows elements functions"""
+    """Test basic arrows elements functions."""
     n = 5  # number of droplets
     pos = np.random.randn(n, dim)
 

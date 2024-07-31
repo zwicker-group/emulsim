@@ -1,5 +1,4 @@
-"""
-Test generic elements functionality
+"""Test generic elements functionality.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -29,7 +28,7 @@ from sim.elements.base import _ElementBase
 
 
 class EmptyElement(ObjectElementBase):
-    """dummy class to test the simplest element"""
+    """Dummy class to test the simplest element."""
 
     parameters_default = {"dim": 2}  # type: ignore
 
@@ -43,7 +42,7 @@ class EmptyElement(ObjectElementBase):
 
 
 def generate_elements(dim=None, incl_obj=True):
-    """helper function generating all tested backgrounds"""
+    """Helper function generating all tested backgrounds."""
     if incl_obj:
         yield EmptyElement(parameters={"dim": 2 if dim is None else dim})
 
@@ -99,7 +98,7 @@ def generate_elements(dim=None, incl_obj=True):
 
 @pytest.mark.parametrize("element", generate_elements())
 def test_basic(element):
-    """test basic functions of elements"""
+    """Test basic functions of elements."""
     assert isinstance(str(element), str)
     assert isinstance(repr(element), str)
     assert isinstance(element.attributes, dict)
@@ -119,7 +118,7 @@ def test_basic(element):
 
 @pytest.mark.parametrize("element", generate_elements())
 def test_numba_data_access(element, capsys):
-    """test whether the element data can be used in numba"""
+    """Test whether the element data can be used in numba."""
 
     @jit
     def printer(element_data):
@@ -133,7 +132,7 @@ def test_numba_data_access(element, capsys):
 @pytest.mark.parametrize("element", generate_elements())
 @pytest.mark.parametrize("ext", ["zarr", "json"])
 def test_element_io(element, ext, tmp_path):
-    """test writing and reading element states"""
+    """Test writing and reading element states."""
     path = tmp_path / f"test_io_{element.__class__.__name__}.{ext}"
 
     element.to_file(path)

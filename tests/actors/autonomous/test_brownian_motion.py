@@ -13,7 +13,7 @@ from sim.elements import PointsElement, SphericalDropletsElement
 
 
 def test_brownian_motion_points():
-    """simple test of Brownian motion of points"""
+    """Simple test of Brownian motion of points."""
 
     element = PointsElement(np.random.randn(10, 2))
     actor = BrownianMotionActor()
@@ -33,7 +33,7 @@ def test_brownian_motion_points():
     not module_available("droplets"), reason="requires `droplets` module"
 )
 def test_brownian_motion_droplets():
-    """simple test of Brownian motion of droplets"""
+    """Simple test of Brownian motion of droplets."""
 
     droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)

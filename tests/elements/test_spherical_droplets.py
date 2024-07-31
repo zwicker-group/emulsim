@@ -1,5 +1,4 @@
-"""
-Test spherical droplets elements functionality
+"""Test spherical droplets elements functionality.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -14,7 +13,7 @@ from sim.elements import SphericalDropletsElement
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_spherical_droplets_element(dim):
-    """test basic spherical droplets functions"""
+    """Test basic spherical droplets functions."""
     emulsion = [SphericalDroplet([0] * dim, 1), SphericalDroplet([1] * dim, 2)]
     element = SphericalDropletsElement.from_droplets(emulsion)
     assert element.dim == dim
@@ -47,7 +46,7 @@ def test_spherical_droplets_element(dim):
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_spherical_droplets_element_empty(dim):
-    """test empty spherical droplets elements"""
+    """Test empty spherical droplets elements."""
     d = SphericalDroplet([0] * dim, 1)
 
     def check(el, size):

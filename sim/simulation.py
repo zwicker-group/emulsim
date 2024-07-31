@@ -1,5 +1,4 @@
-"""
-Provides a class representing the full simulation
+"""Provides a class representing the full simulation.
 
 .. autosummary::
    :nosignatures:
@@ -34,7 +33,7 @@ ElementNamesType = Union[str, tuple[str]]
 
 
 class Simulation:
-    """Class defining the simulation state"""
+    """Class defining the simulation state."""
 
     def __init__(
         self,
@@ -74,12 +73,12 @@ class Simulation:
         self._cache: dict[str, SimulationSolver] = {}
 
     def __repr__(self):
-        """return instance as string"""
+        """Return instance as string."""
         actors_str = ", ".join(repr(actor) for actor in self.actors)
         return f"{self.__class__.__name__}({self.state!r}, actors=[{actors_str}])"
 
     def __str__(self):
-        """return instance as string"""
+        """Return instance as string."""
         actors_str = ", ".join(str(actor) for actor in self.actors)
         return f"{self.__class__.__name__}({self.state!s}, actors=[{actors_str}])"
 
@@ -94,7 +93,7 @@ class Simulation:
         return {"state": self.state.attributes, "actors": actor_infos}
 
     def copy(self, method: Literal["clean", "shallow", "data"]) -> Simulation:
-        """returns a copy the entire simulation
+        """Returns a copy the entire simulation.
 
         Args:
             method (str):
@@ -111,7 +110,7 @@ class Simulation:
     def add_actor(
         self, elements: ElementNamesType, actor: ActorBase, *, check: str = "log"
     ):
-        """adds a new actor to the simulation
+        """Adds a new actor to the simulation.
 
         Args:
             elements (str or tuple of str):
@@ -145,7 +144,7 @@ class Simulation:
             # run some checks before adding the actor
 
             def show_msg(msg: str, exception: type[BaseException]):
-                """helper function showing the message according to chosen method"""
+                """Helper function showing the message according to chosen method."""
                 if check == "warn":
                     warnings.warn(msg)
                 elif check == "log":
@@ -175,7 +174,7 @@ class Simulation:
         self.actors.append((elements, actor))
 
     def get_graph(self, with_data: bool = True):
-        """return a graph representation of the simulation
+        """Return a graph representation of the simulation.
 
         Args:
             with_data (bool):
@@ -208,7 +207,7 @@ class Simulation:
         return graph
 
     def plot_as_graph(self, layout: str | Callable = "auto", **kwargs) -> None:
-        """represent the simulation in a graphical form
+        """Represent the simulation in a graphical form.
 
         Args:
             layout (str):
@@ -252,7 +251,7 @@ class Simulation:
         nx.draw_networkx_labels(graph, pos, labels)
 
     def get_interacting_elements(self, with_data: bool = True):
-        """return a graph representation the interacting elements of a simulation
+        """Return a graph representation the interacting elements of a simulation.
 
         Args:
             with_data (bool):
@@ -293,7 +292,7 @@ class Simulation:
         label_edges: bool = True,
         **kwargs,
     ) -> None:
-        """plot all interacting elements as a graph
+        """Plot all interacting elements as a graph.
 
         Args:
             layout (str):
@@ -333,7 +332,7 @@ class Simulation:
             )
 
     def estimate_dt(self, state: State | None = None) -> float:
-        """get the optimal time step for the simulation
+        """Get the optimal time step for the simulation.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -360,7 +359,7 @@ class Simulation:
     def _make_evolve_state(
         self, actor_id: int, state: State | None = None
     ) -> Callable[[tuple[np.ndarray, ...], float, float], float | None]:
-        """factory function creating a function to evolve a single actor
+        """Factory function creating a function to evolve a single actor.
 
         Args:
             actor_id (int):
@@ -395,7 +394,7 @@ class Simulation:
             def evolve_state(
                 state_data: tuple[np.ndarray, ...], t: float, dt: float
             ) -> float:
-                """evolve the states affected by this actor and record runtime"""
+                """Evolve the states affected by this actor and record runtime."""
                 with nb.objmode(time_start="f8"):
                     time_start = time.perf_counter()
                 actor_evolver(get_element_states(state_data), t, dt)
@@ -409,7 +408,7 @@ class Simulation:
             def evolve_state(
                 state_data: tuple[np.ndarray, ...], t: float, dt: float
             ) -> None:
-                """evolve the states affected by this actor"""
+                """Evolve the states affected by this actor."""
                 states = get_element_states(state_data)
                 actor_evolver(states, t, dt)
 
@@ -417,7 +416,7 @@ class Simulation:
         return evolve_state  # type: ignore
 
     def make_evolver_numba(self, state: State | None = None) -> EvolverType:
-        """return a function evolving the state from time `t` to `t + dt`
+        """Return a function evolving the state from time `t` to `t + dt`
 
         Args:
             state (:class:`~sim.state.State`):
@@ -431,7 +430,7 @@ class Simulation:
             state = self.state
 
         def chain(actor_id: int, inner: Callable | None = None) -> Callable:
-            """recursive factory function for running all actors"""
+            """Recursive factory function for running all actors."""
             # get the evolver function
             actor_evolver = self._make_evolve_state(actor_id, state=state)
 
@@ -475,7 +474,7 @@ class Simulation:
 
             @jit
             def evolver(state_data: tuple[np.ndarray, ...], t: float, dt: float):
-                """wrapper to providing access to the timings array"""
+                """Wrapper to providing access to the timings array."""
                 timings = get_timings_arr()
                 evolver_chain(state_data, t, dt, timings)
 
@@ -494,7 +493,7 @@ class Simulation:
         return evolver  # type: ignore
 
     def evolve(self, state: State, t: float, dt: float) -> None:
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             state (:class:`~sim.state.State`):
@@ -530,7 +529,7 @@ class Simulation:
         use_cache: bool = False,
         **kwargs,
     ) -> State | tuple[State, dict[str, Any]]:
-        r"""run the simulation to advance the state in time
+        r"""Run the simulation to advance the state in time.
 
         Args:
             t_range (float or tuple of floats):
@@ -609,7 +608,7 @@ class Simulation:
 
 
 class SimulationSolver(AdaptiveSolverBase):
-    """Solver for element/actor-based simulations"""
+    """Solver for element/actor-based simulations."""
 
     dt_default = 1.0
     dt_min: float = 1e-10
@@ -628,7 +627,7 @@ class SimulationSolver(AdaptiveSolverBase):
         tolerance: float = 1e-4,
         use_cache: bool = False,
     ):
-        """initialize the explicit solver for the actor-based simulation
+        """Initialize the explicit solver for the actor-based simulation.
 
         Args:
             simulation (:class:`Simulation`):
@@ -656,7 +655,7 @@ class SimulationSolver(AdaptiveSolverBase):
         self._cache_stepper: dict[str, Callable] = {}
 
     def _make_single_step(self, state: State) -> Callable[[State, float, float], None]:
-        """return function evolving state using adaptive time steps
+        """Return function evolving state using adaptive time steps.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -678,7 +677,7 @@ class SimulationSolver(AdaptiveSolverBase):
                 self.info["backend"] = "numba"
 
                 def single_step(state: State, t: float, dt: float) -> None:
-                    """function that advances the state from t_start to t_end"""
+                    """Function that advances the state from t_start to t_end."""
                     simulation_evolver(state._data_numba, t, dt)
 
         if backend == "numpy":
@@ -686,7 +685,7 @@ class SimulationSolver(AdaptiveSolverBase):
             self.info["backend"] = "numpy"
 
             def single_step(state: State, t: float, dt: float) -> None:
-                """function that advances the state from t_start to t_end"""
+                """Function that advances the state from t_start to t_end."""
                 self.simulation.evolve(state, t, dt)
 
         elif "single_step" not in locals():
@@ -697,7 +696,7 @@ class SimulationSolver(AdaptiveSolverBase):
     def _make_fixed_stepper(  # type: ignore
         self, state: State, dt: float
     ) -> Callable[[State, float, float], float]:
-        """return function evolving state using adaptive time steps
+        """Return function evolving state using adaptive time steps.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -713,7 +712,7 @@ class SimulationSolver(AdaptiveSolverBase):
         single_step = self._make_single_step(state)
 
         def fixed_stepper(state: State, t_start: float, t_end: float) -> float:
-            """advance `state` from `t_start` to `t_end` using fixed steps"""
+            """Advance `state` from `t_start` to `t_end` using fixed steps."""
             # calculate number of steps (which is at least 1)
             steps = max(1, int(np.ceil((t_end - t_start) / dt)))
 
@@ -729,7 +728,7 @@ class SimulationSolver(AdaptiveSolverBase):
     def _make_adaptive_stepper(  # type: ignore
         self, state: State, dt: float
     ) -> Callable[[State, float, float], float]:
-        """return function evolving state using adaptive time steps
+        """Return function evolving state using adaptive time steps.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -758,7 +757,7 @@ class SimulationSolver(AdaptiveSolverBase):
         self.info["dt_statistics"] = dt_stats = OnlineStatistics()
 
         def adaptive_stepper(state: State, t_start: float, t_end: float) -> float:
-            """advance `state` from `t_start` to `t_end` using adaptive steps"""
+            """Advance `state` from `t_start` to `t_end` using adaptive steps."""
             nonlocal dt_opt  # `dt_float` stores value for the next call
 
             t = t_start
@@ -817,7 +816,7 @@ class SimulationSolver(AdaptiveSolverBase):
     def make_stepper(  # type: ignore
         self, state: State, dt: float | None = None
     ) -> Callable[[State, float, float], float]:
-        """return a stepper function using an explicit scheme
+        """Return a stepper function using an explicit scheme.
 
         Args:
             state (:class:`~pde.fields.base.FieldBase`):
@@ -868,7 +867,7 @@ class SimulationSolver(AdaptiveSolverBase):
 def _make_get_element_states(
     element_indices: tuple[int, ...]
 ) -> Callable[[tuple[np.ndarray, ...]], tuple[np.ndarray, ...]]:
-    """creates helper function that extracts the states of the given elements
+    """Creates helper function that extracts the states of the given elements.
 
     Args:
         element_indices (tuple): Indices of the elements to be extracted

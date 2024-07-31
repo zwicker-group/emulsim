@@ -1,5 +1,4 @@
-"""
-Provides classes that track the state of the simulation
+"""Provides classes that track the state of the simulation.
 
 .. autosummary::
    :nosignatures:
@@ -30,7 +29,7 @@ from .simulation import State
 
 
 class TrajectoryTracker(TrackerBase):
-    """stores the state as a function of time during the simulation
+    """Stores the state as a function of time during the simulation.
 
     Stored data can be read using :class:`Trajectory`.
     """
@@ -91,7 +90,7 @@ class TrajectoryTracker(TrackerBase):
         return super().initialize(state, info)  # type: ignore
 
     def handle(self, state: State, t: float) -> None:  # type: ignore
-        """handle data supplied to this tracker
+        """Handle data supplied to this tracker.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -102,7 +101,7 @@ class TrajectoryTracker(TrackerBase):
         self._writer.append(state, time=t)
 
     def finalize(self, info: InfoDict | None = None) -> None:
-        """finalize the tracker, supplying additional information
+        """Finalize the tracker, supplying additional information.
 
         Args:
             info (dict):
@@ -129,7 +128,7 @@ class Trajectory(_Trajectory):
 
 
 class DropletElementTracker(TrackerBase):
-    """stores information about droplets in a simulation
+    """Stores information about droplets in a simulation.
 
     Attributes:
         emulsions (:class:`~droplets.analysis.emulsions.EmulsionTimeCourse`):
@@ -214,7 +213,7 @@ class DropletElementTracker(TrackerBase):
         return super().initialize(state, info)  # type: ignore
 
     def handle(self, state: State, t: float) -> None:  # type: ignore
-        """handle data supplied to this tracker
+        """Handle data supplied to this tracker.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -260,7 +259,7 @@ class DropletElementTracker(TrackerBase):
                         del self._active_tracks[i]
 
     def finalize(self, info: InfoDict | None = None) -> None:
-        """finalize the tracker, supplying additional information
+        """Finalize the tracker, supplying additional information.
 
         Args:
             info (dict):
@@ -275,7 +274,7 @@ class DropletElementTracker(TrackerBase):
 
 
 class FieldTracker(TrackerBase):
-    """wrapper to use `py-pde` trackers on fields
+    """Wrapper to use `py-pde` trackers on fields.
 
     This acts as a wrapper around any of the trackers from :mod:`pde.trackers`,
     e.g., `tracker = FieldTracker('background', PlotTracker())`.
@@ -299,7 +298,7 @@ class FieldTracker(TrackerBase):
         state: State,
         info: InfoDict | None = None,
     ) -> float:
-        """initialize the tracker with information about the simulation
+        """Initialize the tracker with information about the simulation.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -323,7 +322,7 @@ class FieldTracker(TrackerBase):
         return self.tracker.initialize(field, info)
 
     def handle(self, state: State, t: float) -> None:  # type: ignore
-        """handle data supplied to this tracker
+        """Handle data supplied to this tracker.
 
         Args:
             state (:class:`~sim.state.State`):
@@ -344,7 +343,7 @@ class FieldTracker(TrackerBase):
         self.tracker.handle(field, t)
 
     def finalize(self, info: InfoDict | None = None) -> None:
-        """finalize the tracker, supplying additional information
+        """Finalize the tracker, supplying additional information.
 
         Args:
             info (dict):

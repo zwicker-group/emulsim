@@ -1,5 +1,4 @@
-"""
-Provides an actor nucleating droplets from a field
+"""Provides an actor nucleating droplets from a field.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -23,7 +22,7 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class DropletNucleationActor(ActorBase):
-    r"""actor that nucleates droplets from a field
+    r"""Actor that nucleates droplets from a field.
 
     The nucleation is based on simple nucleation theory, assuming a nucleation barrier
     that grows linearly with super-saturation :math:`\Delta c`. The nucleation rate
@@ -80,7 +79,7 @@ class DropletNucleationActor(ActorBase):
     element_classes = (SphericalDropletsElement, FieldElementBase)
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             elements (tuple):
@@ -111,7 +110,7 @@ class DropletNucleationActor(ActorBase):
             self._cache["cell_bounds"] = None
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             elements (tuple):
@@ -129,7 +128,7 @@ class DropletNucleationActor(ActorBase):
         return 1.0 / (k * cell_vol)  # type: ignore
 
     def nucleation_rate(self, field: FieldElementBase | ScalarField) -> ScalarField:
-        """return nucleation rate :math:`k` for a given field
+        """Return nucleation rate :math:`k` for a given field.
 
         Note that this nucleation rate is actually a nucleation rate density. The rate
         with which a droplet is nucleated anywhere in the system thus given by the
@@ -150,7 +149,7 @@ class DropletNucleationActor(ActorBase):
     def estimate_nucleation_count(
         self, field: FieldElementBase, t_range: float
     ) -> float:
-        """rough estimate of the number of nucleated droplets
+        """Rough estimate of the number of nucleated droplets.
 
         Args:
             field (:class:`FieldElementBase` or :class:`ScalarField`):
@@ -166,7 +165,7 @@ class DropletNucleationActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -206,7 +205,7 @@ class DropletNucleationActor(ActorBase):
         def evolver(
             elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
-            """check for nucleation in all grid cells"""
+            """Check for nucleation in all grid cells."""
             droplets_data, field_data = elements_data
 
             # check nucleation for each cell in the field grid
@@ -242,7 +241,7 @@ class DropletNucleationActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):

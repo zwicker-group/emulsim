@@ -33,7 +33,7 @@ CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
 @pytest.mark.parametrize("path", EXAMPLE_PATH.glob("**/*.py"))
 def test_example(path):
-    """runs an example script given by path"""
+    """Runs an example script given by path."""
     # check whether the example should actually by ran
     if path.name.startswith("_"):
         pytest.skip("skip examples starting with an underscore")

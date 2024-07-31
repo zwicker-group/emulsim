@@ -14,7 +14,7 @@ from helpers import assert_recarrays_allclose
 
 
 def test_simulation():
-    """test some methods of the Simulation class"""
+    """Test some methods of the Simulation class."""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
@@ -55,7 +55,7 @@ def test_simulation():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_adaptive_simulation_simple(backend):
-    """test some adaptive simulations"""
+    """Test some adaptive simulations."""
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
     element = sim.ScalarFieldElement.from_field(field)
@@ -80,7 +80,7 @@ def test_adaptive_simulation_simple(backend):
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 def test_adaptive_reaction_diffusion():
-    """test adaptive reaction-diffusion simulation"""
+    """Test adaptive reaction-diffusion simulation."""
     # set up state
     grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
     field = ScalarField.random_uniform(grid)
@@ -99,7 +99,7 @@ def test_adaptive_reaction_diffusion():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_adaptive_simulation_complex(backend):
-    """test some adaptive simulations"""
+    """Test some adaptive simulations."""
     thresh = {"numpy": 5, "numba": 25}[backend]
 
     # set up state
@@ -125,7 +125,7 @@ def test_adaptive_simulation_complex(backend):
 
 
 def test_simulation_timing():
-    """test some methods of the Simulation class"""
+    """Test some methods of the Simulation class."""
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
     element = sim.ScalarFieldElement.from_field(field)
@@ -152,7 +152,7 @@ def test_simulation_timing():
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 @pytest.mark.parametrize("use_cache", [True, False])
 def test_simulation_cache(backend, use_cache):
-    """test caching of Simulation class"""
+    """Test caching of Simulation class."""
     # setup state
     grid = UnitGrid([4, 4], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))

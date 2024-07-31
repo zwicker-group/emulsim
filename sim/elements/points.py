@@ -1,5 +1,4 @@
-"""
-Provides an element that represents a collection of points
+"""Provides an element that represents a collection of points.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -18,7 +17,7 @@ from .base import ArrayElementBase, NoData
 
 
 class PointsElement(ArrayElementBase):
-    """an element that represents a collection of points"""
+    """An element that represents a collection of points."""
 
     parameters_default = [
         Parameter(
@@ -30,7 +29,7 @@ class PointsElement(ArrayElementBase):
     ]
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -74,7 +73,7 @@ class PointsElement(ArrayElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color="red", **kwargs):
-        """plot all points of this element
+        """Plot all points of this element.
 
         Args:
             color (matplotlib color):
@@ -108,7 +107,7 @@ class PointsElement(ArrayElementBase):
         ax.set_ylim(ymin, ymax)
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
-        """returns data for plotting on a single napari layer
+        """Returns data for plotting on a single napari layer.
 
         Args:
             size (float):
@@ -130,7 +129,7 @@ class PointsElement(ArrayElementBase):
 
 
 class ArrowsElement(PointsElement):
-    """an element that represents a collection of points with direction
+    """An element that represents a collection of points with direction.
 
     Args:
         data (:class:`~numpy.recarray`):
@@ -144,7 +143,7 @@ class ArrowsElement(PointsElement):
     """
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -162,7 +161,7 @@ class ArrowsElement(PointsElement):
         directions: np.ndarray,
         parameters: dict[str, Any] | None = None,
     ) -> ArrowsElement:
-        """create element from separately specified positions and directions
+        """Create element from separately specified positions and directions.
 
         Args:
             positions (:class:`~numpy.ndarray`):
@@ -190,7 +189,7 @@ class ArrowsElement(PointsElement):
         direction_magnitude: float | np.ndarray = 1,
         parameters: dict[str, Any] | None = None,
     ) -> ArrowsElement:
-        """create element from separately specified positions and directions
+        """Create element from separately specified positions and directions.
 
         Args:
             positions (:class:`~numpy.ndarray`):
@@ -230,7 +229,7 @@ class ArrowsElement(PointsElement):
 
     @plot_on_axes()
     def plot(self, ax, color="red", **kwargs):
-        """plot all points of this element
+        """Plot all points of this element.
 
         Args:
             color (matplotlib color):

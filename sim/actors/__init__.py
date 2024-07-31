@@ -1,11 +1,9 @@
-"""
-Provides actors that determine the dynamics of the simulation by modifying the state of
-elements during each time step. Actors are separated into several categories, which we
-describe separately below. 
-
+"""Provides actors that determine the dynamics of the simulation by modifying the state
+of elements during each time step. Actors are separated into several categories, which
+we describe separately below.
 
 **General actors** are classes that provide basic infrastructure to implement custom
-implementations: 
+implementations:
 
 .. autosummary::
    :nosignatures:
@@ -17,7 +15,7 @@ implementations:
 
 
 **Autonomous actors** only affect a single element and thus describe the autonomous
-dynamics of this element when it is not coupled to other elements. 
+dynamics of this element when it is not coupled to other elements.
 
 .. autosummary::
    :nosignatures:
@@ -26,7 +24,7 @@ dynamics of this element when it is not coupled to other elements.
    ~autonomous.box.BoxActor
    ~autonomous.brownian_motion.BrownianMotionActor
    ~autonomous.coalescence.CoalescenceDropletActor
-   ~autonomous.emitters.EmittersActor 
+   ~autonomous.emitters.EmittersActor
    ~autonomous.fields.LocalReactionsActor
    ~autonomous.fields.ScalarPDEActor
    ~autonomous.fields.DiffusionActor

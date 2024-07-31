@@ -8,7 +8,7 @@ import numpy as np
 
 
 def assert_data_equals(left: Any, right: Any, *, fuzzy: bool = False) -> bool:
-    """checks whether two objects are equal, also supporting :class:~numpy.ndarray`
+    """Checks whether two objects are equal, also supporting :class:~numpy.ndarray`
 
     Args:
         left: one object

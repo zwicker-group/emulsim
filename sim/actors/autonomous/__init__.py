@@ -1,5 +1,4 @@
-"""
-Provides actors that affect single elements in a simulation
+"""Provides actors that affect single elements in a simulation.
 
 .. autosummary::
    :nosignatures:
@@ -8,7 +7,7 @@ Provides actors that affect single elements in a simulation
    ~box.BoxActor
    ~brownian_motion.BrownianMotionActor
    ~coalescence.CoalescenceDropletActor
-   ~emitters.EmittersActor 
+   ~emitters.EmittersActor
    ~fields.LocalReactionsActor
    ~fields.ScalarPDEActor
    ~fields.DiffusionActor

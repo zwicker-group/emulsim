@@ -1,5 +1,4 @@
-"""
-Provides a simulation element representing spherical droplets
+"""Provides a simulation element representing spherical droplets.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -20,7 +19,7 @@ from .fields import FieldElementBase
 
 
 class SphericalDropletsElement(ArrayElementBase):
-    """an element representing many droplets"""
+    """An element representing many droplets."""
 
     parameters_default = [
         Parameter(
@@ -37,7 +36,7 @@ class SphericalDropletsElement(ArrayElementBase):
     data: np.recarray
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -62,7 +61,7 @@ class SphericalDropletsElement(ArrayElementBase):
         *,
         maxcount: int | None = None,
     ):
-        """helper function that ensures that the droplet attribute is linked with `data`
+        """Helper function that ensures that the droplet attribute is linked with `data`
 
         Args:
             droplets:
@@ -113,7 +112,7 @@ class SphericalDropletsElement(ArrayElementBase):
         droplet: SphericalDroplet | None = None,
         parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
-        """create empty SphericalDropletsElement that can be filled with droplets later
+        """Create empty SphericalDropletsElement that can be filled with droplets later.
 
         Since :class:`SphericalDropletsElement` needs to know what kind of droplets it
         describes, this information needs to be supplied, either in form of an example
@@ -161,8 +160,7 @@ class SphericalDropletsElement(ArrayElementBase):
         maxcount: int | None = None,
         parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
-        """
-        Create `SphericalDropletsElement` from a list of droplets
+        """Create `SphericalDropletsElement` from a list of droplets.
 
         Args:
             droplets (:class:`droplets.emulsions.Emulsion`):
@@ -199,8 +197,7 @@ class SphericalDropletsElement(ArrayElementBase):
         rng: np.random.Generator | None = None,
         parameters: dict[str, Any] | None = None,
     ) -> SphericalDropletsElement:
-        """
-        Create `SphericalDropletsElement` with random droplets
+        """Create `SphericalDropletsElement` with random droplets.
 
         Args:
             num (int):
@@ -269,7 +266,7 @@ class SphericalDropletsElement(ArrayElementBase):
         return float(self.parameters["droplet_concentration"]) * total_volume  # type: ignore
 
     def plot(self, ax=None, *args, **kwargs):
-        """plot all droplets of this element
+        """Plot all droplets of this element.
 
         Args:
             {PLOT_ARGS}
@@ -289,7 +286,7 @@ class SphericalDropletsElement(ArrayElementBase):
     def _get_napari_layer_data(
         self, point_like: bool = False, resolution: float = 1, **kwargs
     ) -> dict[str, Any]:
-        """returns data for plotting on a single napari layer
+        """Returns data for plotting on a single napari layer.
 
         Args:
             point_like (bool):

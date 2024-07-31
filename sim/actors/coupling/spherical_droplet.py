@@ -1,12 +1,11 @@
-"""
-Provides a coupling of extended spherical droplets to a field
+"""Provides a coupling of extended spherical droplets to a field.
 
 This module also provides a class for managing a collection of spherical shells with
 different subdivisions into spherical sectors. Each sector is defined by a unit vector
 pointing to its center and an associated weight, which captures is local size compared
 to all other shell sectors. These shell sectors are used to connect the diffusive fluxes
 right outside droplets to the background field; see the pulbication for details:
-`A. Kulkarni, E. Vidal-Henriquez, and D. Zwicker, Sci. Rep. 13, 733 
+`A. Kulkarni, E. Vidal-Henriquez, and D. Zwicker, Sci. Rep. 13, 733
 <https://doi.org/10.1038/s41598-023-27630-3>`_.
 
 .. autosummary::
@@ -127,7 +126,7 @@ def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float
 
 
 class PointsOnSphere:
-    """class representing points on an n-dimensional unit sphere"""
+    """Class representing points on an n-dimensional unit sphere."""
 
     def __init__(self, points):
         """
@@ -142,7 +141,7 @@ class PointsOnSphere:
 
     @classmethod
     def make_uniform(cls, dim: int, num_points: int | None = None):
-        """create uniformly distributed points on a sphere
+        """Create uniformly distributed points on a sphere.
 
         Args:
             dim (int):
@@ -194,7 +193,7 @@ class PointsOnSphere:
 
     @cached_method()
     def get_area_weights(self, balance_axes: bool = True):
-        """return the weight of each point associated with the unit cell size
+        """Return the weight of each point associated with the unit cell size.
 
         Args:
             balance_axes (bool):
@@ -252,7 +251,7 @@ class PointsOnSphere:
         return weights.reshape(self.points.shape[:-1])
 
     def get_distance_matrix(self):
-        """calculate the (spherical) distances between each point
+        """Calculate the (spherical) distances between each point.
 
         Returns:
             :class:`~numpy.ndarray`:
@@ -289,7 +288,7 @@ class PointsOnSphere:
         return float(dists_sorted[:, 1].mean())
 
     def write_to_xyz(self, path: str, comment: str = "", symbol: str = "S"):
-        """write the point coordinates to a xyz file
+        """Write the point coordinates to a xyz file.
 
         Args:
             path (str):
@@ -309,7 +308,7 @@ class PointsOnSphere:
 
 
 class ShellSectors:
-    """class representing the sectors of a single shell"""
+    """Class representing the sectors of a single shell."""
 
     def __init__(self, vectors: np.ndarray, weights: np.ndarray | None = None):
         """
@@ -334,7 +333,7 @@ class ShellSectors:
 
     @classmethod
     def generate(cls, dim: int, sector_count: int = 1) -> ShellSectors:
-        """generate a :class:`ShellSectors` for a simulation
+        """Generate a :class:`ShellSectors` for a simulation.
 
         Args:
             dim (int):
@@ -372,7 +371,7 @@ class ShellSectors:
         return self.vectors.shape[0]
 
     def get_shell(self, radius: float) -> ShellSectors:
-        """return shell corresponding to droplet of given radius
+        """Return shell corresponding to droplet of given radius.
 
         Args:
             radius (float):
@@ -386,7 +385,7 @@ class ShellSectors:
     def make_shell_data_getter(
         self,
     ) -> Callable[[float], tuple[np.ndarray, np.ndarray]]:
-        """returns a function for obtaining a shell
+        """Returns a function for obtaining a shell.
 
         Returns:
             callable: A function that is called with a radius and returns a
@@ -401,14 +400,14 @@ class ShellSectors:
 
         @jit
         def get_shell(radius: float) -> tuple[np.ndarray, np.ndarray]:
-            """compiled helper function that extracts shell parameters"""
+            """Compiled helper function that extracts shell parameters."""
             return vectors, weights
 
         return get_shell  # type: ignore
 
 
 class ShellCollection:
-    """class representing a collection of shells"""
+    """Class representing a collection of shells."""
 
     max_sector_count: int = 512  # maximal number of sectors
 
@@ -454,7 +453,7 @@ class ShellCollection:
         dictlist: Sequence[dict[str, Any]],
         info_dict: dict[str, Any] | None = None,
     ) -> ShellCollection:
-        """create shell collection from a list of dictionaries
+        """Create shell collection from a list of dictionaries.
 
         Args:
             dictlist (list of dicts):
@@ -480,7 +479,7 @@ class ShellCollection:
         radius_max: float = np.inf,
         info_dict: dict[str, Any] | None = None,
     ) -> ShellCollection:
-        """generate a :class:`ShellCollection` for a simulation
+        """Generate a :class:`ShellCollection` for a simulation.
 
         Args:
             dim (int):
@@ -554,7 +553,7 @@ class ShellCollection:
         return cls.from_dictlist(data, info_dict=info_dict)
 
     def __getitem__(self, index: int) -> ShellSectors:
-        """obtain a shell of the collection
+        """Obtain a shell of the collection.
 
         Args:
             index (int):
@@ -570,12 +569,12 @@ class ShellCollection:
         return len(self.shells)
 
     def __iter__(self):
-        """iterate over all shells"""
+        """Iterate over all shells."""
         for i in range(len(self)):
             yield self[i]
 
     def get_shell(self, radius: float) -> ShellSectors:
-        """return shell corresponding to droplet of given radius
+        """Return shell corresponding to droplet of given radius.
 
         Args:
             radius (float):
@@ -597,7 +596,7 @@ class ShellCollection:
     def make_shell_data_getter(
         self,
     ) -> Callable[[float], tuple[np.ndarray, np.ndarray]]:
-        """returns a function for obtaining a shell
+        """Returns a function for obtaining a shell.
 
         Returns:
             callable: A function that is called with a radius and returns a
@@ -614,7 +613,7 @@ class ShellCollection:
 
         @jit
         def get_shell(radius: float) -> tuple[np.ndarray, np.ndarray]:
-            """compiled helper function that extracts shell parameters"""
+            """Compiled helper function that extracts shell parameters."""
             i = int(min(np.searchsorted(max_radii, radius), num - 1))  # type: ignore
             return vectors[i], weights[i]
 
@@ -625,7 +624,7 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class SphericalDropletActor(ActorBase):
-    """an actor coupling spherical droplets to a field"""
+    """An actor coupling spherical droplets to a field."""
 
     parameters_default = [
         Parameter(
@@ -719,7 +718,7 @@ class SphericalDropletActor(ActorBase):
     """float: tolerance determining when a simpler expression for reactions is used"""
 
     def _parse_expression(self, parameter_key: str) -> Callable:
-        """parse expressions that depend on droplet variables
+        """Parse expressions that depend on droplet variables.
 
         Args:
             out (dict, optional):
@@ -755,7 +754,7 @@ class SphericalDropletActor(ActorBase):
             )
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             elements (tuple):
@@ -806,7 +805,7 @@ class SphericalDropletActor(ActorBase):
         self._cache["shells"] = shells
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         The time step is based on the time scale of diffusion in the shell. In the
         special case of large shells (for instance in mean-field coarsening simulations)
@@ -850,8 +849,8 @@ class SphericalDropletActor(ActorBase):
     def get_flux_outside(
         self, radius: float, c_far: float, cEqOut: float, droplet_id: int
     ) -> float:
-        """returns the integrated outwards flux at the droplet surface given
-        some imposed concentration value at the outer shell
+        """Returns the integrated outwards flux at the droplet surface given some
+        imposed concentration value at the outer shell.
 
         Note:
             We assume that the flux is integrated over the entire spherical
@@ -1015,13 +1014,11 @@ class SphericalDropletActor(ActorBase):
             raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
 
     def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
-        """create a function that calculates the integrated outwards flux at
-        the droplet surface given some imposed concentration value at the outer
-        shell. The fluxes are calcuated by solving
-        the ReactionDiffusion or the Diffusion equation inside each shell sector.
-        Detailed documentation for calculating the material fluxes
-        (both inside and outside the droplets) is located at
-        /py-sim/docs/methods.
+        """Create a function that calculates the integrated outwards flux at the droplet
+        surface given some imposed concentration value at the outer shell. The fluxes
+        are calcuated by solving the ReactionDiffusion or the Diffusion equation inside
+        each shell sector. Detailed documentation for calculating the material fluxes
+        (both inside and outside the droplets) is located at /py-sim/docs/methods.
 
         Returns:
             callable: the function with the signature
@@ -1045,7 +1042,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 1d droplet without reaction"""
+                    """Flux for 1d droplet without reaction."""
                     return 2 * D * (cEqOut - c_far) / L
 
             else:
@@ -1053,7 +1050,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 1d droplet with reaction"""
+                    """Flux for 1d droplet with reaction."""
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
@@ -1092,7 +1089,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 2d droplet without reaction"""
+                    """Flux for 2d droplet without reaction."""
                     return 2 * π * D * (cEqOut - c_far) / float(np.log1p(L / R))
 
             else:
@@ -1105,7 +1102,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 2d droplet with reaction"""
+                    """Flux for 2d droplet with reaction."""
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
@@ -1153,7 +1150,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 3d droplet without reaction"""
+                    """Flux for 3d droplet without reaction."""
                     return 4 * π * D * R * (1 + R / L) * (cEqOut - c_far)
 
             else:
@@ -1161,7 +1158,7 @@ class SphericalDropletActor(ActorBase):
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
                 ) -> float:
-                    """flux for 3d droplet with reaction"""
+                    """Flux for 3d droplet with reaction."""
                     sOut_cEqOut = calc_sOut(cEqOut, droplet_id)
                     sOut_c_far = calc_sOut(c_far, droplet_id)
 
@@ -1209,7 +1206,7 @@ class SphericalDropletActor(ActorBase):
     def get_equilibrium_concentrations(
         self, droplets: SphericalDropletsElement
     ) -> np.ndarray:
-        """returns the equilibrium concentration outside each droplet
+        """Returns the equilibrium concentration outside each droplet.
 
         Args:
             droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
@@ -1241,7 +1238,7 @@ class SphericalDropletActor(ActorBase):
         point_style: dict[str, Any] | None = None,
         shell_style: dict[str, Any] | None = None,
     ):
-        r"""plot all shell points around the droplets of a given state
+        r"""Plot all shell points around the droplets of a given state.
 
         Args:
             elements (tuple):
@@ -1308,7 +1305,7 @@ class SphericalDropletActor(ActorBase):
     def _make_droplet_evolver_numba(
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray], int, float, float, np.ndarray, np.ndarray], None]:
-        """create a function to evolve a single droplet from time `t` to `t + dt`
+        """Create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -1361,7 +1358,7 @@ class SphericalDropletActor(ActorBase):
             field_data: np.ndarray,
             field_update: np.ndarray,
         ) -> None:
-            """update a single droplet based on the surrounding field"""
+            """Update a single droplet based on the surrounding field."""
             R = droplet_data.radius
             V = volume(R)
             shell_vectors, shell_weights = get_shell_data(R)
@@ -1420,7 +1417,7 @@ class SphericalDropletActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -1485,7 +1482,7 @@ class SphericalDropletActor(ActorBase):
                 field_data: np.ndarray,
                 background_update: np.ndarray,
             ) -> None:
-                """evolve a chunk of droplets explicitly"""
+                """Evolve a chunk of droplets explicitly."""
                 for droplet_id, droplet_data in enumerate(droplets_data, i_start):
                     # skip droplets that have disappeared
                     if droplet_data.radius > 0:
@@ -1506,7 +1503,7 @@ class SphericalDropletActor(ActorBase):
             def evolver(
                 elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """evolve all droplets in parallel chunks"""
+                """Evolve all droplets in parallel chunks."""
                 droplets_data, field_data = elements_data
                 field_update = np.empty(tmp_shape)  # allocate temporary memory
                 # calculate size of each chunk
@@ -1528,7 +1525,7 @@ class SphericalDropletActor(ActorBase):
             def evolver(
                 elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """evolve all droplets explicitly"""
+                """Evolve all droplets explicitly."""
                 droplets_data, field_data = elements_data
                 for droplet_id, droplet_data in enumerate(droplets_data):
                     # skip droplets that have disappeared
@@ -1540,7 +1537,7 @@ class SphericalDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):

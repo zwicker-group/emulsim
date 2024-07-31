@@ -18,7 +18,7 @@ from sim.elements import SphericalDropletsElement
 )
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_coalescence(backend):
-    """simple test of droplet coalescence"""
+    """Simple test of droplet coalescence."""
 
     droplets = [
         SphericalDroplet(np.random.uniform(0, 1, 2), np.random.uniform(1, 2))
