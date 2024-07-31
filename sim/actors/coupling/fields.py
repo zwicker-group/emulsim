@@ -1,5 +1,4 @@
-"""
-Provides an actor coupling two or more fields
+"""Provides an actor coupling two or more fields.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -21,7 +20,7 @@ from ..base import ActorBase, ElementsType
 
 
 class FieldCouplingActor(ActorBase):
-    """actor that couples multiple fields by local interactions"""
+    """Actor that couples multiple fields by local interactions."""
 
     parameters_default = [
         Parameter(
@@ -57,7 +56,7 @@ class FieldCouplingActor(ActorBase):
         self.element_classes = (FieldElementBase,) * self.num_fields
 
     def _update_cache(self, fields: ElementsType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -82,7 +81,7 @@ class FieldCouplingActor(ActorBase):
     def make_evolver_numba(
         self, fields: ElementsType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -105,14 +104,14 @@ class FieldCouplingActor(ActorBase):
 
         @jit
         def innermost(state_data, t, dt):
-            """no-op function serving as innermost nested function"""
+            """No-op function serving as innermost nested function."""
             pass
 
         def chain(
             expression_id: int,
             inner: Callable[[tuple[np.ndarray, ...], float, float], None],
         ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-            """recursive helper function for running all actors"""
+            """Recursive helper function for running all actors."""
             # run through all expressions
             field_id = expressions[expression_id]["field_id"]
             rhs = expressions[expression_id]["rhs"]
@@ -134,7 +133,7 @@ class FieldCouplingActor(ActorBase):
         return chain(0, innermost)
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -154,7 +153,7 @@ class FieldCouplingActor(ActorBase):
 
 
 class FieldBoundaryExchangeActor(ActorBase):
-    """actor that exchanges material between a field and its boundary
+    """Actor that exchanges material between a field and its boundary.
 
     This actor does move material between support points in the boundary field and the
     adjacent support points in the bulk field. This is an approximation, which might
@@ -190,7 +189,7 @@ class FieldBoundaryExchangeActor(ActorBase):
     element_classes = (FieldElementBase, ScalarBoundaryFieldElement)
 
     def _update_cache(self, fields: ElementsType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -271,7 +270,7 @@ class FieldBoundaryExchangeActor(ActorBase):
     def make_evolver_numba(
         self, fields: ElementsType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -299,7 +298,7 @@ class FieldBoundaryExchangeActor(ActorBase):
             def evolver(
                 elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """evolve the flux between bulk and boundary"""
+                """Evolve the flux between bulk and boundary."""
                 bulk_data, boundary_data = elements_data
 
                 # determine concentrations in both fields
@@ -326,7 +325,7 @@ class FieldBoundaryExchangeActor(ActorBase):
             def evolver(
                 elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
             ) -> None:
-                """evolve the flux between bulk and boundary"""
+                """Evolve the flux between bulk and boundary."""
                 bulk_data, boundary_data = elements_data
 
                 # determine concentrations at all bulk points. This cannot be done in
@@ -355,7 +354,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
@@ -397,4 +396,4 @@ class FieldBoundaryExchangeActor(ActorBase):
 
 
 class DomainStitchingActor(ActorBase):
-    """actor that couples two domains at a common boundary"""
+    """Actor that couples two domains at a common boundary."""

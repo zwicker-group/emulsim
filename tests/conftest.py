@@ -1,5 +1,4 @@
-"""
-This file is used to configure the test environment when running py.test
+"""This file is used to configure the test environment when running py.test.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -13,7 +12,7 @@ from pde.tools.numba import random_seed
 
 @pytest.fixture(scope="function", autouse=True)
 def general_test_setup_and_teardown():
-    """helper function preparing and cleaning tests"""
+    """Helper function preparing and cleaning tests."""
     # initialize random number generators to have predicable tests
     random_seed(0)
 

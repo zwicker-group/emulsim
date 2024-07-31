@@ -1,5 +1,4 @@
-"""
-Provides an actor coupling point-like droplets to a field
+"""Provides an actor coupling point-like droplets to a field.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -23,13 +22,13 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class PointDropletActor(ActorBase):
-    """actor that couples points-like droplets to a field
+    """Actor that couples points-like droplets to a field.
 
-    For simplicity, these droplets interact with the field only at one point
-    (their position). For a physical correct model, where the exchange flux with the
-    dilute phase is governed by diffusion, this approximation only works in three
-    dimension where it accelerates calculations and is usually a good approximation when
-    the background field varies only little on the length scale of the droplet size. To
+    For simplicity, these droplets interact with the field only at one point (their
+    position). For a physical correct model, where the exchange flux with the dilute
+    phase is governed by diffusion, this approximation only works in three dimension
+    where it accelerates calculations and is usually a good approximation when the
+    background field varies only little on the length scale of the droplet size. To
     cover also other dimension, a simple linear exchange flux model is also supported.
     """
 
@@ -95,7 +94,7 @@ class PointDropletActor(ActorBase):
     def _parse_expression(
         self, expr: Callable | str | float, signature: list[list[str]]
     ) -> Callable:
-        """parse an expression for a parameter
+        """Parse an expression for a parameter.
 
         Returns:
             callable: A function that can be evaluated to obtain the expression
@@ -108,7 +107,7 @@ class PointDropletActor(ActorBase):
             return ScalarExpression(str(expr), signature, allow_indexed=True)
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             elements (tuple):
@@ -137,7 +136,7 @@ class PointDropletActor(ActorBase):
         )
 
     def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             elements (tuple):
@@ -178,8 +177,8 @@ class PointDropletActor(ActorBase):
         return dt
 
     def get_flux_outside(self, radius: float, c_back: float, cEqOut: float) -> float:
-        """returns the integrated outwards flux at the droplet surface given
-        some imposed concentration value far away
+        """Returns the integrated outwards flux at the droplet surface given some
+        imposed concentration value far away.
 
         Args:
             radius (float):
@@ -216,8 +215,8 @@ class PointDropletActor(ActorBase):
             )
 
     def _make_flux_outside(self) -> Callable:
-        """create a function that calculates the integrated outwards flux at
-        the droplet surface given some imposed concentration far away.
+        """Create a function that calculates the integrated outwards flux at the droplet
+        surface given some imposed concentration far away.
 
         Returns:
             callable: The function with the signature (radius: float, c_back: float,
@@ -229,7 +228,7 @@ class PointDropletActor(ActorBase):
             if self._cache["dim"] == 3:
 
                 def flux_outside(radius: float, c_back: float, cEqOut: float):
-                    """diffusive exchange flux for 3d droplet"""
+                    """Diffusive exchange flux for 3d droplet."""
                     return 4 * np.pi * D * radius * (cEqOut - c_back)
 
             else:
@@ -247,7 +246,7 @@ class PointDropletActor(ActorBase):
                 calc_exchange_rate = jit(exchange_rate)
 
             def flux_outside(radius: float, c_back: float, cEqOut: float):
-                """linear exchange flux"""
+                """Linear exchange flux."""
                 return calc_exchange_rate(radius) * (cEqOut - c_back)
 
         else:
@@ -260,7 +259,7 @@ class PointDropletActor(ActorBase):
     def get_equilibrium_concentrations(
         self, droplets: SphericalDropletsElement
     ) -> np.ndarray:
-        """returns the equilibrium concentration outside each droplet
+        """Returns the equilibrium concentration outside each droplet.
 
         Args:
             droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
@@ -292,7 +291,7 @@ class PointDropletActor(ActorBase):
     def _make_droplet_evolver_numba(
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray], int, np.ndarray, float, float], None]:
-        """create a function to evolve a single droplet from time `t` to `t + dt`
+        """Create a function to evolve a single droplet from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -337,7 +336,7 @@ class PointDropletActor(ActorBase):
             t: float,
             dt: float,
         ) -> None:
-            """update a single droplet based on the surrounding field"""
+            """Update a single droplet based on the surrounding field."""
             R = droplet_data.radius
 
             # obtain the material flux across the droplet surface
@@ -378,7 +377,7 @@ class PointDropletActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -398,7 +397,7 @@ class PointDropletActor(ActorBase):
         def evolver(
             elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
-            """evolve all droplets explicitly"""
+            """Evolve all droplets explicitly."""
             droplets_data, field_data = elements_data
             for droplet_id, droplet_data in enumerate(droplets_data):
                 # skip droplets that have disappeared
@@ -408,7 +407,7 @@ class PointDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):

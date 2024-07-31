@@ -19,7 +19,7 @@ from sim.elements import FieldCollectionElement, MeanfieldElement, ScalarFieldEl
 
 
 def test_diffusion_actor():
-    """test basic methods of the simple diffusion actor"""
+    """Test basic methods of the simple diffusion actor."""
     grid = CartesianGrid([[0, 10]], 5, periodic=True)
     element = ScalarFieldElement.from_field(ScalarField(grid, 3))
     assert element.grid == grid
@@ -29,7 +29,7 @@ def test_diffusion_actor():
 
 
 def test_diffusion_vs_pde():
-    """compare the diffusion background with the PDF actor"""
+    """Compare the diffusion background with the PDF actor."""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy(method="data")
@@ -56,7 +56,7 @@ def test_diffusion_vs_pde():
 
 @pytest.mark.parametrize("meanfield", [True, False])
 def test_local_reactions(meanfield):
-    """test basic methods of the simple reactions actor"""
+    """Test basic methods of the simple reactions actor."""
     if meanfield:
         element = MeanfieldElement(1, {"bounds": [[0, 3]]})
         assert element.concentration == 1
@@ -96,7 +96,7 @@ def test_local_reactions(meanfield):
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 def test_diffusion_vs_reaction_diffusion():
-    """compare the diffusion background with the RD-background"""
+    """Compare the diffusion background with the RD-background."""
     field = ScalarField.random_uniform(UnitGrid([10]))
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy(method="data")
@@ -117,7 +117,7 @@ def test_diffusion_vs_reaction_diffusion():
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 def test_reaction_diffusion_background():
-    """test a diffusion background with a reaction"""
+    """Test a diffusion background with a reaction."""
     field = ScalarField.random_uniform(UnitGrid([10]))
     element = ScalarFieldElement.from_field(field)
     actor = ReactionDiffusionActor(parameters={"reaction_flux": "-c"})
@@ -130,7 +130,7 @@ def test_reaction_diffusion_background():
 
 
 def test_collection_pde():
-    """test CollectionPDEActor"""
+    """Test CollectionPDEActor."""
     grid = UnitGrid([10])
     fields = FieldCollection.scalar_random_uniform(2, grid)
     eqs = PDE({"a": "laplace(a)", "b": "2*laplace(b)"})

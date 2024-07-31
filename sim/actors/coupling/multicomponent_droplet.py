@@ -1,5 +1,4 @@
-"""
-Provides an actor coupling multicomponent droplets to background fields
+"""Provides an actor coupling multicomponent droplets to background fields.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -27,7 +26,7 @@ ActorElementType = tuple[MulticomponentDropletsElement, FieldCollectionElement]
 
 
 class SolventFractionError(RuntimeError):
-    """error indicating that the solvent fraction was not in [0, 1]"""
+    """Error indicating that the solvent fraction was not in [0, 1]"""
 
     pass
 
@@ -35,7 +34,7 @@ class SolventFractionError(RuntimeError):
 def _make_regularizer(
     num_comps: int, eps: float = 1e-8
 ) -> Callable[[np.ndarray], float]:
-    """create function regularizing compositions
+    """Create function regularizing compositions.
 
     Args:
         num_comps (int):
@@ -52,7 +51,7 @@ def _make_regularizer(
 
     @jit
     def regularize(phi: np.ndarray) -> np.ndarray:
-        """regularize a state ensuring variables stay within bounds"""
+        """Regularize a state ensuring variables stay within bounds."""
         correction = np.zeros(num_comps)
 
         if phi.ndim == 1:
@@ -114,7 +113,7 @@ def _make_regularizer(
 
 
 class MulticomponentDropletActor(ActorBase):
-    """actor that couples points-like multicomponent droplets to multiple field
+    """Actor that couples points-like multicomponent droplets to multiple field.
 
     For simplicity, these droplets interact with the field only at one point (their
     position) using a simple linear exchange flux model. This model can be derived in
@@ -218,7 +217,7 @@ class MulticomponentDropletActor(ActorBase):
         rates: np.ndarray,
         production: np.ndarray | None = None,
     ) -> MulticomponentDropletActor:
-        """create functions suitable to describe linear reactions
+        """Create functions suitable to describe linear reactions.
 
         Args:
             parameters (dict):
@@ -257,7 +256,7 @@ class MulticomponentDropletActor(ActorBase):
                 t: float,
                 out: np.ndarray | None = None,
             ) -> np.ndarray:
-                """function implementing the linear reactions"""
+                """Function implementing the linear reactions."""
                 if out is None:
                     out = np.empty_like(phis)
                 for i in range(num_comps):
@@ -272,7 +271,7 @@ class MulticomponentDropletActor(ActorBase):
 
     @property
     def chis_full(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: the full interaction matrix including solvent"""
+        """:class:`~numpy.ndarray`: the full interaction matrix including solvent."""
         chis = self.parameters["chis"]
         num_comps = len(chis)
         result = np.zeros((num_comps + 1, num_comps + 1))
@@ -283,14 +282,14 @@ class MulticomponentDropletActor(ActorBase):
 
     @property
     def _chis_solvent(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: interactions between the components and solvent"""
+        """:class:`~numpy.ndarray`: interactions between the components and solvent."""
         chis_sol = self.parameters["chis_solvent"]
         num_comps = len(self.parameters["chis"])
         return np.broadcast_to(chis_sol, (num_comps,)).astype(float)
 
     @property
     def _chis_reduced(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: reduced interaction matrix with solvent-effects"""
+        """:class:`~numpy.ndarray`: reduced interaction matrix with solvent-effects."""
         chis = self.parameters["chis"]
         chis_sol = self._chis_solvent
         return chis - chis_sol - chis_sol.reshape(-1, 1)  # type: ignore
@@ -298,7 +297,7 @@ class MulticomponentDropletActor(ActorBase):
     def _make_calc_state_vars(
         self,
     ) -> Callable[[np.ndarray], tuple[float, np.ndarray, float]]:
-        """create function calculating the state variables
+        """Create function calculating the state variables.
 
         Returns:
             A function that calculates free energy, chemical potentials and pressure for
@@ -319,7 +318,7 @@ class MulticomponentDropletActor(ActorBase):
 
         @jit
         def calc_state_vars(phis: np.ndarray) -> tuple[float, np.ndarray, float]:
-            """calculates thermodynamic state variables from composition"""
+            """Calculates thermodynamic state variables from composition."""
             assert phis.shape == (num_comps,)
             phi_sol = 1.0 - phis.sum(axis=0)
             if phi_sol <= 0:
@@ -344,7 +343,7 @@ class MulticomponentDropletActor(ActorBase):
         return calc_state_vars  # type: ignore
 
     def _update_cache(self, elements: ActorElementType) -> None:
-        """prepare the simulation doing pre-calculations
+        """Prepare the simulation doing pre-calculations.
 
         Args:
             elements (tuple):
@@ -418,7 +417,7 @@ class MulticomponentDropletActor(ActorBase):
         fields: FieldCollectionElement,
         kind: str,
     ) -> tuple[np.ndarray, FieldBase]:
-        """return a thermodynamic quantity in the droplets and the background field
+        """Return a thermodynamic quantity in the droplets and the background field.
 
         Args:
             droplets (:class:`MulticomponentDropletsElement`):
@@ -461,7 +460,7 @@ class MulticomponentDropletActor(ActorBase):
         return np.array(data_droplets), data_field
 
     def get_droplet_fractions(self, elements: ActorElementType) -> np.ndarray:
-        """calculates the fractions outside and inside of all droplets
+        """Calculates the fractions outside and inside of all droplets.
 
         Args:
             elements (tuple):
@@ -486,7 +485,7 @@ class MulticomponentDropletActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ActorElementType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):
@@ -530,7 +529,7 @@ class MulticomponentDropletActor(ActorBase):
         def evolver(
             elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
         ) -> None:
-            """evolve all droplets and the fields explicitly"""
+            """Evolve all droplets and the fields explicitly."""
             droplets_data, fields_data = elements_data
 
             # determine diffusive flux in the background
@@ -644,7 +643,7 @@ class MulticomponentDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple):

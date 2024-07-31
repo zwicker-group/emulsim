@@ -1,5 +1,4 @@
-"""
-Provides elements that represent extended, discretized fields 
+"""Provides elements that represent extended, discretized fields.
 
 .. autosummary::
    :nosignatures:
@@ -37,7 +36,7 @@ from .base import ArrayElementBase, NoData
 
 
 class ReservoirElement(ArrayElementBase):
-    """an element representing a homogeneous, constant field"""
+    """An element representing a homogeneous, constant field."""
 
     dim = None  # works for any dimension
 
@@ -67,7 +66,7 @@ class ReservoirElement(ArrayElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color="tab:blue", **kwargs):
-        """plot the field
+        """Plot the field.
 
         Args:
             color:
@@ -78,7 +77,7 @@ class ReservoirElement(ArrayElementBase):
         ...
 
     def get_concentration(self, points: np.ndarray):
-        """determine concentration at the given points
+        """Determine concentration at the given points.
 
         Args:
             points (:class:`~numpy.ndarray`):
@@ -96,7 +95,7 @@ class ReservoirElement(ArrayElementBase):
             raise ValueError("Expected single point of list of points")
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """add the given amount to the field
+        """Add the given amount to the field.
 
         Args:
             point:
@@ -107,7 +106,7 @@ class ReservoirElement(ArrayElementBase):
         ...
 
     def make_get_concentration_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
+        """Get a compiled function for obtaining concentrations.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -122,7 +121,7 @@ class ReservoirElement(ArrayElementBase):
         return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -137,10 +136,10 @@ class ReservoirElement(ArrayElementBase):
 
 
 class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
-    """base class for field elements"""
+    """Base class for field elements."""
 
     def set_bounds(self, bounds: Sequence[tuple[float, float]]) -> None:
-        """set the boundaries of the field
+        """Set the boundaries of the field.
 
         Args:
             bounds (sequence):
@@ -154,7 +153,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
     @abstractproperty
     def grid(self) -> CartesianGrid:
-        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid."""
         ...
 
     @abstractproperty
@@ -168,7 +167,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         return self.total_amount / self.volume
 
     def check_coupling_dim(self, dim: int) -> None:
-        """checks the dimension of a coupled field
+        """Checks the dimension of a coupled field.
 
         Args:
             dim (int):
@@ -184,7 +183,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
     @abstractmethod
     def get_concentration(self, points):
-        """determine concentration at the given points
+        """Determine concentration at the given points.
 
         Args:
             points (:class:`~numpy.ndarray`):
@@ -195,7 +194,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
     @abstractmethod
     def add_amount(self, point: np.ndarray, amount: float):
-        """add the given amount to the field
+        """Add the given amount to the field.
 
         Args:
             point (:class:`~numpy.ndarray`):
@@ -206,7 +205,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         ...
 
     def make_get_concentration_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
+        """Get a compiled function for obtaining concentrations.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -216,7 +215,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         raise NotImplementedError
 
     def make_add_amount_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -226,11 +225,11 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         raise NotImplementedError
 
     def plot(self, ax=None, **kwargs):
-        """plot the field"""
+        """Plot the field."""
         ...
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
-        """returns data for plotting on a single napari layer
+        """Returns data for plotting on a single napari layer.
 
         Args:
             **kwargs: Extra arguments are passed to plotting function
@@ -242,7 +241,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
 
 class MeanfieldElement(FieldElementBase):
-    """an element representing a homogeneous, changing field"""
+    """An element representing a homogeneous, changing field."""
 
     parameters_default = [
         Parameter(
@@ -269,7 +268,7 @@ class MeanfieldElement(FieldElementBase):
         super().__init__(data, parameters)  # type: ignore
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -291,7 +290,7 @@ class MeanfieldElement(FieldElementBase):
     def from_field(
         cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> MeanfieldElement:
-        """create a mean field element from a scalar field
+        """Create a mean field element from a scalar field.
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
@@ -315,7 +314,7 @@ class MeanfieldElement(FieldElementBase):
 
     @cached_property()
     def grid(self) -> CartesianGrid:
-        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid."""
         return CartesianGrid(self.bounds, 1)
 
     @property
@@ -330,7 +329,7 @@ class MeanfieldElement(FieldElementBase):
 
     @concentration.setter
     def concentration(self, value: float):
-        """set the field concentration
+        """Set the field concentration.
 
         Args:
             value (float):
@@ -340,7 +339,7 @@ class MeanfieldElement(FieldElementBase):
 
     @property
     def field(self) -> ScalarField:
-        """:class:`~pde.fields.scalar.ScalarField`: representation as a scalar field"""
+        """:class:`~pde.fields.scalar.ScalarField`: representation as a scalar field."""
         return ScalarField(self.grid, data=self.concentration)
 
     @property
@@ -350,7 +349,7 @@ class MeanfieldElement(FieldElementBase):
 
     @total_amount.setter
     def total_amount(self, amount: float):
-        """set the total material amount in the field
+        """Set the total material amount in the field.
 
         Args:
             amount (float):
@@ -359,7 +358,7 @@ class MeanfieldElement(FieldElementBase):
         self.concentration = amount / self.volume
 
     def check_coupling_dim(self, dim: int) -> None:
-        """checks the dimension of a coupled field
+        """Checks the dimension of a coupled field.
 
         Args:
             dim (int):
@@ -381,7 +380,7 @@ class MeanfieldElement(FieldElementBase):
 
     @plot_on_axes()
     def plot(self, ax, color="tab:blue", **kwargs):
-        """plot the field
+        """Plot the field.
 
         Args:
             color:
@@ -407,7 +406,7 @@ class MeanfieldElement(FieldElementBase):
         ax.set_aspect(1)
 
     def get_concentration(self, points: np.ndarray):
-        """determine concentration at the given points
+        """Determine concentration at the given points.
 
         Args:
             points (:class:`~numpy.ndarray`):
@@ -425,7 +424,7 @@ class MeanfieldElement(FieldElementBase):
             raise ValueError("Expected single point of list of points")
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """add the given amount to the field
+        """Add the given amount to the field.
 
         Args:
             point:
@@ -436,7 +435,7 @@ class MeanfieldElement(FieldElementBase):
         self.data[0] += amount / self.volume
 
     def make_get_concentration_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
+        """Get a compiled function for obtaining concentrations.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -451,7 +450,7 @@ class MeanfieldElement(FieldElementBase):
         return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -468,7 +467,7 @@ class MeanfieldElement(FieldElementBase):
 
 
 class ScalarFieldElement(FieldElementBase):
-    """the state associated with a spatially resolved field"""
+    """The state associated with a spatially resolved field."""
 
     parameters_default = [
         Parameter(
@@ -502,7 +501,7 @@ class ScalarFieldElement(FieldElementBase):
         super().__init__(data, parameters)  # type: ignore
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -527,7 +526,7 @@ class ScalarFieldElement(FieldElementBase):
 
     @property
     def data(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: Value at the valid grid points"""
+        """:class:`~numpy.ndarray`: Value at the valid grid points."""
         return self._field.data
 
     @data.setter
@@ -538,7 +537,7 @@ class ScalarFieldElement(FieldElementBase):
     def from_field(
         cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> ScalarFieldElement:
-        """create a scalar field element from a scalar field
+        """Create a scalar field element from a scalar field.
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
@@ -562,7 +561,7 @@ class ScalarFieldElement(FieldElementBase):
         return cls(field.data, parameters)
 
     def copy(self, method: Literal["clean", "shallow", "data"], data=None):
-        """create a copy of the state
+        """Create a copy of the state.
 
         Args:
             method (str):
@@ -589,12 +588,12 @@ class ScalarFieldElement(FieldElementBase):
 
     @property
     def grid(self) -> CartesianGrid:
-        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid."""
         return self.parameters["grid"]  # type: ignore
 
     @property
     def field(self) -> ScalarField:
-        """:class:`~pde.fields.scalar.ScalarField`: the scalar field"""
+        """:class:`~pde.fields.scalar.ScalarField`: the scalar field."""
         return self._field
 
     @property
@@ -603,7 +602,7 @@ class ScalarFieldElement(FieldElementBase):
         return self.data.size
 
     def plot(self, ax=None, **kwargs):
-        """plot the field
+        """Plot the field.
 
         This simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
         arguments are forwarded to this method.
@@ -618,7 +617,7 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.integral.real
 
     def get_concentration(self, points: np.ndarray):
-        """determine concentration at the given points
+        """Determine concentration at the given points.
 
         Args:
             points (:class:`~numpy.ndarray`):
@@ -628,7 +627,7 @@ class ScalarFieldElement(FieldElementBase):
         return self._field.interpolate(points)
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """add the given amount to the field
+        """Add the given amount to the field.
 
         Args:
             point (:class:`~numpy.ndarray`):
@@ -639,7 +638,7 @@ class ScalarFieldElement(FieldElementBase):
         self._field.insert(point, amount)
 
     def make_get_concentration_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
+        """Get a compiled function for obtaining concentrations.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -650,13 +649,13 @@ class ScalarFieldElement(FieldElementBase):
 
         @register_jitable
         def get_concentration(data: np.ndarray, point: np.ndarray):
-            """helper function swapping the argument order"""
+            """Helper function swapping the argument order."""
             return interpolate(point, data)
 
         return get_concentration  # type: ignore
 
     def make_add_amount_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -667,7 +666,7 @@ class ScalarFieldElement(FieldElementBase):
 
 
 class FieldCollectionElement(ArrayElementBase):
-    """the state associated with multiple spatially resolved fields"""
+    """The state associated with multiple spatially resolved fields."""
 
     parameters_default = [
         Parameter(
@@ -686,7 +685,7 @@ class FieldCollectionElement(ArrayElementBase):
     _field: FieldCollection
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -710,7 +709,7 @@ class FieldCollectionElement(ArrayElementBase):
 
     @property
     def data(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: Value at the valid grid points of all fields"""
+        """:class:`~numpy.ndarray`: Value at the valid grid points of all fields."""
         return self._field.data
 
     @data.setter
@@ -730,7 +729,7 @@ class FieldCollectionElement(ArrayElementBase):
             self._field = FieldCollection(fields, label=self.parameters["label"])
 
     def copy(self, method: Literal["clean", "shallow", "data"], data=None):
-        """create a copy of the state
+        """Create a copy of the state.
 
         Args:
             method (str):
@@ -762,7 +761,7 @@ class FieldCollectionElement(ArrayElementBase):
 
     @classmethod
     def from_fields(cls, fields: FieldCollection) -> FieldCollectionElement:
-        """create a scalar field element from a scalar field
+        """Create a scalar field element from a scalar field.
 
         Args:
             field (:class:`~pde.fields.collection.FieldCollection`):
@@ -781,12 +780,12 @@ class FieldCollectionElement(ArrayElementBase):
 
     @property
     def grid(self) -> CartesianGrid:
-        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid"""
+        """:class:`~pde.grids.cartesian.CartesianGrid`: discretization grid."""
         return self.parameters["grid"]  # type: ignore
 
     @property
     def field(self) -> FieldCollection:
-        """:class:`~pde.fields.collection.FieldCollection`: all fields"""
+        """:class:`~pde.fields.collection.FieldCollection`: all fields."""
         return self._field
 
     @property
@@ -795,7 +794,7 @@ class FieldCollectionElement(ArrayElementBase):
         return self.data.size
 
     def plot(self, ax=None, **kwargs):
-        """plot the field
+        """Plot the field.
 
         Note that only the first field is plotted if the dimension is different from 1.
         The method simply calls :meth:`~pde.fields.base.DataFieldBase.plot` and all
@@ -811,7 +810,7 @@ class FieldCollectionElement(ArrayElementBase):
 
     @property
     def amounts(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: the total material amount in each field"""
+        """:class:`~numpy.ndarray`: the total material amount in each field."""
         return np.array(self.field.integrals)
 
     @property
@@ -820,7 +819,7 @@ class FieldCollectionElement(ArrayElementBase):
         return self.amounts.sum()  # type: ignore
 
     def get_concentrations(self, points: np.ndarray):
-        """determine concentrations at the given points
+        """Determine concentrations at the given points.
 
         Args:
             points (:class:`~numpy.ndarray`):
@@ -830,7 +829,7 @@ class FieldCollectionElement(ArrayElementBase):
         return np.array([field.interpolate(points) for field in self.field])
 
     def add_amounts(self, point: np.ndarray, amounts: np.ndarray):
-        """add the given amounts to the fields
+        """Add the given amounts to the fields.
 
         Args:
             point (:class:`~numpy.ndarray`):
@@ -842,7 +841,7 @@ class FieldCollectionElement(ArrayElementBase):
             field.insert(point, amount)
 
     def make_get_concentrations_compiled(self) -> Callable:
-        """get a compiled function for obtaining concentrations
+        """Get a compiled function for obtaining concentrations.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -856,7 +855,7 @@ class FieldCollectionElement(ArrayElementBase):
 
         @register_jitable
         def get_concentration(data: np.ndarray, point: np.ndarray) -> np.ndarray:
-            """helper function swapping the argument order"""
+            """Helper function swapping the argument order."""
             result = np.empty(num_fields)
             for i in range(num_fields):
                 result[i] = interpolate(point, data[i])
@@ -865,7 +864,7 @@ class FieldCollectionElement(ArrayElementBase):
         return get_concentration  # type: ignore
 
     def make_add_amounts_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,
@@ -879,7 +878,7 @@ class FieldCollectionElement(ArrayElementBase):
 
         @register_jitable
         def inserter(data: np.ndarray, point: np.ndarray, amounts: np.ndarray) -> None:
-            """helper function inserting amounts"""
+            """Helper function inserting amounts."""
             for i in range(num_fields):
                 inserter_single(data[i], point, amounts[i])
 
@@ -887,7 +886,7 @@ class FieldCollectionElement(ArrayElementBase):
 
 
 class ScalarBoundaryFieldElement(ScalarFieldElement):
-    """the state associated with a spatially resolved boundary
+    """The state associated with a spatially resolved boundary.
 
     Note:
         The data described by this element are volume concentrations with units
@@ -950,7 +949,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         super().__init__(data, parameters)
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
-        """initialize the state with attributes and (optionally) data
+        """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
@@ -977,7 +976,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
     def from_field(
         cls, field: ScalarField, parameters: dict[str, Any] | None = None
     ) -> ScalarBoundaryFieldElement:
-        """create a scalar boundary element from a scalar field
+        """Create a scalar boundary element from a scalar field.
 
         Args:
             field (:class:`~pde.fields.scalar.ScalarField`):
@@ -999,7 +998,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         data: NumberOrArray = 0,
         parameters: dict[str, Any] | None = None,
     ) -> ScalarBoundaryFieldElement:
-        """create a scalar boundary element using a grid describing the full domain
+        """Create a scalar boundary element using a grid describing the full domain.
 
         Args:
             grid (:class:`~pde.grids.CartesianGrid`):
@@ -1040,7 +1039,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         return cls(data, parameters)
 
     def check_coupling_dim(self, dim: int) -> None:
-        """checks the dimension of a coupled field
+        """Checks the dimension of a coupled field.
 
         Args:
             dim (int):
@@ -1057,7 +1056,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
 
     @cached_property()
     def bulk_coordinates(self) -> np.ndarray:
-        """:class:`~numpy.ndarray` all boundary points in the bulk coordinate system"""
+        """:class:`~numpy.ndarray` all boundary points in the bulk coordinate system."""
         axis_position = self.parameters["axis_position"]
         if np.isnan(axis_position):
             raise RuntimeError("Axis position was not specified")
@@ -1065,7 +1064,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
 
     @plot_on_axes()
     def plot(self, ax=None, colorbar: bool = False, **kwargs):
-        """plot the boundary field element
+        """Plot the boundary field element.
 
         Args:
             {PLOT_ARGS}
@@ -1121,7 +1120,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             raise NotImplementedError(f"Plotting dim={self.dim} not implemented")
 
     def add_amount(self, point: np.ndarray, amount: float):
-        """add the given amount to the field
+        """Add the given amount to the field.
 
         Args:
             point (:class:`~numpy.ndarray`):
@@ -1132,7 +1131,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         self._field.insert(point, amount / self.parameters["thickness"])
 
     def make_add_amount_compiled(self) -> Callable:
-        """get a compiled function for adding amount to the field
+        """Get a compiled function for adding amount to the field.
 
         Returns:
             callable: a function with signature (data: :class:`~numpy.ndarray`,

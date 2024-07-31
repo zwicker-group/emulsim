@@ -9,7 +9,7 @@ from sim.elements import MeanfieldElement, ReservoirElement
 
 
 def test_actor_base():
-    """test basic functions of the ActorBase class"""
+    """Test basic functions of the ActorBase class."""
     field = MeanfieldElement(data=1, parameters={"bounds": [[0, 1]]})
     reservoir = ReservoirElement()
 
@@ -34,7 +34,7 @@ def test_actor_base():
 
 
 def test_find_actors():
-    """test find_actors function"""
+    """Test find_actors function."""
     field = MeanfieldElement(data=1, parameters={"bounds": [[0, 1]]})
 
     class TestActor1(ActorBase):

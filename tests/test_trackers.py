@@ -12,7 +12,7 @@ import sim
 
 
 def test_field_tracker():
-    """test the field tracker"""
+    """Test the field tracker."""
     # setup state
     field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))
     background = sim.ScalarFieldElement.from_field(field)
@@ -37,7 +37,7 @@ def test_field_tracker():
 
 
 def test_element_trackers(tmp_path):
-    """test DropletElementTracker and Trajectory"""
+    """Test DropletElementTracker and Trajectory."""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))

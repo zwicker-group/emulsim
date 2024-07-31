@@ -22,7 +22,7 @@ from sim.elements import (
 
 @pytest.mark.parametrize("do_jit", [True, False])
 def test_make_regularizer(do_jit):
-    """test regularizer"""
+    """Test regularizer."""
     jitter = jit if do_jit else lambda x: x
 
     a = np.array([0.48247728, 0.52013119])
@@ -57,7 +57,7 @@ def test_make_regularizer(do_jit):
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 def test_multicomponent_thermodynamics():
-    """test the implementation of the thermodynamics"""
+    """Test the implementation of the thermodynamics."""
     from phasesep import FloryHuggins2Components
 
     chi = 3
@@ -78,7 +78,7 @@ def test_multicomponent_thermodynamics():
 @pytest.mark.parametrize("dim", [1, 3])
 @pytest.mark.parametrize("num_comps", [1, 2])
 def test_multicomponent_droplet_actor(dim, num_comps):
-    """test basic multicomponent droplets simulations"""
+    """Test basic multicomponent droplets simulations."""
     # create the background field
     grid = pde.CartesianGrid([[0, 32]] * dim, 1, periodic=True)
     fc = pde.FieldCollection.scalar_random_uniform(num_comps, grid, 0, 0.1 / num_comps)
@@ -154,7 +154,7 @@ def test_multicomponent_droplet_actor(dim, num_comps):
 
 
 def test_multicomponent_equilibrium():
-    """test equilibrium in multicomponent system"""
+    """Test equilibrium in multicomponent system."""
     grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.05, 0.15])
 
@@ -189,7 +189,7 @@ def test_multicomponent_equilibrium():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coexistence(backend):
-    """test coexistence in multicomponent system"""
+    """Test coexistence in multicomponent system."""
     grid = pde.CartesianGrid([[0, 32]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
 
@@ -218,7 +218,7 @@ def test_multicomponent_coexistence(backend):
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_coarsening(backend):
-    """simple test of coarsening of multicomponent droplets"""
+    """Simple test of coarsening of multicomponent droplets."""
     grid = pde.CartesianGrid([[-64, 64]] * 3, 2, periodic=True)
 
     phiOut = 0.1
@@ -255,7 +255,7 @@ def test_multicomponent_coarsening(backend):
 )
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
-    """test active droplet simulation"""
+    """Test active droplet simulation."""
     import droplets
     import phasesep
 

@@ -17,7 +17,7 @@ from ..base import ActorBase, ElementsType
 
 
 class ActiveParticleActor(ActorBase):
-    """represents actor that moves arrows according to their direction"""
+    """Represents actor that moves arrows according to their direction."""
 
     parameters_default = [
         Parameter(
@@ -28,7 +28,7 @@ class ActiveParticleActor(ActorBase):
     element_classes = (ArrowsElement,)
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             elements (tuple of :class:`~sim.elements.points.ArrowsElement`):
@@ -42,7 +42,7 @@ class ActiveParticleActor(ActorBase):
     def make_evolver_numba(  # type: ignore
         self, elements: ElementsType
     ) -> Callable[[tuple[np.ndarray], float, float], None]:
-        """return a function evolve the field state from time `t` to `t + dt`
+        """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.points.ArrowsElement`):
@@ -61,7 +61,7 @@ class ActiveParticleActor(ActorBase):
 
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float) -> None:
-            """evolve all points explicitly"""
+            """Evolve all points explicitly."""
             points = state_data[0]
 
             for i in nb.prange(len(state_data[0])):
@@ -91,7 +91,7 @@ class ActiveParticleActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """evolve the field state from time `t` to `t + dt`
+        """Evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.points.ArrowsElement`):

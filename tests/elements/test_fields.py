@@ -1,5 +1,4 @@
-"""
-Test generic elements functionality
+"""Test generic elements functionality.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -20,7 +19,7 @@ from sim.elements import (
 
 
 def generate_field_elements():
-    """helper function generating all tested field elements"""
+    """Helper function generating all tested field elements."""
     grid = CartesianGrid([[0, 3], [0, 3]], 1)
     element = MeanfieldElement(parameters={"bounds": grid.axes_bounds})
     yield element, grid
@@ -32,7 +31,7 @@ def generate_field_elements():
 
 @pytest.mark.parametrize("element,grid", generate_field_elements())
 def test_elements_numpy(element, grid):
-    """test functions based on numpy"""
+    """Test functions based on numpy."""
     assert isinstance(element.attributes, dict)
 
     # test adding amounts
@@ -54,7 +53,7 @@ def test_elements_numpy(element, grid):
 
 @pytest.mark.parametrize("element,grid", generate_field_elements())
 def test_elements_numba(element, grid):
-    """test functions based on numba"""
+    """Test functions based on numba."""
     # test adding amounts
     assert element.total_amount == 0
     p = grid.get_random_point()
@@ -76,7 +75,7 @@ def test_elements_numba(element, grid):
 
 
 def test_reservoir():
-    """test the ReservoirElement"""
+    """Test the ReservoirElement."""
     element = ReservoirElement()
 
     assert isinstance(element.attributes, dict)
@@ -115,7 +114,7 @@ def test_reservoir():
     ],
 )
 def test_meanfield_basic(element):
-    """test basic methods of the simple mean field element"""
+    """Test basic methods of the simple mean field element."""
     assert element.concentration == 1
     element.concentration = 2
     assert element.concentration == 2
@@ -127,7 +126,7 @@ def test_meanfield_basic(element):
 
 
 def test_scalarfield():
-    """test basic methods of the simple scalar element"""
+    """Test basic methods of the simple scalar element."""
     grid = UnitGrid([10])
     element = ScalarFieldElement(1, {"grid": grid})
     assert element.grid == grid
@@ -141,7 +140,7 @@ def test_scalarfield():
 
 @pytest.mark.parametrize("axis", [1, -1])
 def test_boundaryfield(axis):
-    """test basic methods of the simple boundary field element"""
+    """Test basic methods of the simple boundary field element."""
     grid = UnitGrid([10, 8])
     element = ScalarBoundaryFieldElement.from_bulk_grid(
         grid, axis=axis, upper=True, data=1
@@ -168,7 +167,7 @@ def test_boundaryfield(axis):
 @pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("num_fields", [1, 2])
 def test_field_collection(dim, num_fields):
-    """test basic methods of the FieldCollection"""
+    """Test basic methods of the FieldCollection."""
     grid = UnitGrid([5] * dim)
     fc = FieldCollection.scalar_random_uniform(num_fields, grid)
     element = FieldCollectionElement.from_fields(fc)

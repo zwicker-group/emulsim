@@ -15,7 +15,7 @@ from sim.state import State
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_state_general(dim, capsys):
-    """test some methods of the SimulationState class"""
+    """Test some methods of the SimulationState class."""
     s = State(
         {str(i): el for i, el in enumerate(generate_elements(dim, incl_obj=False))}
     )
@@ -75,14 +75,14 @@ def test_state_general(dim, capsys):
 
 
 def test_state_errors():
-    """test some safe-guarding of the State class"""
+    """Test some safe-guarding of the State class."""
     with pytest.raises(ValueError):
         State({str(i): el for i, el in enumerate(generate_elements())})
 
 
 @pytest.mark.parametrize("element", generate_elements())
 def test_state_copy(element):
-    """test copying different states"""
+    """Test copying different states."""
     s = State({"el": element})
     s1 = s.copy(method="data")
     s2 = s.copy(method="data")
@@ -91,7 +91,7 @@ def test_state_copy(element):
 
 
 def test_field_element_copy():
-    """special tests on field elements, which have special requirements"""
+    """Special tests on field elements, which have special requirements."""
     field = pde.ScalarField.random_normal(pde.UnitGrid([4, 4]))
     e1 = ScalarFieldElement.from_field(field)
 
@@ -120,7 +120,7 @@ def test_field_element_copy():
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_state_io(dim, tmp_path):
-    """test some IO of the State class"""
+    """Test some IO of the State class."""
     s1 = State({str(i): el for i, el in enumerate(generate_elements(dim))})
 
     path = tmp_path / "state.zarr"

@@ -10,7 +10,7 @@ from sim.elements import MeanfieldElement
 
 
 def test_function_actor_1el():
-    """test function actor with single element"""
+    """Test function actor with single element."""
     element = MeanfieldElement(data=1, parameters={"bounds": [[0, 1]]})
 
     def f_nb(state, t, dt):
@@ -39,7 +39,7 @@ def test_function_actor_1el():
 
 
 def test_function_actor_2el():
-    """test function actor with two elements"""
+    """Test function actor with two elements."""
     element_a = MeanfieldElement(data=1, parameters={"bounds": [[0, 1]]})
     element_b = MeanfieldElement(data=2, parameters={"bounds": [[0, 1]]})
 
@@ -76,7 +76,7 @@ def test_function_actor_2el():
 
 @pytest.mark.parametrize("cls", [FunctionActor, NumbaFunctionActor])
 def test_function_actor_signature(cls):
-    """test signature checking"""
+    """Test signature checking."""
     cls(1, lambda state, t, dt: ...)
 
     def f(state, t, dt, extra=None):

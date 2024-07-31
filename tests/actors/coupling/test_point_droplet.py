@@ -16,7 +16,7 @@ from sim.elements import MeanfieldElement, SphericalDropletsElement
 
 @pytest.mark.parametrize("dim", [3])
 def test_point_droplets_diffusion(dim):
-    """simple test of point droplets with diffusive exchange"""
+    """Simple test of point droplets with diffusive exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -58,7 +58,7 @@ def test_point_droplets_diffusion(dim):
 
 @pytest.mark.parametrize("dim", [3])
 def test_point_droplets_diffusion_coarsening(dim):
-    """simple test of coarsening with diffusive exchange"""
+    """Simple test of coarsening with diffusive exchange."""
     grid = UnitGrid([3] * dim)
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field1.concentration == pytest.approx(0)
@@ -98,7 +98,7 @@ def test_point_droplets_diffusion_coarsening(dim):
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_material_conservation(backend):
-    """test whether the simulation conserves the total amount of material"""
+    """Test whether the simulation conserves the total amount of material."""
     grid = UnitGrid([4] * 3, periodic=True)
     field = MeanfieldElement(1, {"bounds": grid.axes_bounds})
 
@@ -119,7 +119,7 @@ def test_material_conservation(backend):
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_point_droplets_linear(dim):
-    """simple test of point droplets with linear exchange"""
+    """Simple test of point droplets with linear exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -155,7 +155,7 @@ def test_point_droplets_linear(dim):
 
 @pytest.mark.parametrize("dim", [1, 2])
 def test_point_droplets_linear_coarsening(dim):
-    """simple test of coarsening with linear exchange"""
+    """Simple test of coarsening with linear exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
@@ -186,7 +186,7 @@ def test_point_droplets_linear_coarsening(dim):
 @pytest.mark.parametrize("compiled", [False, True])
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_point_droplets_reactions_inside(dim, compiled):
-    """simple test of SphericalDropletAgents with reactions"""
+    """Simple test of SphericalDropletAgents with reactions."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 

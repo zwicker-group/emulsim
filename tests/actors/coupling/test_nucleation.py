@@ -17,7 +17,7 @@ from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDroplets
 @pytest.mark.parametrize("field_cls", [MeanfieldElement, ScalarFieldElement])
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_nucleation(dim, field_cls, backend):
-    """simple test of of nucleation actor"""
+    """Simple test of of nucleation actor."""
     # prepare initial
     if dim == 1:
         grid = UnitGrid([100])

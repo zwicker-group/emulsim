@@ -1,5 +1,4 @@
-"""
-Provides a simulation element representing spherical droplets
+"""Provides a simulation element representing spherical droplets.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -19,7 +18,7 @@ from .spherical_droplets import SphericalDropletsElement
 
 
 class MulticomponentDroplet(SphericalDroplet):
-    """represents a single droplet comprised of many species"""
+    """Represents a single droplet comprised of many species."""
 
     __slots__ = ["data"]
 
@@ -69,7 +68,7 @@ class MulticomponentDroplet(SphericalDroplet):
 
     @classmethod
     def get_dtype(cls, **kwargs):
-        """determine the dtype representing this droplet class
+        """Determine the dtype representing this droplet class.
 
         Args:
             position (:class:`~numpy.ndarray`):
@@ -109,14 +108,14 @@ class MulticomponentDroplet(SphericalDroplet):
         return l, h
 
     def check_data(self):
-        """method that checks the validity and consistency of self.data"""
+        """Method that checks the validity and consistency of self.data."""
         super().check_data()
         if np.any(self.amounts < 0):
             raise ValueError(f"Amounts must be positive ({self.amounts})")
 
     @property
     def amounts(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: the composition"""
+        """:class:`~numpy.ndarray`: the composition."""
         return self.data["amounts"]
 
     @amounts.setter
@@ -126,7 +125,7 @@ class MulticomponentDroplet(SphericalDroplet):
 
     @property
     def phis(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: total amounts in the droplet"""
+        """:class:`~numpy.ndarray`: total amounts in the droplet."""
         return self.amounts / self.volume
 
     @property
@@ -136,12 +135,12 @@ class MulticomponentDroplet(SphericalDroplet):
 
     @classmethod
     def _make_merge_data(cls) -> Callable[[np.ndarray, np.ndarray, np.ndarray], None]:
-        """factory for a function that merges the data of two droplets"""
+        """Factory for a function that merges the data of two droplets."""
         parent_merge = super()._make_merge_data()
 
         @register_jitable
         def merge_data(drop1: np.ndarray, drop2: np.ndarray, out: np.ndarray) -> None:
-            """merge the data of two droplets"""
+            """Merge the data of two droplets."""
             parent_merge(drop1, drop2, out)
             out.amounts[...] = drop1.amounts + drop2.amounts  # type: ignore
 
@@ -162,7 +161,7 @@ class MulticomponentDroplet(SphericalDroplet):
         return np.outer(self.phis, phase_field).astype(dtype)
 
     def _get_mpl_patch(self, dim=None, *, brightness=0.5, **kwargs):
-        """return the patch representing the droplet for plotting
+        """Return the patch representing the droplet for plotting.
 
         The color of the droplets is determined automatically using at most the first
         three concentrations inside the droplet.
@@ -193,7 +192,7 @@ class MulticomponentDroplet(SphericalDroplet):
 
 
 class MulticomponentDropletsElement(SphericalDropletsElement):
-    """an element representing many multicomponent droplets"""
+    """An element representing many multicomponent droplets."""
 
     droplet_class = MulticomponentDroplet
 
@@ -205,12 +204,12 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
 
     @property
     def phis(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: fractions of all components in all droplets"""
+        """:class:`~numpy.ndarray`: fractions of all components in all droplets."""
         return np.array([d.phis for d in self.droplets if d.radius > 0])
 
     @property
     def amounts(self) -> np.ndarray:
-        """:class:`~numpy.ndarray`: the amounts in all droplets"""
+        """:class:`~numpy.ndarray`: the amounts in all droplets."""
         return sum(droplet.amounts for droplet in self.droplets if droplet.radius > 0)  # type: ignore
 
     @property
@@ -219,7 +218,7 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
         return sum(self.amounts)  # type: ignore
 
     def plot(self, ax=None, *args, **kwargs):
-        """plot all droplets of this element
+        """Plot all droplets of this element.
 
         Args:
             {PLOT_ARGS}

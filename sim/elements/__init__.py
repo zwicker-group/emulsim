@@ -1,5 +1,4 @@
-"""
-Provides classes representing elements of a simulation
+"""Provides classes representing elements of a simulation.
 
 .. autosummary::
    :nosignatures:

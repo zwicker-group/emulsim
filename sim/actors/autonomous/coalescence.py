@@ -17,17 +17,17 @@ from ..base import ActorBase, ElementsType
 
 
 def fill_with_zeros(recarr: np.recarray) -> None:
-    """fill a record array with zeros"""
+    """Fill a record array with zeros."""
     recarr.fill(0)
 
 
 @overload(fill_with_zeros)
 def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
-    """create numba implementation to fill a record array with zeros"""
+    """Create numba implementation to fill a record array with zeros."""
     keys = tuple(recarr.dtype.fields.keys())
 
     def fill_with_zeros_impl(recarr: np.recarray) -> None:
-        """numba implementation to fill a record array with zeros"""
+        """Numba implementation to fill a record array with zeros."""
         for key in literal_unroll(keys):
             if isinstance(recarr[key], (int, float)):
                 recarr[key] = 0
@@ -38,14 +38,14 @@ def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
 
 
 class CoalescenceDropletActor(ActorBase):
-    """represents actor that merges overlapping droplets"""
+    """Represents actor that merges overlapping droplets."""
 
     element_classes = ([SphericalDropletsElement, MulticomponentDropletsElement],)
 
     def make_evolver_numba(
         self, elements: ElementsType
     ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
-        """return a function evolve the field state from time `t` to `t + dt`
+        """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
@@ -61,7 +61,7 @@ class CoalescenceDropletActor(ActorBase):
 
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
-            """evolve all points explicitly"""
+            """Evolve all points explicitly."""
             (data,) = state_data
 
             # sort all droplets by radius
@@ -85,7 +85,7 @@ class CoalescenceDropletActor(ActorBase):
         return evolver  # type: ignore
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
-        """evolve the field state from time `t` to `t + dt`
+        """Evolve the field state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):

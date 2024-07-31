@@ -1,5 +1,4 @@
-"""
-Supplies the base class for actors
+"""Supplies the base class for actors.
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
@@ -25,7 +24,7 @@ EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
-    """represents a single actor, which affects one or more elements"""
+    """Represents a single actor, which affects one or more elements."""
 
     element_classes: tuple[ElementsSpec, ...] = tuple()
     """tuple: defines the elements this actor handles and in what order they need to be
@@ -67,7 +66,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         *elements: _ElementBase | type[_ElementBase],
         silent: bool = False,
     ) -> bool:
-        """determines whether this actor supports the given elements
+        """Determines whether this actor supports the given elements.
 
         Args:
             elements (:class:`~sim.elements.base._ElementBase`):
@@ -127,11 +126,11 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         return {"class": self.__class__.__name__, "parameters": self.parameters}
 
     def copy(self) -> ActorBase:
-        """returns a copy the actor"""
+        """Returns a copy the actor."""
         return self.__class__(self.parameters.copy())
 
     def estimate_dt(self, elements: ElementsType) -> float:
-        """estimate the maximal time step for simulating this actor
+        """Estimate the maximal time step for simulating this actor.
 
         Args:
             elements (tuple of :class:`~sim.elements.base._ElementBase`):
@@ -143,7 +142,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         raise NotImplementedError
 
     def _check_cache(self, elements: ElementsType, **kwargs) -> None:
-        r"""checks whether the simulation needs to run :meth:`_update_cache`.
+        r"""Checks whether the simulation needs to run :meth:`_update_cache`.
 
         Subclasses can defined `_update_cache` to populate `self._cache` with
         pre-computed data, which is then available in later.
@@ -164,7 +163,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 self._cache["cache_key"] = cache_key
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:
-        """return a function evolve the state from time `t` to `t + dt`
+        """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
             *elements (tuple of :class:`~sim.elements.base._ElementBase`):
@@ -179,7 +178,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 
     @abstractmethod
     def evolve(self, elements: ElementsType, t: float, dt: float):
-        """evolve the state from time `t` to `t + dt`
+        """Evolve the state from time `t` to `t + dt`
 
         Args:
             elements (tuple of :class:`~sim.elements.base._ElementBase`):
@@ -200,7 +199,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
 def find_actors(
     *elements: _ElementBase | type[_ElementBase], unordered: bool = False
 ) -> list[type[ActorBase]]:
-    """finds actors compatible with the given elements
+    """Finds actors compatible with the given elements.
 
     Args:
         elements (:class:`~sim.elements.base._ElementBase`):
