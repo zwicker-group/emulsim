@@ -253,15 +253,17 @@ napoleon_custom_sections = None
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://docs.scipy.org/doc/numpy/": None,
-    "https://docs.scipy.org/doc/scipy/reference": None,
-    "https://matplotlib.org": None,
-    "http://docs.h5py.org/en/latest/": None,
-    "https://py-pde.readthedocs.io/en/latest": None,
-    "https://py-droplets.readthedocs.io/en/latest": None,
-    "https://py-modelrunner.readthedocs.io/en/latest": None,
-    "https://napari.org/": None,
+    "h5py": ("https://docs.h5py.org/en/latest", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
+    "napari": ("https://napari.org/", None),
+    "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "python": ("https://docs.python.org/3/", None),
+    "py-pde": ("https://py-pde.readthedocs.io/en/latest", None),
+    "py-droplets": ("https://py-droplets.readthedocs.io/en/latest", None),
+    "py-modelrunner": ("https://py-modelrunner.readthedocs.io/en/latest", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "sympy": ("https://docs.sympy.org/latest/", None),
 }
 
 
