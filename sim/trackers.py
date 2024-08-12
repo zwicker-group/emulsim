@@ -42,7 +42,6 @@ class TrajectoryTracker(TrackerBase):
         *,
         mode: ModeType | None = None,
         info: InfoDict | None = None,
-        interval=None,
     ):
         """
         Args:
@@ -61,7 +60,7 @@ class TrajectoryTracker(TrackerBase):
                 Additional information that are written to the trajectory storage. To
                 document simulation parameters, `simulation.info` can be used here.
         """
-        super().__init__(interrupts=interrupts, interval=interval)
+        super().__init__(interrupts=interrupts)
         self.storage = storage
         self.mode = mode
         self.info = info
@@ -150,7 +149,6 @@ class DropletElementTracker(TrackerBase):
         store_emulsions: bool | str = True,
         store_droplet_tracks: bool | str = True,
         keep_vanished: bool = False,
-        interval=None,
     ):
         """
         Args:
@@ -176,7 +174,7 @@ class DropletElementTracker(TrackerBase):
                 droplets disappearing and re-appearing should be combined in a single
                 track.
         """
-        super().__init__(interrupts=interrupts, interval=interval)
+        super().__init__(interrupts=interrupts)
         self.element_name = element_name
         self.store_emulsions = store_emulsions
         self.store_droplet_tracks = store_droplet_tracks
