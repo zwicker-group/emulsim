@@ -10,8 +10,8 @@ import pytest
 from pde.tools.numba import random_seed
 
 
-@pytest.fixture(scope="function", autouse=True)
-def general_test_setup_and_teardown():
+@pytest.fixture(autouse=True)
+def _setup_and_teardown():
     """Helper function preparing and cleaning tests."""
     # initialize random number generators to have predicable tests
     random_seed(0)

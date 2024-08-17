@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Tuple, Type, Union  # @UnusedImport
+from typing import Any, Callable
 
 import numpy as np
 
@@ -22,7 +22,7 @@ class EmittersActor(ActorBase):
     parameters_default = [
         Parameter(
             "positions",
-            np.array(tuple()),
+            np.array(()),
             np.array,
             "The positions of all the emitters. This needs to be an array of "
             "positions. The dimension of each position needs to be compatible with "

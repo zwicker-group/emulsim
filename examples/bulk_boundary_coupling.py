@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bulk-boundary coupling 
+Bulk-boundary coupling
 ======================
 
 Demonstrates coupling of bulk and boundary fields.

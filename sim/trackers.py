@@ -18,9 +18,8 @@ import logging
 
 from droplets.droplet_tracks import DropletTrack, DropletTrackList
 from droplets.emulsions import EmulsionTimeCourse
-from modelrunner.storage import ModeType, StorageID
+from modelrunner.storage import ModeType, StorageID, TrajectoryWriter
 from modelrunner.storage import Trajectory as _Trajectory
-from modelrunner.storage import TrajectoryWriter
 from pde.fields.base import FieldBase
 from pde.tools.docstrings import fill_in_docstring
 from pde.trackers.base import InfoDict, InterruptData, TrackerBase
@@ -336,7 +335,8 @@ class FieldTracker(TrackerBase):
             field = state[self.element_name]._field
         else:
             self._logger.warning(
-                f"Element `{self.element_name}` does not seem to contain a scalar field"
+                "Element `%s` does not seem to contain a scalar field",
+                self.element_name,
             )
         self.tracker.handle(field, t)
 

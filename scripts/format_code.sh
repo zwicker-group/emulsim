@@ -7,10 +7,10 @@ find . -name '*.py' ! -path "*submodules*" -exec pyupgrade --py39-plus {} +
 popd > /dev/null
 
 echo "Formating import statements..."
-isort ..
+ruff check --fix --config=../pyproject.toml ..
 
 echo "Formating docstrings..."
-docformatter --in-place --black --exclude submodules --recursive ..
+docformatter --in-place --black --recursive ..
 
 echo "Formating source code..."
-black ..
+ruff format --config=../pyproject.toml ..

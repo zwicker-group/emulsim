@@ -130,9 +130,9 @@ class NumbaFunctionActor(ActorBase):
         # actually compile the function since it seemed to have passed the test
         try:
             return jit(self.func)  # type: ignore
-        except (RuntimeError, TypingError):
+        except (RuntimeError, TypingError) as err:
             self._logger.warning("Could not compile user-supplied function")
-            raise NotImplementedError
+            raise NotImplementedError from err
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
         """Evolve the state from time `t` to `t + dt`

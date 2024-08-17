@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Active particles 
+Active particles
 ================
 
 Simple implementation of non-interacting active particles.

@@ -6,7 +6,6 @@ import os
 import subprocess as sp
 import sys
 from pathlib import Path
-from typing import Dict, Set
 
 import pytest
 
@@ -56,7 +55,7 @@ def test_example(path):
             delete_path.unlink(missing_ok=True)
 
     # check its output
-    msg = "Script `%s` failed with following output:" % path
+    msg = f"Script `{path}` failed with following output:"
     if outs:
         msg = f"{msg}\nSTDOUT:\n{outs}"
     if errs:

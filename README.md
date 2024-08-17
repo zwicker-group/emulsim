@@ -1,8 +1,5 @@
 # py-sim
 
-[![Build status](https://github.com/zwicker-group/py-sim/workflows/build/badge.svg)](https://github.com/zwicker-group/py-sim/actions?query=workflow%3Abuild)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
 Framework for simulating physical systems consisting of multiple, interacting entities. 
 
 

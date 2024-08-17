@@ -23,6 +23,7 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any, Callable
 
 import numba as nb
@@ -186,7 +187,7 @@ class PointsOnSphere:
             ]
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         # normalize vectors
         return cls(points)
@@ -235,7 +236,7 @@ class PointsOnSphere:
             weights /= spherical.surface_from_radius(1, dim=self.dim)
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         if balance_axes:
             weights /= weights.sum()  # normalize weights
@@ -273,7 +274,7 @@ class PointsOnSphere:
             metric = haversine_distance
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         # determine the distances between all points
         dists = spatial.distance.pdist(self.points, metric)
@@ -287,7 +288,9 @@ class PointsOnSphere:
         dists_sorted = np.sort(self.get_distance_matrix(), axis=1)
         return float(dists_sorted[:, 1].mean())
 
-    def write_to_xyz(self, path: str, comment: str = "", symbol: str = "S"):
+    def write_to_xyz(
+        self, path: Path | str, comment: str = "", symbol: str = "S"
+    ) -> None:
         """Write the point coordinates to a xyz file.
 
         Args:
@@ -298,11 +301,11 @@ class PointsOnSphere:
             symbol (str, optional):
                 Denotes the symbol used for the atoms
         """
-        with open(path, "w") as fp:
+        with Path(path).open("w") as fp:
             fp.write("%d\n" % len(self.points))
             fp.write(comment + "\n")
             for point in self.points:
-                point_str = " ".join("%.12g" % v for v in point)
+                point_str = " ".join(f"{v:.12g}" for v in point)
                 line = f"{symbol} {point_str}\n"
                 fp.write(line)
 
@@ -830,8 +833,9 @@ class SphericalDropletActor(ActorBase):
             stats = droplets.droplets.get_size_statistics(incl_vanished=False)
             mean_radius = float(stats["radius_mean"])
             self._logger.info(
-                f"Base time step on shell thickness ({shell_thickness}) and mean "
-                f"droplet radius ({mean_radius})"
+                "Base time step on shell thickness (%g) and mean droplet radius (%g)",
+                shell_thickness,
+                mean_radius,
             )
             length_scale = min(shell_thickness, mean_radius)
         else:
@@ -1448,7 +1452,7 @@ class SphericalDropletActor(ActorBase):
         num_threads_max = max(1, droplets.droplet_count // 32)
         num_threads = min(num_threads, num_threads_max)
         self._logger.info(
-            f"Initialize update routine of %s with %d threads",
+            "Initialize update routine of %s with %d threads",
             self.__class__.__name__,
             num_threads,
         )

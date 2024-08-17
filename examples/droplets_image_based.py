@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Biased droplet dynamics 
+Biased droplet dynamics
 =======================
 
 Demonstrates how droplet dynamics can be biased using an external field, which is here

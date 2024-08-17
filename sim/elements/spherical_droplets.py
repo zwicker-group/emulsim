@@ -46,11 +46,12 @@ class SphericalDropletsElement(ArrayElementBase):
 
         if data is not NoData:
             # extract the droplets from data if given
-            drop_list = [
-                self.droplet_class.from_data(data_row) for data_row in self.data
+            drop_list: list[SphericalDroplet] = [
+                self.droplet_class.from_data(data_row)  # type: ignore
+                for data_row in self.data
             ]
             droplets = Emulsion(
-                drop_list, copy=False, dtype=self.data.dtype, force_consistency=True  # type: ignore
+                drop_list, copy=False, dtype=self.data.dtype, force_consistency=True
             )
             # initialize the droplet information in the class
             self._init_droplets(droplets)
@@ -69,7 +70,7 @@ class SphericalDropletsElement(ArrayElementBase):
             maxcount (int):
                 If supplied, sets the maximal number of droplets that can be stored in
                 this element. If `maxcount > len(droplets)`, the additional entries are
-                intialized as zero.
+                initialized as zero.
         """
         if droplets.dtype is None:
             raise ValueError(
@@ -77,16 +78,15 @@ class SphericalDropletsElement(ArrayElementBase):
                 "droplet (with potentially vanishing radius) or dtype must be set."
             )
 
-        if maxcount is not None:
-            # ensure that len(droplets) >= maxcount
-            if maxcount > len(droplets):
-                # append empty droplets to list
-                empty_droplet = self.droplet_class.from_data(
-                    np.zeros(1, dtype=droplets.dtype)[0]
-                )
-                for _ in range(maxcount - len(droplets)):
-                    droplets.append(empty_droplet, copy=True)  # type: ignore
-                assert len(droplets) == maxcount
+        # ensure that len(droplets) >= maxcount
+        if maxcount is not None and maxcount > len(droplets):
+            # append empty droplets to list
+            empty_droplet = self.droplet_class.from_data(
+                np.zeros(1, dtype=droplets.dtype)[0]
+            )
+            for _ in range(maxcount - len(droplets)):
+                droplets.append(empty_droplet, copy=True)  # type: ignore
+            assert len(droplets) == maxcount
 
         self.droplets = droplets  # set the given droplets as an attribute
 
@@ -142,9 +142,8 @@ class SphericalDropletsElement(ArrayElementBase):
                 droplet = cls.droplet_class(np.zeros(dim), 0.0)
             else:
                 raise TypeError("Either `droplet` or `dim` need to be set")
-        elif dim is not None:
-            if droplet.dim != dim:
-                raise DimensionError(f"Inconsistent dimension ({droplet.dim} != {dim})")
+        elif dim is not None and droplet.dim != dim:
+            raise DimensionError(f"Inconsistent dimension ({droplet.dim} != {dim})")
 
         # initialize empty emulsion
         emulsion = Emulsion([], copy=False, dtype=droplet.data.dtype)
@@ -281,7 +280,7 @@ class SphericalDropletsElement(ArrayElementBase):
         if "grid" in kwargs:
             emulsion = emulsion.copy()
             emulsion.grid = kwargs.pop("grid")
-        emulsion.plot(ax=ax, *args, **plot_args)
+        emulsion.plot(*args, ax=ax, **plot_args)
 
     def _get_napari_layer_data(
         self, point_like: bool = False, resolution: float = 1, **kwargs

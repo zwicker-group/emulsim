@@ -28,8 +28,6 @@ ActorElementType = tuple[MulticomponentDropletsElement, FieldCollectionElement]
 class SolventFractionError(RuntimeError):
     """Error indicating that the solvent fraction was not in [0, 1]"""
 
-    pass
-
 
 def _make_regularizer(
     num_comps: int, eps: float = 1e-8
@@ -596,7 +594,7 @@ class MulticomponentDropletActor(ActorBase):
                 Δamount = diff_step * (mu_out - mu_in)
 
                 # check whether the updated droplet vanishes
-                volume_vanishes = V + ΔV < volume_min
+                volume_vanishes = volume_min > V + ΔV
                 fraction_vanishes = np.sum(amounts + Δamount + Sin) < V * phi_min
                 if volume_vanishes or fraction_vanishes:
                     # remove droplet & ensure all amount is dumped into the background
@@ -736,7 +734,7 @@ class MulticomponentDropletActor(ActorBase):
             Δamount = diff_step * (mu_out - mu_in)
 
             # check whether the updated droplet vanishes
-            volume_vanishes = V + ΔV < volume_min
+            volume_vanishes = volume_min > V + ΔV
             fraction_vanishes = np.sum(droplet.amounts + Δamount + Sin) < V * phi_min
             if volume_vanishes or fraction_vanishes:
                 # remove droplet & ensure all amount is dumped into the background

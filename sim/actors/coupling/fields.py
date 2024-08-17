@@ -67,7 +67,7 @@ class FieldCouplingActor(ActorBase):
         for field in fields[1:]:
             grid.assert_grid_compatible(field.grid)  # type: ignore
 
-        rhs_expressions: dict[int, ScalarExpression] = dict()
+        rhs_expressions: dict[int, ScalarExpression] = {}
         field_names = self.parameters["fields"]
         signature = field_names + ["t"]
         for field_name, rhs in self.parameters["evolution_rates"].items():
@@ -105,7 +105,6 @@ class FieldCouplingActor(ActorBase):
         @jit
         def innermost(state_data, t, dt):
             """No-op function serving as innermost nested function."""
-            pass
 
         def chain(
             expression_id: int,

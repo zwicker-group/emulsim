@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brownian droplet coarsening 
+Brownian droplet coarsening
 ===========================
 
 Simple examples of droplets subjected to Brownian motion and coalescence.

@@ -3,7 +3,7 @@
 Random field actor
 ==================
 
-Demonstrates a custom actor class that sets a field to random values 
+Demonstrates a custom actor class that sets a field to random values
 """
 
 import numba as nb
