@@ -26,7 +26,7 @@ EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """Represents a single actor, which affects one or more elements."""
 
-    element_classes: tuple[ElementsSpec, ...] = tuple()
+    element_classes: tuple[ElementsSpec, ...] = ()
     """tuple: defines the elements this actor handles and in what order they need to be
     supplied. An empty list indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
@@ -104,11 +104,9 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 if not issubclass(given_cls, expected):
                     mismatch_cls = expected.__name__
 
-            if mismatch_cls:
-                # the actor did not accept the element
+            if mismatch_cls and cls in given_cls._compatible_actors:
                 # check whether the element declares the actor as compatible
-                if cls in given_cls._compatible_actors:
-                    mismatch_cls = None
+                mismatch_cls = None
 
             if mismatch_cls:
                 if silent:
@@ -193,7 +191,6 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
                 which evolves the state
         """
-        pass
 
 
 def find_actors(

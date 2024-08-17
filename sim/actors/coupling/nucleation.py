@@ -268,7 +268,7 @@ class DropletNucleationActor(ActorBase):
         # determine which cells nucleated a droplet
         if nucl_rate.max() > 1 / dt:
             self._logger.warning(
-                f"Nucleation rate too large ({nucl_rate.max()}; reduce dt ({dt})"
+                "Nucleation rate too large (%g; reduce dt (%g))", nucl_rate.max(), dt
             )
 
         # determine grid cells that exhibit nucleation

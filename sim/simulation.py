@@ -349,9 +349,9 @@ class Simulation:
             try:
                 dt = actor.estimate_dt(state[elements])
             except NotImplementedError:
-                self._logger.info(f'Unknown time step for actor "{actor}"')
+                self._logger.info('Unknown time step for actor "%s"', actor)
             else:
-                self._logger.debug(f'Time step for actor "{actor}": {dt}')
+                self._logger.debug('Time step for actor "%s": %g', actor, dt)
                 dts.append(dt)
 
         return min(dts)
@@ -522,7 +522,7 @@ class Simulation:
         self,
         t_range: TRangeType,
         dt: float | None = None,
-        tracker: TrackerCollectionDataType = ["progress"],
+        tracker: TrackerCollectionDataType = None,
         *,
         backend: str = "auto",
         ret_info: bool = False,
@@ -570,6 +570,8 @@ class Simulation:
                 `ret_info == True`, a tuple with the final state and a
                 dictionary with additional information is returned.
         """
+        if tracker is None:
+            tracker = ["progress"]
         cache_key = {"backend": backend, **kwargs}
         if (
             use_cache
@@ -836,7 +838,7 @@ class SimulationSolver(AdaptiveSolverBase):
                 # this can happen if there are no restrictions on the time step
                 dt = self.dt_default
                 self._logger.warning(
-                    f"Time step could not be determined automatically. Using dt={dt}"
+                    "Time step could not be determined automatically. Using dt=%g", dt
                 )
         dt_float = float(dt)
 
@@ -848,7 +850,7 @@ class SimulationSolver(AdaptiveSolverBase):
         # check whether the stepper can be loaded from the cache
         cache_key = f"{self.backend}_{self.adaptive}"
         if self.use_cache and cache_key in self._cache_stepper:
-            self._logger.info(f"Use cached `{cache_key}` stepper")
+            self._logger.info("Use cached `%s` stepper", cache_key)
             return self._cache_stepper[cache_key]
 
         # build the stepper
@@ -865,7 +867,7 @@ class SimulationSolver(AdaptiveSolverBase):
 
 
 def _make_get_element_states(
-    element_indices: tuple[int, ...]
+    element_indices: tuple[int, ...],
 ) -> Callable[[tuple[np.ndarray, ...]], tuple[np.ndarray, ...]]:
     """Creates helper function that extracts the states of the given elements.
 
@@ -888,7 +890,7 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: tuple[np.ndarray, ...]
+            state_data: tuple[np.ndarray, ...],
         ) -> tuple[np.ndarray, np.ndarray]:
             return (state_data[i], state_data[j])
 
@@ -897,7 +899,7 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: tuple[np.ndarray, ...]
+            state_data: tuple[np.ndarray, ...],
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
             return (state_data[i], state_data[j], state_data[k])
 
@@ -906,7 +908,7 @@ def _make_get_element_states(
 
         @jit
         def get_element_states(
-            state_data: tuple[np.ndarray, ...]
+            state_data: tuple[np.ndarray, ...],
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
             sd = state_data
             return (sd[i], sd[j], sd[k], sd[l])

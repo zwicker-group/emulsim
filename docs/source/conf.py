@@ -15,24 +15,27 @@
 import os.path
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
-sys.path.insert(0, os.path.abspath("../../submodules/py-droplets"))
-sys.path.insert(0, os.path.abspath("../../submodules/py-pde"))
-sys.path.insert(0, os.path.abspath("../../submodules/py-pde/docs/sphinx_ext"))
-sys.path.insert(0, os.path.abspath("../../submodules/py-phasesep"))
-sys.path.insert(0, os.path.abspath("../../submodules/py-modelrunner"))
+sys.path.insert(0, os.path.abspath("../.."))  # noqa: PTH100
+sys.path.insert(0, os.path.abspath("../../submodules/py-droplets"))  # noqa: PTH100
+sys.path.insert(0, os.path.abspath("../../submodules/py-pde"))  # noqa: PTH100
+sys.path.insert(
+    0,
+    os.path.abspath("../../submodules/py-pde/docs/sphinx_ext"),  # noqa: PTH100
+)
+sys.path.insert(0, os.path.abspath("../../submodules/py-phasesep"))  # noqa: PTH100
+sys.path.insert(0, os.path.abspath("../../submodules/py-modelrunner"))  # noqa: PTH100
 sys.path.insert(0, ".")
 
 from datetime import date
 
-import sphinx_simplify_typehints  # @UnresolvedImport @UnusedImport
+import sphinx_simplify_typehints
 
 # -- Project information -----------------------------------------------------
 
 project = "py-sim"
 module_name = "sim"
 author = "David Zwicker"
-copyright = f"{date.today().year}, {author}"  # @ReservedAssignment
+copyright = f"{date.today().year}, {author}"  # noqa: A001
 
 # The short X.Y version
 import sim

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from typing import Any, Callable, Dict, Optional, Tuple, Type  # @UnusedImport
+from typing import Any, Callable
 
 import numpy as np
 
@@ -153,7 +153,7 @@ class ScalarPDEActor(ActorBase):
 
         if inspect.isclass(pde):
             self._logger.warning("Got class `%s` instead of an instance", pde)
-            self.pde = pde()
+            self.pde: PDEBase = pde()
         else:
             self.pde = pde
 
@@ -260,7 +260,7 @@ class DiffusionActor(ScalarPDEActor):
         """
         (element,) = elements  # extract single element
         dx = float(element.grid.discretization.min())
-        return 0.1 * dx**2 / float(self.pde.diffusivity)
+        return 0.1 * dx**2 / float(self.pde.diffusivity)  # type: ignore
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
@@ -344,13 +344,13 @@ class ReactionDiffusionActor(ScalarPDEActor):
             s_max = 0
             for c in np.linspace(0, 1, 32):
                 test_field.data = c
-                rates = self.pde.reaction_rate(test_field)
+                rates = self.pde.reaction_rate(test_field)  # type: ignore
                 s_max = max(s_max, np.max(np.abs(rates.data)))
-            diffusivity = self.pde.diffusivity.value
+            diffusivity = self.pde.diffusivity.value  # type: ignore
         else:
             # PDE seems to be an instance of DiffusionPDE
             s_max = 0
-            diffusivity = self.pde.diffusivity
+            diffusivity = self.pde.diffusivity  # type: ignore
 
         if s_max == 0:
             dt_reaction = float("inf")
@@ -392,7 +392,7 @@ class CollectionPDEActor(ActorBase):
 
         if inspect.isclass(pde):
             self._logger.warning("Got class `%s` instead of an instance", pde)
-            self.pde = pde()
+            self.pde: PDEBase = pde()
         else:
             self.pde = pde
 

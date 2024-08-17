@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Custom Brownian motion class 
+Custom Brownian motion class
 ============================
 
 Demonstrates the custom implementation of Brownian motion.

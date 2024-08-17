@@ -233,4 +233,4 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
         if "grid" in kwargs:
             emulsion = emulsion.copy()
             emulsion.grid = kwargs.pop("grid")
-        emulsion.plot(ax=ax, *args, **plot_args)
+        emulsion.plot(*args, ax=ax, **plot_args)

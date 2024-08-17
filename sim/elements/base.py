@@ -53,8 +53,6 @@ if TYPE_CHECKING:
 class NoData:
     """Helper class that marks data omission."""
 
-    ...
-
 
 def _equals(left: Any, right: Any) -> bool:
     """Checks whether two objects are equal, also supporting :class:~numpy.ndarray`
@@ -121,7 +119,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
         Parameterized.__init__(self, parameters, strict=True)
         self._init_state({"parameters": parameters}, data)
 
-    def __init_subclass__(cls, **kwargs):  # @NoSelf
+    def __init_subclass__(cls, **kwargs):
         """Register all subclasses to reconstruct them later."""
         # register the subclasses
         super().__init_subclass__(**kwargs)
@@ -408,7 +406,6 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
                 If the location contains a trajectory of the state, `index` must denote
                 the index determining which state should be created
         """
-        ...
         # determine the class to reconstruct the data from attribute
 
         class_name = storage.read_attrs(loc).get("_element_class", None)
@@ -524,7 +521,6 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
     def plot(self, ax=None, *args, **kwargs):
         """Plot the element."""
-        pass
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         """Returns data for plotting on a single napari layer.

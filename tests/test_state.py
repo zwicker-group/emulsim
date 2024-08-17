@@ -4,9 +4,9 @@
 
 import numpy as np
 import pytest
+from elements.test_generic import generate_elements
 
 import pde
-from elements.test_generic import generate_elements
 from pde.tools.numba import jit
 
 from sim.elements import ScalarFieldElement

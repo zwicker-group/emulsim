@@ -171,5 +171,6 @@ class BoxActor(ActorBase):
         # move the points to inside the box
         # TODO: support extended objects, where `point_like` is False
         points.positions[...] = self._grid.normalize_point(  # type: ignore
-            points.positions, reflect=True  # type: ignore
+            points.positions,  # type: ignore
+            reflect=True,
         )

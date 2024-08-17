@@ -119,7 +119,7 @@ class State(DictElementBase):
         # re-create the State object using the DictState methods
         obj = super().from_data(attributes, data)
         # set the parameters correctly
-        Parameterized.__init__(obj, attributes.get("parameters", None))
+        Parameterized.__init__(obj, attributes.get("parameters"))
         return obj  # type: ignore
 
     @property
@@ -257,9 +257,12 @@ class State(DictElementBase):
             except AttributeError:
                 pass
             else:
-                if isinstance(candidate, GridBase) and candidate.dim == self.dim:
-                    if grid is None or candidate.volume > grid.volume:
-                        grid = candidate
+                if (
+                    isinstance(candidate, GridBase)
+                    and candidate.dim == self.dim
+                    and (grid is None or candidate.volume > grid.volume)
+                ):
+                    grid = candidate
 
         if grid is None:
             raise RuntimeError("Could not determine suitable grid")

@@ -74,7 +74,6 @@ class ReservoirElement(ArrayElementBase):
                 color specifications are allowed.
             {PLOT_ARGS}
         """
-        ...
 
     def get_concentration(self, points: np.ndarray):
         """Determine concentration at the given points.
@@ -103,7 +102,6 @@ class ReservoirElement(ArrayElementBase):
             amount:
                 The total amount added to the field
         """
-        ...
 
     def make_get_concentration_compiled(self) -> Callable:
         """Get a compiled function for obtaining concentrations.
@@ -226,7 +224,6 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
     def plot(self, ax=None, **kwargs):
         """Plot the field."""
-        ...
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         """Returns data for plotting on a single napari layer.

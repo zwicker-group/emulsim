@@ -172,7 +172,7 @@ class PointDropletActor(ActorBase):
 
         else:
             raise NotImplementedError(
-                "Flux model `%s` undefined" % self.parameters["flux_model"]
+                "Flux model `{}` undefined".format(self.parameters["flux_model"])
             )
         return dt
 
@@ -211,7 +211,7 @@ class PointDropletActor(ActorBase):
 
         else:
             raise NotImplementedError(
-                "Flux model `%s` undefined" % self.parameters["flux_model"]
+                "Flux model `{}` undefined".format(self.parameters["flux_model"])
             )
 
     def _make_flux_outside(self) -> Callable:
@@ -251,7 +251,7 @@ class PointDropletActor(ActorBase):
 
         else:
             raise NotImplementedError(
-                "Flux model `%s` undefined" % self.parameters["flux_model"]
+                "Flux model `{}` undefined".format(self.parameters["flux_model"])
             )
 
         return flux_outside
