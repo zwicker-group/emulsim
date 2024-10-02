@@ -23,5 +23,5 @@ simulation = sim.Simulation(state)
 simulation.add_actor("background", sim.DiffusionActor())
 simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
 
-# run simulation with an interactive visualziation
+# run simulation with an interactive visualization
 simulation.run(t_range=100, tracker=["progress", "interactive"])

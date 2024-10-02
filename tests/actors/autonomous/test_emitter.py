@@ -15,6 +15,7 @@ def test_emitters(rng):
     grid = UnitGrid([3, 3])
     background = MeanfieldElement(parameters={"bounds": [[0, 3], [0, 3]]})
     assert background.concentration == pytest.approx(0)
+    assert background.volume > 0
 
     emitters = EmittersActor({"positions": [grid.get_random_point(rng=rng)]})
     assert isinstance(emitters.info, dict)

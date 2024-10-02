@@ -9,7 +9,9 @@ import inspect
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Union
+from collections.abc import Callable
+from types import EllipsisType
+from typing import Any
 
 import numpy as np
 
@@ -19,16 +21,16 @@ from pde.tools.cache import objects_equal
 from ..elements.base import _ElementBase
 
 ElementsType = tuple[_ElementBase, ...]
-ElementsSpec = Union[type[_ElementBase], list[type[_ElementBase]]]
+ElementsSpec = type[_ElementBase] | list[type[_ElementBase]]
 EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
     """Represents a single actor, which affects one or more elements."""
 
-    element_classes: tuple[ElementsSpec, ...] = ()
+    element_classes: tuple[ElementsSpec, ...] | EllipsisType = ()
     """tuple: defines the elements this actor handles and in what order they need to be
-    supplied. An empty list indicates that all elements and lists of elements are
+    supplied. An ellipsis (...) indicates that all elements and lists of elements are
     accepted. Setting this attribute allows internal consistency checks."""
 
     parameters_default: ParameterListType = []
@@ -78,14 +80,19 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         Returns:
             bool: Whether the current actor supports the elements in the given order
         """
+        if cls.element_classes == Ellipsis:
+            return True  # generic result indicating that all elements are supported
+
         if len(elements) != len(cls.element_classes):
             if silent:
                 return False
             else:
-                raise ValueError(f"Expected {len(cls.element_classes)} elements")
+                raise ValueError(
+                    f"Expected {len(cls.element_classes)} elements (got {len(elements)})"
+                )
 
         # check whether all elements have the expected type
-        for given, expected in zip(elements, cls.element_classes):
+        for given, expected in zip(elements, cls.element_classes, strict=False):
             if isinstance(given, _ElementBase):
                 given_cls = given.__class__
             elif inspect.isclass(given):
@@ -97,8 +104,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             mismatch_cls = None
             if hasattr(expected, "__iter__"):
                 # actor supports multiple classes for this element
-                if not any(issubclass(given_cls, cls) for cls in expected):  # type: ignore
-                    mismatch_cls = ", ".join(cls.__name__ for cls in expected)  # type: ignore
+                if not any(issubclass(given_cls, cls) for cls in expected):
+                    mismatch_cls = ", ".join(cls.__name__ for cls in expected)
             else:
                 # actor supports a single class for this element
                 if not issubclass(given_cls, expected):

@@ -9,7 +9,11 @@ from pde import CartesianGrid, ScalarField, UnitGrid
 
 from sim import Simulation, State
 from sim.actors.autonomous import DiffusionActor
-from sim.actors.coupling.fields import FieldBoundaryExchangeActor, FieldCouplingActor
+from sim.actors.coupling.fields import (
+    FieldBoundaryExchangeActor,
+    FieldCouplingActor,
+    FieldExchangeActor,
+)
 from sim.elements import (
     MeanfieldElement,
     ScalarBoundaryFieldElement,
@@ -104,3 +108,53 @@ def test_field_boundary_coupling(resolution, rng):
     np.testing.assert_allclose(res1["bndry"].data, res2["bndry"].data)
     assert pytest.approx(total_amount) == res1.get_total_quantity("total_amount")
     assert pytest.approx(total_amount) == res2.get_total_quantity("total_amount")
+
+
+@pytest.mark.parametrize(
+    "cls1,cls2",
+    [
+        (MeanfieldElement, ScalarFieldElement),
+        (ScalarFieldElement, MeanfieldElement),
+        (ScalarFieldElement, ScalarFieldElement),
+    ],
+)
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_field_exchange_actor(cls1, cls2, backend):
+    """Test the FieldExchangeActor."""
+    grid = UnitGrid([2, 2])
+
+    field1 = cls1.from_field(ScalarField(grid, 2))
+    field2 = cls2.from_field(ScalarField(grid, 1))
+    actor = FieldExchangeActor({"exchange_rate": "c1 - c2"})
+
+    if backend == "numpy":
+        actor.evolve((field1, field2), 0, 2)
+    elif backend == "numba":
+        evolver = actor.make_evolver_numba((field1, field2))
+        evolver((field1._data_numba, field2._data_numba), 0, 2)
+    else:
+        raise ValueError
+
+    np.testing.assert_allclose(field1.data, 0)
+    np.testing.assert_allclose(field2.data, 3)
+
+
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_field_exchange_actor_different_volume(backend):
+    """Test the FieldExchangeActor with bulks of different volume."""
+    grid = CartesianGrid([(0, 1), (0, 1)], 2)
+
+    field1 = ScalarFieldElement.from_field(ScalarField(grid, 2))
+    field2 = MeanfieldElement.from_field(ScalarField(grid, 1), {"volume": 4})
+    actor = FieldExchangeActor({"exchange_rate": "c1 - c2"})
+
+    if backend == "numpy":
+        actor.evolve((field1, field2), 0, 2)
+    elif backend == "numba":
+        evolver = actor.make_evolver_numba((field1, field2))
+        evolver((field1._data_numba, field2._data_numba), 0, 2)
+    else:
+        raise ValueError
+
+    np.testing.assert_allclose(field1.data, 0)
+    np.testing.assert_allclose(field2.data, 1.5)

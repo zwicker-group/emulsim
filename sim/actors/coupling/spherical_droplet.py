@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numba as nb
 import numpy as np

@@ -23,6 +23,7 @@ if not module_available("napari"):
     SKIP_EXAMPLES.add("droplets_interactive.py")
 if not module_available("numba_scipy"):
     SKIP_EXAMPLES.add("droplets_active.py")
+    SKIP_EXAMPLES.add("droplets_trackers.py")
 
 # get dictionary of files that need to be deleted after the examples ran
 CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}

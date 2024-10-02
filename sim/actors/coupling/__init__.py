@@ -5,6 +5,7 @@
 
    ~nucleation.DropletNucleationActor
    ~fields.FieldCouplingActor
+   ~fields.FieldExchangeActor
    ~fields.FieldBoundaryExchangeActor
    ~point_droplet.PointDropletActor
    ~spherical_droplet.SphericalDropletActor
@@ -13,7 +14,7 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
-from .fields import FieldBoundaryExchangeActor, FieldCouplingActor
+from .fields import FieldBoundaryExchangeActor, FieldCouplingActor, FieldExchangeActor
 from .multicomponent_droplet import MulticomponentDropletActor
 from .nucleation import DropletNucleationActor
 from .point_droplet import PointDropletActor

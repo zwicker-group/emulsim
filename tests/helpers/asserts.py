@@ -39,7 +39,7 @@ def assert_data_equals(left: Any, right: Any, *, fuzzy: bool = False) -> bool:
 
         elif hasattr(left, "__iter__"):
             assert len(left) == len(right)
-            for l, r in zip(left, right):
+            for l, r in zip(left, right, strict=False):
                 assert_data_equals(l, r, fuzzy=fuzzy)
 
         else:

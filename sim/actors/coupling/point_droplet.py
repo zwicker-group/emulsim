@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import math
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 
@@ -74,7 +74,7 @@ class PointDropletActor(ActorBase):
             object,
             "Rate with which droplet material is exchanged with the dilute phase when "
             "the `flux_model` is `linear`. Must be the total flux exchanged from the "
-            "droplet torward the background field. This can either be a number of an "
+            "droplet toward the background field. This can either be a number of an "
             "expression, which can depend on the radius `R` of the droplet.",
         ),
         Parameter(

@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from types import EllipsisType
+from typing import Any
 
 import numpy as np
 
@@ -15,8 +17,8 @@ from pde.tools.expressions import ScalarExpression
 from pde.tools.numba import jit
 
 from ... import Parameter
-from ...elements import FieldElementBase, ScalarBoundaryFieldElement
-from ..base import ActorBase, ElementsType
+from ...elements import FieldElementBase, MeanfieldElement, ScalarBoundaryFieldElement
+from ..base import ActorBase, ElementsSpec, ElementsType
 
 
 class FieldCouplingActor(ActorBase):
@@ -36,6 +38,8 @@ class FieldCouplingActor(ActorBase):
             "The expressions determining the dynamics of the fields",
         ),
     ]
+
+    element_classes: tuple[ElementsSpec, ...] | EllipsisType = Ellipsis
 
     def __init__(self, parameters: dict[str, Any] | None = None):
         """
@@ -149,6 +153,162 @@ class FieldCouplingActor(ActorBase):
 
         for field_id, rhs in self._cache["rhs_expressions"].items():
             fields[field_id].data[...] += dt * rhs(*field_data, t)
+
+
+class FieldExchangeActor(ActorBase):
+    """Actor that exchanges material between two fields on the same grid."""
+
+    parameters_default = [
+        Parameter(
+            "exchange_rate",
+            "0",
+            str,
+            "The expressions determining the exchange from the first field toward the "
+            "second field. The names of the field are set by `field_names`",
+        ),
+        Parameter(
+            "field_name",
+            ("c1", "c2"),
+            tuple,
+            "The names of the two fields, which appear in `exchange_rate`",
+        ),
+    ]
+
+    element_classes = (FieldElementBase, FieldElementBase)
+
+    def __init__(self, parameters: dict[str, Any] | None = None):
+        """
+        Args:
+            parameters (dict):
+                Parameters defining the behavior of the actor. Call
+                :meth:`~ActorBase.show_parameters` for details.
+        """
+        super().__init__(parameters)
+
+        # check parameter validity
+        if len(self.parameters["field_name"]) != 2:
+            raise ValueError("Exactly two field names expected")
+        if "t" in self.parameters["field_name"]:
+            raise ValueError('Field name must not be "t", since this signifies time')
+
+    def _update_cache(self, fields: tuple[FieldElementBase, FieldElementBase]) -> None:
+        """Prepare the simulation doing pre-calculations.
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+        """
+        # ensure that all grids are compatible
+        self._cache["grid"] = None
+        mean_field = []
+        for field in fields:
+            if isinstance(field, MeanfieldElement):
+                mean_field.append(True)
+            else:
+                mean_field.append(False)
+                grid = field.grid
+                if grid is not None:
+                    if self._cache["grid"] is not None:
+                        grid.assert_grid_compatible(self._cache["grid"])
+                    self._cache["grid"] = grid
+        self._cache["mean_field"] = tuple(mean_field)
+        if all(mean_field):
+            # This does not work since they could have different volume, in which case
+            # the exchange flux would not be properly defined.
+            raise RuntimeError("Cannot exchange flux between two MeanfieldElements")
+
+        # prepare exchange expression
+        self._cache["rhs_expression"] = ScalarExpression(
+            self.parameters["exchange_rate"],
+            signature=tuple(self.parameters["field_name"]) + ("t",),
+        )
+
+    def make_evolver_numba(
+        self,
+        fields: tuple[FieldElementBase, FieldElementBase],  # type: ignore
+    ) -> Callable[[tuple[np.ndarray, ...], float, float], None]:
+        """Return a function evolve the state from time `t` to `t + dt`
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+
+        Returns:
+            callable: A function with signature
+                (droplets_data: :class:`~numpy.ndarray`, field_data, t: float,
+                dt: float), evolving `droplets_data` and `field_data`
+        """
+        self._check_cache(fields)
+
+        field1_mean, field2_mean = self._cache["mean_field"]
+        rhs = self._cache["rhs_expression"].get_compiled(single_arg=False)
+        if self._cache["grid"]:
+            integrate = self._cache["grid"].make_integrator()
+        if field1_mean:
+            add_amount1 = fields[0].make_add_amount_compiled()
+        if field2_mean:
+            add_amount2 = fields[1].make_add_amount_compiled()
+
+        @jit
+        def evolver(
+            elements_data: tuple[np.ndarray, np.ndarray], t: float, dt: float
+        ) -> None:
+            """Evolve the flux between bulk and boundary."""
+            field1, field2 = elements_data
+            flux = rhs(field1, field2, t)
+
+            if field1_mean and field2_mean:
+                raise RuntimeError
+            elif field1_mean and not field2_mean:
+                add_amount1(field1, None, -dt * integrate(flux))
+                field2 += dt * flux
+            elif not field1_mean and field2_mean:
+                field1 -= dt * flux
+                add_amount2(field2, None, dt * integrate(flux))
+            else:
+                field1 -= dt * flux
+                field2 += dt * flux
+
+        return evolver  # type: ignore
+
+    def evolve(
+        self,
+        fields: tuple[FieldElementBase, FieldElementBase],  # type: ignore
+        t: float,
+        dt: float,
+    ) -> None:
+        """Evolve the state from time `t` to `t + dt`
+
+        Args:
+            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+                The state of the individual fields
+            t (float):
+                The current time point
+            dt (float):
+                The time step
+        """
+        self._check_cache(fields)
+
+        # extract the data from all the fields
+        field1 = fields[0].data
+        field2 = fields[1].data
+        field1_mean, field2_mean = self._cache["mean_field"]
+
+        # calculate the exchange rate
+        flux = self._cache["rhs_expression"](field1, field2, t)
+
+        # update the fields accordingly
+        if field1_mean and field2_mean:
+            raise RuntimeError
+        elif field1_mean and not field2_mean:
+            fields[0].add_amount(None, -dt * self._cache["grid"].integrate(flux))  # type: ignore
+            field2 += dt * flux
+        elif not field1_mean and field2_mean:
+            field1 -= dt * flux
+            fields[1].add_amount(None, dt * self._cache["grid"].integrate(flux))  # type: ignore
+        else:
+            field1 -= dt * flux
+            field2 += dt * flux
 
 
 class FieldBoundaryExchangeActor(ActorBase):

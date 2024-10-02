@@ -12,8 +12,8 @@ from __future__ import annotations
 import itertools
 import warnings
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
-from typing import Any, Callable, Literal
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, Literal
 
 import numpy as np
 
@@ -131,7 +131,7 @@ class State(DictElementBase):
     @_data_numba.setter
     def _data_numba(self, state_data: tuple) -> None:
         """Sets the data of all states."""
-        for key, new_el_data in zip(self.data.keys(), state_data):
+        for key, new_el_data in zip(self.data.keys(), state_data, strict=False):
             self.data[key]._data_numba[...] = new_el_data
 
     def copy(self, method: Literal["clean", "shallow", "data"] = "clean", data=None):
@@ -354,7 +354,7 @@ class State(DictElementBase):
             def state_error_estimator(state1: State, state2: State) -> float:
                 """Estimate error for all elements."""
                 error = 0.0
-                for el_err, el1, el2 in zip(el_errs, state1, state2):
+                for el_err, el1, el2 in zip(el_errs, state1, state2, strict=False):
                     # The extra cast to a float can be sometimes necessary. We had one
                     # case where the error estimator of an ArrayState returned an record
                     # array, which caused problems downstream. To catch such errors

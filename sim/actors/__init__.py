@@ -40,6 +40,7 @@ elements.
 
    ~coupling.nucleation.DropletNucleationActor
    ~coupling.fields.FieldCouplingActor
+   ~coupling.fields.FieldExchangeActor
    ~coupling.fields.FieldBoundaryExchangeActor
    ~coupling.point_droplet.PointDropletActor
    ~coupling.spherical_droplet.SphericalDropletActor
