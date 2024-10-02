@@ -13,12 +13,14 @@ import sim
 from helpers import assert_recarrays_allclose
 
 
-def test_simulation():
+def test_simulation(rng):
     """Test some methods of the Simulation class."""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
-    droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
+    droplet_data = [
+        SphericalDroplet(grid.get_random_point(rng=rng), 1) for _ in range(3)
+    ]
     droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
     state = sim.State({"background": background, "droplets": droplets})
 
@@ -54,10 +56,10 @@ def test_simulation():
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
-def test_adaptive_simulation_simple(backend):
+def test_adaptive_simulation_simple(backend, rng):
     """Test some adaptive simulations."""
     # set up state
-    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
+    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True), rng=rng)
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
@@ -79,11 +81,11 @@ def test_adaptive_simulation_simple(backend):
 @pytest.mark.skipif(
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
-def test_adaptive_reaction_diffusion():
+def test_adaptive_reaction_diffusion(rng):
     """Test adaptive reaction-diffusion simulation."""
     # set up state
     grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-    field = ScalarField.random_uniform(grid)
+    field = ScalarField.random_uniform(grid, rng=rng)
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
@@ -98,12 +100,12 @@ def test_adaptive_reaction_diffusion():
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
-def test_adaptive_simulation_complex(backend):
+def test_adaptive_simulation_complex(backend, rng):
     """Test some adaptive simulations."""
     thresh = {"numpy": 5, "numba": 25}[backend]
 
     # set up state
-    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
+    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True), rng=rng)
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
@@ -124,10 +126,10 @@ def test_adaptive_simulation_complex(backend):
     assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
 
 
-def test_simulation_timing():
+def test_simulation_timing(rng):
     """Test some methods of the Simulation class."""
     # set up state
-    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True))
+    field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True), rng=rng)
     element = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": element})
 
@@ -151,12 +153,14 @@ def test_simulation_timing():
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 @pytest.mark.parametrize("use_cache", [True, False])
-def test_simulation_cache(backend, use_cache):
+def test_simulation_cache(backend, use_cache, rng):
     """Test caching of Simulation class."""
     # setup state
     grid = UnitGrid([4, 4], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
-    droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
+    droplet_data = [
+        SphericalDroplet(grid.get_random_point(rng=rng), 1) for _ in range(3)
+    ]
     droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
     state = sim.State({"background": background, "droplets": droplets})
     state2 = state.copy(method="clean")

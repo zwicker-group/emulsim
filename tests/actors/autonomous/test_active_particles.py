@@ -9,11 +9,11 @@ from sim.actors.autonomous import ActiveParticleActor
 from sim.elements import ArrowsElement
 
 
-def test_active_particles():
+def test_active_particles(rng):
     """Simple test of active particles."""
     # setup state
-    particle_data = np.random.uniform(0, 100, size=(10, 2))
-    element = ArrowsElement.from_position_random_direction(particle_data)
+    particle_data = rng.uniform(0, 100, size=(10, 2))
+    element = ArrowsElement.from_position_random_direction(particle_data, rng=rng)
     actor = ActiveParticleActor()
 
     assert actor.estimate_dt((element,)) > 0
@@ -30,12 +30,12 @@ def test_active_particles():
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_active_particles_rotation_diffusion(dim):
+def test_active_particles_rotation_diffusion(dim, rng):
     """Simple test of Brownian motion of droplets."""
     # setup state
-    particle_data = np.random.uniform(0, 100, size=(10, dim))
+    particle_data = rng.uniform(0, 100, size=(10, dim))
     element = ArrowsElement.from_position_random_direction(
-        particle_data, np.random.uniform(0, 1, 10)
+        particle_data, rng.uniform(0, 1, 10)
     )
     dir_mag = np.linalg.norm(element.directions)
     actor = ActiveParticleActor({"rotational_diffusion": 1})

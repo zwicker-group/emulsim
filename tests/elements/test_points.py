@@ -10,10 +10,10 @@ from sim.elements import ArrowsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_arrows_element(dim):
+def test_arrows_element(dim, rng):
     """Test basic arrows elements functions."""
     n = 5  # number of droplets
-    pos = np.random.randn(n, dim)
+    pos = rng.normal(size=(n, dim))
 
     element = ArrowsElement.from_position_direction(positions=pos, directions=0)
     assert element.dim == dim

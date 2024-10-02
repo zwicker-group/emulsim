@@ -188,6 +188,8 @@ class ArrowsElement(PointsElement):
         positions: np.ndarray,
         direction_magnitude: float | np.ndarray = 1,
         parameters: dict[str, Any] | None = None,
+        *,
+        rng: np.random.Generator | None = None,
     ) -> ArrowsElement:
         """Create element from separately specified positions and directions.
 
@@ -200,16 +202,19 @@ class ArrowsElement(PointsElement):
             parameters (dict):
                 Additional parameters. Call
                 :meth:`~PointsElement.show_parameters` for details.
+            rng (:class:`~numpy.random.Generator`):
+                Random number generator (default: :func:`~numpy.random.default_rng()`)
         """
+        rng = np.random.default_rng(rng)
         positions = np.atleast_2d(positions)
         num_points, dim = positions.shape
         magnitude: np.ndarray = np.array(direction_magnitude, np.double, ndmin=1)
 
         if dim == 1:
-            directions = magnitude * np.random.choice([-1.0, 1.0], size=num_points)
+            directions = magnitude * rng.choice([-1.0, 1.0], size=num_points)
             directions = directions.reshape(-1, 1)
         elif dim == 2:
-            φs = np.random.uniform(0, 2 * np.pi, size=num_points)
+            φs = rng.uniform(0, 2 * np.pi, size=num_points)
             directions = magnitude[:, np.newaxis] * np.c_[np.sin(φs), np.cos(φs)]
         else:
             raise NotImplementedError

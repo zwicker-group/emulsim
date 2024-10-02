@@ -30,13 +30,13 @@ def generate_field_elements():
 
 
 @pytest.mark.parametrize("element,grid", generate_field_elements())
-def test_elements_numpy(element, grid):
+def test_elements_numpy(element, grid, rng):
     """Test functions based on numpy."""
     assert isinstance(element.attributes, dict)
 
     # test adding amounts
     assert element.total_amount == 0
-    p = grid.get_random_point()
+    p = grid.get_random_point(rng=rng)
     element.add_amount(p, 3)
     assert element.total_amount == pytest.approx(3)
 
@@ -52,11 +52,11 @@ def test_elements_numpy(element, grid):
 
 
 @pytest.mark.parametrize("element,grid", generate_field_elements())
-def test_elements_numba(element, grid):
+def test_elements_numba(element, grid, rng):
     """Test functions based on numba."""
     # test adding amounts
     assert element.total_amount == 0
-    p = grid.get_random_point()
+    p = grid.get_random_point(rng=rng)
     adder = element.make_add_amount_compiled()
     adder(element.data, p, 3)
     assert element.total_amount == pytest.approx(3)
@@ -166,10 +166,10 @@ def test_boundaryfield(axis):
 
 @pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("num_fields", [1, 2])
-def test_field_collection(dim, num_fields):
+def test_field_collection(dim, num_fields, rng):
     """Test basic methods of the FieldCollection."""
     grid = UnitGrid([5] * dim)
-    fc = FieldCollection.scalar_random_uniform(num_fields, grid)
+    fc = FieldCollection.scalar_random_uniform(num_fields, grid, rng=rng)
     element = FieldCollectionElement.from_fields(fc)
 
     assert element.dim == dim

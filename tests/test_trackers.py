@@ -11,10 +11,10 @@ from pde import MemoryStorage, ScalarField, UnitGrid
 import sim
 
 
-def test_field_tracker():
+def test_field_tracker(rng):
     """Test the field tracker."""
     # setup state
-    field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True))
+    field = ScalarField.random_uniform(UnitGrid([32, 32], periodic=True), rng=rng)
     background = sim.ScalarFieldElement.from_field(field)
     state = sim.State({"field": background})
 
@@ -36,12 +36,14 @@ def test_field_tracker():
     )
 
 
-def test_element_trackers(tmp_path):
+def test_element_trackers(tmp_path, rng):
     """Test DropletElementTracker and Trajectory."""
     # setup state
     grid = UnitGrid([32, 32], periodic=True)
     background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
-    droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(2)]
+    droplet_data = [
+        SphericalDroplet(grid.get_random_point(rng=rng), 1) for _ in range(2)
+    ]
     droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
     state = sim.State({"background": background, "droplets": droplets})
 

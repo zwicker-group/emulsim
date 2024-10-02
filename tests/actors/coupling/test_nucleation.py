@@ -16,7 +16,7 @@ from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDroplets
 @pytest.mark.parametrize("dim", [1, 2])
 @pytest.mark.parametrize("field_cls", [MeanfieldElement, ScalarFieldElement])
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
-def test_nucleation(dim, field_cls, backend):
+def test_nucleation(dim, field_cls, backend, rng):
     """Simple test of of nucleation actor."""
     # prepare initial
     if dim == 1:
@@ -24,12 +24,9 @@ def test_nucleation(dim, field_cls, backend):
     elif dim == 2:
         grid = UnitGrid([10, 10])
     background_el = field_cls.from_field(ScalarField(grid))
-    drop = SphericalDroplet(grid.get_random_point(), radius=0.1)
+    drop = SphericalDroplet(grid.get_random_point(rng=rng), radius=0.1)
     drops = Emulsion([], dtype=drop.data.dtype)
     droplets_el = SphericalDropletsElement.from_droplets(drops, maxcount=100)
-    # droplets_el = SphericalDropletsElement.from_random(
-    #     1, bounds=grid, radius=0.1, maxcount=100
-    # )
     state = State({"background": background_el, "droplets": droplets_el})
 
     # setup simulation

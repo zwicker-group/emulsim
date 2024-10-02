@@ -24,10 +24,10 @@ def test_spherical_polygon_area():
     assert sector_area == pytest.approx(np.pi / 2)
 
 
-def test_spherical_voronoi():
+def test_spherical_voronoi(rng):
     """Test spatial.SphericalVoronoi."""
     # random points on the sphere
-    ps = np.random.random((32, 3)) - 0.5
+    ps = rng.random((32, 3)) - 0.5
     ps /= np.linalg.norm(ps, axis=1)[:, None]
 
     voronoi = spatial.SphericalVoronoi(ps)
@@ -59,9 +59,9 @@ def test_points_on_sphere(dim, tmp_path):
     assert path.stat().st_size > 0
 
 
-def test_points_on_sphere_2():
+def test_points_on_sphere_2(rng):
     """Special tests for 2 dimensions."""
-    num = np.random.randint(3, 9)
+    num = rng.integers(3, 9)
     shell = spherical_droplet.PointsOnSphere.make_uniform(dim=2, num_points=num)
     assert num * shell.get_mean_separation() == pytest.approx(2 * np.pi)
 
@@ -90,13 +90,13 @@ def test_shells_general(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_spherical_droplets(dim):
+def test_spherical_droplets(dim, rng):
     """Simple test of SphericalDropletAgents."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
 
-    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplet = SphericalDroplet(grid.get_random_point(rng=rng), 1)
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == 1
 
@@ -140,13 +140,13 @@ def test_spherical_droplets(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_spherical_droplets_const_shell_count(dim):
+def test_spherical_droplets_const_shell_count(dim, rng):
     """Simple test of SphericalDropletAgents."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
 
-    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplet = SphericalDroplet(grid.get_random_point(rng=rng), 1)
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == 1
 
@@ -278,7 +278,7 @@ def test_material_conservation(backend):
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_linearized_fluxes(dim):
+def test_linearized_fluxes(dim, rng):
     """A simple test for implementation of linearized fluxes for Active Emulsions under
     mean-field conditions."""
     if dim == 2 and not module_available("numba_scipy"):
@@ -291,7 +291,7 @@ def test_linearized_fluxes(dim):
     # Initialize radius and positions of 100 droplets
     droplet_data = [
         SphericalDroplet(
-            position=grid.get_random_point(), radius=np.random.uniform(4, 6)
+            position=grid.get_random_point(rng=rng), radius=rng.uniform(4, 6)
         )
         for _ in range(10)
     ]
@@ -320,15 +320,15 @@ def test_linearized_fluxes(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_coarsening(dim):
+def test_coarsening(dim, rng):
     """Simple test of coarsening."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
     emulsion = Emulsion(
         [
-            SphericalDroplet(grid.get_random_point(), 0.1),
-            SphericalDroplet(grid.get_random_point(), 0.2),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.1),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.2),
         ]
     )
     droplets = SphericalDropletsElement.from_droplets(emulsion)
@@ -383,7 +383,7 @@ def test_spherical_droplets_drift(dim, backend):
             )
 
 
-def test_multithreading():
+def test_multithreading(rng):
     """Simple consistency test for multiprocessing."""
     grid = UnitGrid([1])
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
@@ -391,7 +391,7 @@ def test_multithreading():
 
     emulsion = Emulsion(
         [
-            SphericalDroplet(grid.get_random_point(), np.random.uniform(0.01, 0.02))
+            SphericalDroplet(grid.get_random_point(rng=rng), rng.uniform(0.01, 0.02))
             for _ in range(100)
         ]
     )
