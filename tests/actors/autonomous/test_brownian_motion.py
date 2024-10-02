@@ -12,10 +12,10 @@ from sim.actors.autonomous import BrownianMotionActor
 from sim.elements import PointsElement, SphericalDropletsElement
 
 
-def test_brownian_motion_points():
+def test_brownian_motion_points(rng):
     """Simple test of Brownian motion of points."""
 
-    element = PointsElement(np.random.randn(10, 2))
+    element = PointsElement(rng.normal(size=(10, 2)))
     actor = BrownianMotionActor()
 
     assert actor.estimate_dt((element,)) > 0
@@ -32,10 +32,10 @@ def test_brownian_motion_points():
 @pytest.mark.skipif(
     not module_available("droplets"), reason="requires `droplets` module"
 )
-def test_brownian_motion_droplets():
+def test_brownian_motion_droplets(rng):
     """Simple test of Brownian motion of droplets."""
 
-    droplets = [SphericalDroplet(np.random.randn(2), 1) for _ in range(10)]
+    droplets = [SphericalDroplet(rng.normal(size=(2,)), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)
     actor = BrownianMotionActor()
 

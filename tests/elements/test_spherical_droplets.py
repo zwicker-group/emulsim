@@ -12,7 +12,7 @@ from sim.elements import SphericalDropletsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_spherical_droplets_element(dim):
+def test_spherical_droplets_element(dim, rng):
     """Test basic spherical droplets functions."""
     emulsion = [SphericalDroplet([0] * dim, 1), SphericalDroplet([1] * dim, 2)]
     element = SphericalDropletsElement.from_droplets(emulsion)
@@ -27,7 +27,7 @@ def test_spherical_droplets_element(dim):
 
     # create random element
     element = SphericalDropletsElement.from_random(
-        num=3, bounds=[(0, 1)] * dim, radius=1, remove_overlapping=False
+        num=3, bounds=[(0, 1)] * dim, radius=1, remove_overlapping=False, rng=rng
     )
     assert element.dim == dim
     assert element.droplet_count == 3
@@ -35,7 +35,12 @@ def test_spherical_droplets_element(dim):
 
     # create random element
     element = SphericalDropletsElement.from_random(
-        num=3, bounds=[(0, 1)] * dim, radius=1, maxcount=5, remove_overlapping=False
+        num=3,
+        bounds=[(0, 1)] * dim,
+        radius=1,
+        maxcount=5,
+        remove_overlapping=False,
+        rng=rng,
     )
     assert element.dim == dim
     assert element.droplet_count == 3

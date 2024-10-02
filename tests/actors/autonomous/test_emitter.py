@@ -10,13 +10,13 @@ from sim.actors.autonomous import EmittersActor
 from sim.elements import MeanfieldElement
 
 
-def test_emitters():
+def test_emitters(rng):
     """Simple test of emitters."""
     grid = UnitGrid([3, 3])
     background = MeanfieldElement(parameters={"bounds": [[0, 3], [0, 3]]})
     assert background.concentration == pytest.approx(0)
 
-    emitters = EmittersActor({"positions": [grid.get_random_point()]})
+    emitters = EmittersActor({"positions": [grid.get_random_point(rng=rng)]})
     assert isinstance(emitters.info, dict)
     assert emitters.num_elements == 1
 

@@ -90,9 +90,9 @@ def test_state_copy(element):
     assert s1.data is not s2.data is not s.data
 
 
-def test_field_element_copy():
+def test_field_element_copy(rng):
     """Special tests on field elements, which have special requirements."""
-    field = pde.ScalarField.random_normal(pde.UnitGrid([4, 4]))
+    field = pde.ScalarField.random_normal(pde.UnitGrid([4, 4]), rng=rng)
     e1 = ScalarFieldElement.from_field(field)
 
     # copy field element directly

@@ -17,12 +17,10 @@ from sim.elements import SphericalDropletsElement
     not module_available("droplets"), reason="requires `droplets` module"
 )
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
-def test_coalescence(backend):
+def test_coalescence(backend, rng):
     """Simple test of droplet coalescence."""
-
     droplets = [
-        SphericalDroplet(np.random.uniform(0, 1, 2), np.random.uniform(1, 2))
-        for _ in range(10)
+        SphericalDroplet(rng.uniform(0, 1, 2), rng.uniform(1, 2)) for _ in range(10)
     ]
     element = SphericalDropletsElement.from_droplets(droplets)
     state = State({"droplets": element})

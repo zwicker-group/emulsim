@@ -15,13 +15,13 @@ from sim.elements import MeanfieldElement, SphericalDropletsElement
 
 
 @pytest.mark.parametrize("dim", [3])
-def test_point_droplets_diffusion(dim):
+def test_point_droplets_diffusion(dim, rng):
     """Simple test of point droplets with diffusive exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
 
-    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplet = SphericalDroplet(grid.get_random_point(rng=rng), 1)
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == len(droplets) == 1
 
@@ -57,7 +57,7 @@ def test_point_droplets_diffusion(dim):
 
 
 @pytest.mark.parametrize("dim", [3])
-def test_point_droplets_diffusion_coarsening(dim):
+def test_point_droplets_diffusion_coarsening(dim, rng):
     """Simple test of coarsening with diffusive exchange."""
     grid = UnitGrid([3] * dim)
     field1 = MeanfieldElement(0, {"bounds": grid.axes_bounds})
@@ -65,8 +65,8 @@ def test_point_droplets_diffusion_coarsening(dim):
 
     emulsion1 = Emulsion(
         [
-            SphericalDroplet(grid.get_random_point(), 0.1),
-            SphericalDroplet(grid.get_random_point(), 0.2),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.1),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.2),
         ]
     )
     droplets1 = SphericalDropletsElement.from_droplets(emulsion1)
@@ -118,13 +118,13 @@ def test_material_conservation(backend):
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_point_droplets_linear(dim):
+def test_point_droplets_linear(dim, rng):
     """Simple test of point droplets with linear exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
     assert field.concentration == pytest.approx(0)
 
-    droplet = SphericalDroplet(grid.get_random_point(), 1)
+    droplet = SphericalDroplet(grid.get_random_point(rng=rng), 1)
     droplets = SphericalDropletsElement.from_droplets([droplet])
     assert droplets.droplet_count == len(droplets) == 1
 
@@ -154,7 +154,7 @@ def test_point_droplets_linear(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2])
-def test_point_droplets_linear_coarsening(dim):
+def test_point_droplets_linear_coarsening(dim, rng):
     """Simple test of coarsening with linear exchange."""
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
@@ -162,8 +162,8 @@ def test_point_droplets_linear_coarsening(dim):
 
     emulsion = Emulsion(
         [
-            SphericalDroplet(grid.get_random_point(), 0.1),
-            SphericalDroplet(grid.get_random_point(), 0.2),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.1),
+            SphericalDroplet(grid.get_random_point(rng=rng), 0.2),
         ]
     )
     droplets = SphericalDropletsElement.from_droplets(emulsion)

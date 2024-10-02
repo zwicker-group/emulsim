@@ -28,9 +28,9 @@ def test_diffusion_actor():
     assert actor.num_elements == 1
 
 
-def test_diffusion_vs_pde():
+def test_diffusion_vs_pde(rng):
     """Compare the diffusion background with the PDF actor."""
-    field = ScalarField.random_uniform(UnitGrid([10]))
+    field = ScalarField.random_uniform(UnitGrid([10]), rng=rng)
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy(method="data")
     e3 = e1.copy(method="data")
@@ -95,9 +95,9 @@ def test_local_reactions(meanfield):
 @pytest.mark.skipif(
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
-def test_diffusion_vs_reaction_diffusion():
+def test_diffusion_vs_reaction_diffusion(rng):
     """Compare the diffusion background with the RD-background."""
-    field = ScalarField.random_uniform(UnitGrid([10]))
+    field = ScalarField.random_uniform(UnitGrid([10]), rng=rng)
     e1 = ScalarFieldElement.from_field(field)
     e2 = e1.copy(method="data")
 
@@ -116,9 +116,9 @@ def test_diffusion_vs_reaction_diffusion():
 @pytest.mark.skipif(
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
-def test_reaction_diffusion_background():
+def test_reaction_diffusion_background(rng):
     """Test a diffusion background with a reaction."""
-    field = ScalarField.random_uniform(UnitGrid([10]))
+    field = ScalarField.random_uniform(UnitGrid([10]), rng=rng)
     element = ScalarFieldElement.from_field(field)
     actor = ReactionDiffusionActor(parameters={"reaction_flux": "-c"})
     dt = actor.estimate_dt((element,))
@@ -129,10 +129,10 @@ def test_reaction_diffusion_background():
     np.testing.assert_allclose(element.data, 0, atol=1e-4)
 
 
-def test_collection_pde():
+def test_collection_pde(rng):
     """Test CollectionPDEActor."""
     grid = UnitGrid([10])
-    fields = FieldCollection.scalar_random_uniform(2, grid)
+    fields = FieldCollection.scalar_random_uniform(2, grid, rng=rng)
     eqs = PDE({"a": "laplace(a)", "b": "2*laplace(b)"})
     truth = eqs.solve(fields, t_range=1, dt=0.1, backend="numpy", tracker=None)
 

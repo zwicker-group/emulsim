@@ -41,7 +41,7 @@ def test_fields_1(dim):
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
-def test_fields_2(dim):
+def test_fields_2(dim, rng):
     """Simple test of two fields."""
     if dim == 0:
         grid = UnitGrid([3])
@@ -51,7 +51,8 @@ def test_fields_2(dim):
     else:
         grid = UnitGrid([3] * dim)
         element1 = ScalarFieldElement.from_field(ScalarField(grid, 2))
-        element2 = ScalarFieldElement.from_field(ScalarField.random_uniform(grid))
+        field = ScalarField.random_uniform(grid, rng=rng)
+        element2 = ScalarFieldElement.from_field(field)
 
     actor = FieldCouplingActor({"fields": ["a", "b"], "evolution_rates": {"a": "+b"}})
 
@@ -70,7 +71,7 @@ def test_fields_2(dim):
 
 
 @pytest.mark.parametrize("resolution", [4, 2, 1])
-def test_field_boundary_coupling(resolution):
+def test_field_boundary_coupling(resolution, rng):
     """Simple test of the boundary coupling."""
     # set up state
     grid = UnitGrid([4, 4], periodic=True)
@@ -81,7 +82,7 @@ def test_field_boundary_coupling(resolution):
     else:
         gri_bulk = CartesianGrid(grid.axes_bounds, [resolution, 4], periodic=True)
         bulk = ScalarFieldElement.from_field(ScalarField(gri_bulk, 0.001))
-    data = np.random.randn(4)
+    data = rng.normal(size=4)
     bndry = ScalarBoundaryFieldElement.from_bulk_grid(
         grid, axis=1, upper=True, data=data
     )
