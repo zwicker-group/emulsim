@@ -15,8 +15,8 @@ import copy
 import logging
 import time
 import warnings
-from collections.abc import Sequence
-from typing import Any, Callable, Literal, Union
+from collections.abc import Callable, Sequence
+from typing import Any, Literal
 
 import numba as nb
 import numpy as np
@@ -29,7 +29,7 @@ from pde.tools.numba import jit, make_array_constructor
 from .actors.base import ActorBase, EvolverType
 from .state import State
 
-ElementNamesType = Union[str, tuple[str]]
+ElementNamesType = str | tuple[str]
 
 
 class Simulation:
@@ -154,11 +154,14 @@ class Simulation:
                 else:
                     raise ValueError(f"Unknown argument check='{check}'")
 
-            if len(actor.element_classes) > 0:
+            if actor.element_classes is not Ellipsis and len(actor.element_classes) > 0:
                 element_objects = [self.state.elements[name] for name in elements]
-                if not actor.supports_elements(*element_objects, silent=True):
+                if not actor.supports_elements(
+                    *element_objects, silent=(check != "raise")
+                ):
                     show_msg(
-                        f"Unsupported elements for `{actor.__class__.__name__}`",
+                        f"Unsupported elements for `{actor.__class__.__name__}`: "
+                        + str(element_objects),
                         TypeError,
                     )
 

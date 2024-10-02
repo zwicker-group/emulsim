@@ -5,6 +5,7 @@
 
    ~nucleation.DropletNucleationActor
    ~fields.FieldCouplingActor
+   ~fields.FieldExchangeActor
    ~fields.FieldBoundaryExchangeActor
    ~point_droplet.PointDropletActor
    ~spherical_droplet.SphericalDropletActor

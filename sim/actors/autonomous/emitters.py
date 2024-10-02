@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -79,7 +80,7 @@ class EmittersActor(ActorBase):
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
             """Evolve all emitters explicitly."""
-            for position, strength in zip(positions, strengths):
+            for position, strength in zip(positions, strengths, strict=False):
                 add_amount(state_data[0], position, dt * strength)
 
         return evolver  # type: ignore
@@ -98,5 +99,5 @@ class EmittersActor(ActorBase):
         (element,) = elements  # extract single element
         positions = self.parameters["positions"]
         strengths = np.broadcast_to(self.parameters["strengths"], (len(positions),))
-        for position, strength in zip(positions, strengths):
+        for position, strength in zip(positions, strengths, strict=False):
             element.add_amount(position, dt * strength)  # type: ignore

@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from collections.abc import Sequence
-from typing import Any, Callable, Literal
+from collections.abc import Callable, Sequence
+from typing import Any, Literal
 
 import numpy as np
 from numba.extending import register_jitable
@@ -248,7 +248,13 @@ class MeanfieldElement(FieldElementBase):
             "This should be a list of tuples, where each element denotes the lower and "
             "upper bounds of an axis. The number of elements then determines the "
             "dimension of the space",
-        )
+        ),
+        Parameter(
+            "volume",
+            -1,
+            float,
+            "Volume of the element. If negative, the volume is determine from `bounds`",
+        ),
     ]
 
     def __init__(self, data: float = 0, parameters: dict[str, Any] | None = None):
@@ -263,13 +269,15 @@ class MeanfieldElement(FieldElementBase):
         """
         # this only defines a new default value
         super().__init__(data, parameters)  # type: ignore
+        if self.parameters["volume"] >= 0:
+            self.volume = self.parameters["volume"]
 
     def _init_state(self, attributes: dict[str, Any], data=NoData) -> None:
         """Initialize the state with attributes and (optionally) data.
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         # store data in a mutable 1d-array
         if data is NoData:
@@ -294,7 +302,7 @@ class MeanfieldElement(FieldElementBase):
                 The scalar field that initializes the element
             parameters (dict):
                 Additional parameters determining how the element behaves. Note that the
-                entry 'bounds' will be overwriten by the data from `field`.
+                entry 'bounds' will be overwritten by the data from `field`.
 
         Returns:
             :class:`MeanfieldElement`: The initialized instance
@@ -834,7 +842,7 @@ class FieldCollectionElement(ArrayElementBase):
             amounts (:class:`~numpy.ndarray`):
                 The total amount added to each field
         """
-        for field, amount in zip(self.field, amounts):
+        for field, amount in zip(self.field, amounts, strict=False):
             field.insert(point, amount)
 
     def make_get_concentrations_compiled(self) -> Callable:

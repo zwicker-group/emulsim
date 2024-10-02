@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 from numba import literal_unroll
@@ -29,7 +29,7 @@ def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
     def fill_with_zeros_impl(recarr: np.recarray) -> None:
         """Numba implementation to fill a record array with zeros."""
         for key in literal_unroll(keys):
-            if isinstance(recarr[key], (int, float)):
+            if isinstance(recarr[key], (int, float)):  # noqa: UP038 (no numba support)
                 recarr[key] = 0
             else:
                 recarr[key][:] = 0

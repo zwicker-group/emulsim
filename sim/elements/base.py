@@ -25,8 +25,8 @@ import copy
 import math
 import warnings
 from abc import ABCMeta, abstractproperty
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union
 
 import numpy as np
 from numba import literal_unroll
@@ -44,7 +44,7 @@ from modelrunner.storage.utils import decode_class, storage_actions
 from pde.tools.numba import jit
 
 SerializedAttributesType = dict[str, str]
-SerializedDataType = Union[np.ndarray, dict[str, np.ndarray]]
+SerializedDataType = np.ndarray | dict[str, np.ndarray]
 
 if TYPE_CHECKING:
     from ..actors.base import ActorBase
@@ -80,7 +80,7 @@ def _equals(left: Any, right: Any) -> bool:
 
     if hasattr(left, "__iter__"):
         return len(left) == len(right) and all(
-            _equals(l, r) for l, r in zip(left, right)
+            _equals(l, r) for l, r in zip(left, right, strict=False)
         )
 
     return bool(left == right)
@@ -722,7 +722,7 @@ class ArrayCollectionElementBase(_ElementBase):
 
         def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
             error = 0
-            for arr1, arr2 in zip(data1, data2):
+            for arr1, arr2 in zip(data1, data2, strict=False):
                 error = max(np.abs(arr1 - arr2).max())
             return error
 
