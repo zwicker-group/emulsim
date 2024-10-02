@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import math
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Sequence
 from typing import Any, Literal
 
@@ -149,12 +149,14 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
         self.bounds = self._cuboid.bounds
         self.volume = float(self._cuboid.volume)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def grid(self) -> CartesianGrid:
         """:class:`pde.grids.cartesian.CartesianGrid`: discretization grid."""
         ...
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def total_amount(self) -> float:
         """float: the total material amount in the field"""
         ...
@@ -267,8 +269,9 @@ class MeanfieldElement(FieldElementBase):
                 importantly, the entry 'bounds' determines the box on which the field is
                 defined.
         """
-        # this only defines a new default value
         super().__init__(data, parameters)  # type: ignore
+
+        # set volume explicitly if it is given
         if self.parameters["volume"] >= 0:
             self.volume = self.parameters["volume"]
 
@@ -462,7 +465,7 @@ class MeanfieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
-        volume = self.volume
+        volume = float(self.volume)
 
         @jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):

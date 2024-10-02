@@ -24,7 +24,7 @@ from __future__ import annotations
 import copy
 import math
 import warnings
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union
 
@@ -277,7 +277,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
         `clean`:
             Makes a copy of the state by gathering its contents using
-            :meth:`~StateBase.__getstate__`, makeing a copy of only the actual data and
+            :meth:`~StateBase.__getstate__`, making a copy of only the actual data and
             then instantiating a new state class, using :meth:`~StateBase.__setstate__`
             to restore the state. Since a new object is created, all data not captured
             by `__getstate__` (like internal caches) are lost!
@@ -348,7 +348,8 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             return False
         return _equals(self.data, other.data)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def degrees_of_freedom(self) -> int:
         """int: the number of degrees of freedom for this element"""
         ...

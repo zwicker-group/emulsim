@@ -75,13 +75,14 @@ class EmittersActor(ActorBase):
         add_amount = element.make_add_amount_compiled()  # type: ignore
 
         positions = np.asarray(self.parameters["positions"])
-        strengths = np.broadcast_to(self.parameters["strengths"], (len(positions),))
+        num_emitters = len(positions)
+        strengths = np.broadcast_to(self.parameters["strengths"], (num_emitters,))
 
         @jit
         def evolver(state_data: tuple[np.ndarray], t: float, dt: float):
             """Evolve all emitters explicitly."""
-            for position, strength in zip(positions, strengths, strict=False):
-                add_amount(state_data[0], position, dt * strength)
+            for i in range(num_emitters):
+                add_amount(state_data[0], positions[i], dt * strengths[i])
 
         return evolver  # type: ignore
 
