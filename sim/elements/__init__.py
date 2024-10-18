@@ -3,8 +3,8 @@
 .. autosummary::
    :nosignatures:
 
-   ~fields.MeanfieldElement
    ~fields.ReservoirElement
+   ~fields.MeanfieldElement
    ~fields.ScalarFieldElement
    ~fields.FieldCollectionElement
    ~fields.ScalarBoundaryFieldElement

@@ -18,7 +18,7 @@ from ..base import ActorBase, ElementsType
 
 
 class BoxActor(ActorBase):
-    """Represents actor that contains particles in a box."""
+    """Actor containing particles in a box."""
 
     parameters_default = [
         Parameter("bounds", [], np.array, "The bounds of the box"),

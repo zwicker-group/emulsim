@@ -17,7 +17,7 @@ from ..base import ActorBase, ElementsType
 
 
 class ActiveParticleActor(ActorBase):
-    """Represents actor that moves arrows according to their direction."""
+    """Actor moving arrows according to their direction."""
 
     parameters_default = [
         Parameter(

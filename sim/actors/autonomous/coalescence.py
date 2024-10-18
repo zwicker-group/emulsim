@@ -38,7 +38,7 @@ def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
 
 
 class CoalescenceDropletActor(ActorBase):
-    """Represents actor that merges overlapping droplets."""
+    """Actor merging overlapping droplets."""
 
     element_classes = ([SphericalDropletsElement, MulticomponentDropletsElement],)
 

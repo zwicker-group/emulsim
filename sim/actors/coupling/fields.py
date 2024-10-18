@@ -22,7 +22,7 @@ from ..base import ActorBase, ElementsSpec, ElementsType
 
 
 class FieldCouplingActor(ActorBase):
-    """Actor that couples multiple fields by local interactions."""
+    """Actor coupling multiple fields by local interactions."""
 
     parameters_default = [
         Parameter(
@@ -156,7 +156,7 @@ class FieldCouplingActor(ActorBase):
 
 
 class FieldExchangeActor(ActorBase):
-    """Actor that exchanges material between two fields on the same grid."""
+    """Actor exchanging material between two fields on the same grid."""
 
     parameters_default = [
         Parameter(
@@ -312,7 +312,7 @@ class FieldExchangeActor(ActorBase):
 
 
 class FieldBoundaryExchangeActor(ActorBase):
-    """Actor that exchanges material between a field and its boundary.
+    """Actor exchanging material between a field and its boundary.
 
     This actor does move material between support points in the boundary field and the
     adjacent support points in the bulk field. This is an approximation, which might
@@ -330,7 +330,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         parameter. In contrast, the names of the actual elements in the entire
         simulation (e.g., `cytosol` and `membrane`) cannot be used to refer to these
         concentrations. The flux is an area flux, so that the total amount of material
-        transfered between the two fields is proportional to the time step and the
+        transferred between the two fields is proportional to the time step and the
         boundary area.
     """
 

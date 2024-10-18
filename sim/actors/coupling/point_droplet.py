@@ -22,7 +22,7 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class PointDropletActor(ActorBase):
-    """Actor that couples points-like droplets to a field.
+    """Actor coupling point-like droplets to a field.
 
     For simplicity, these droplets interact with the field only at one point (their
     position). For a physical correct model, where the exchange flux with the dilute

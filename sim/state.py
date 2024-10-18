@@ -82,7 +82,7 @@ class State(DictElementBase):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         if data is not NoData:
             self.data = data
