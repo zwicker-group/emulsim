@@ -18,7 +18,7 @@ from ..base import ActorBase, ElementsType
 
 
 class EmittersActor(ActorBase):
-    """Represents actor that emit mass into a field at defined positions."""
+    """Actor emitting mass into a field at defined positions."""
 
     parameters_default = [
         Parameter(

@@ -22,7 +22,7 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class DropletNucleationActor(ActorBase):
-    r"""Actor that nucleates droplets from a field.
+    r"""Actor nucleating droplets from a field.
 
     The nucleation is based on simple nucleation theory, assuming a nucleation barrier
     that grows linearly with super-saturation :math:`\Delta c`. The nucleation rate

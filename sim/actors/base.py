@@ -26,7 +26,7 @@ EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 
 
 class ActorBase(Parameterized, metaclass=ABCMeta):
-    """Represents a single actor, which affects one or more elements."""
+    """Base class of a single actor that affects one or more elements."""
 
     element_classes: tuple[ElementsSpec, ...] | EllipsisType = ()
     """tuple: defines the elements this actor handles and in what order they need to be

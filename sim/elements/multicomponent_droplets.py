@@ -192,7 +192,7 @@ class MulticomponentDroplet(SphericalDroplet):
 
 
 class MulticomponentDropletsElement(SphericalDropletsElement):
-    """An element representing many multicomponent droplets."""
+    """Element representing many multicomponent droplets."""
 
     droplet_class = MulticomponentDroplet
 

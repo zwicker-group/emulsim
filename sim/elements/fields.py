@@ -36,7 +36,7 @@ from .base import ArrayElementBase, NoData
 
 
 class ReservoirElement(ArrayElementBase):
-    """An element representing a homogeneous, constant field."""
+    """Element representing a homogeneous, constant field."""
 
     dim = None  # works for any dimension
 
@@ -240,7 +240,7 @@ class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
 
 
 class MeanfieldElement(FieldElementBase):
-    """An element representing a homogeneous, changing field."""
+    """Element representing a homogeneous, changing field."""
 
     parameters_default = [
         Parameter(
@@ -475,7 +475,7 @@ class MeanfieldElement(FieldElementBase):
 
 
 class ScalarFieldElement(FieldElementBase):
-    """The state associated with a spatially resolved field."""
+    """Element representing a scalar spatially-resolved field."""
 
     parameters_default = [
         Parameter(
@@ -674,7 +674,7 @@ class ScalarFieldElement(FieldElementBase):
 
 
 class FieldCollectionElement(ArrayElementBase):
-    """The state associated with multiple spatially resolved fields."""
+    """Element representing multiple spatially-resolved fields."""
 
     parameters_default = [
         Parameter(
@@ -894,7 +894,7 @@ class FieldCollectionElement(ArrayElementBase):
 
 
 class ScalarBoundaryFieldElement(ScalarFieldElement):
-    """The state associated with a spatially resolved boundary.
+    """Element representing the scalar field of a boundary of a field.
 
     Note:
         The data described by this element are volume concentrations with units

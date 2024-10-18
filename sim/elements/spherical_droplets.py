@@ -19,7 +19,7 @@ from .fields import FieldElementBase
 
 
 class SphericalDropletsElement(ArrayElementBase):
-    """An element representing many droplets."""
+    """Element representing many spherical droplets."""
 
     parameters_default = [
         Parameter(

@@ -17,7 +17,7 @@ from .base import ArrayElementBase, NoData
 
 
 class PointsElement(ArrayElementBase):
-    """An element that represents a collection of points."""
+    """Element representing a collection of points."""
 
     parameters_default = [
         Parameter(
@@ -129,7 +129,7 @@ class PointsElement(ArrayElementBase):
 
 
 class ArrowsElement(PointsElement):
-    """An element that represents a collection of points with direction.
+    """Element representing a collection of points with direction.
 
     Args:
         data (:class:`~numpy.recarray`):

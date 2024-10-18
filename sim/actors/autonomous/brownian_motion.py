@@ -17,7 +17,7 @@ from ..base import ActorBase, ElementsType
 
 
 class BrownianMotionActor(ActorBase):
-    """Represents actor that moves objects according to Brownian motion."""
+    """Actor moving objects according to Brownian motion."""
 
     parameters_default = [
         Parameter(

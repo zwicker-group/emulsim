@@ -112,7 +112,7 @@ def _make_regularizer(
 
 
 class MulticomponentDropletActor(ActorBase):
-    """Actor that couples points-like multicomponent droplets to multiple field.
+    """Actor coupling point-like multicomponent droplets to multiple field.
 
     For simplicity, these droplets interact with the field only at one point (their
     position) using a simple linear exchange flux model. This model can be derived in

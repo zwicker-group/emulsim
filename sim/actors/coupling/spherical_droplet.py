@@ -627,7 +627,7 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
 class SphericalDropletActor(ActorBase):
-    """An actor coupling spherical droplets to a field."""
+    """Actor coupling spherical droplets to a field."""
 
     parameters_default = [
         Parameter(
