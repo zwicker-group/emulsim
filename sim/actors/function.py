@@ -55,6 +55,7 @@ class FunctionActor(ActorBase):
 
     def copy(self) -> FunctionActor:
         """Returns a copy the actor."""
+        assert isinstance(self.num_elements, int)
         return self.__class__(self.num_elements, self.func)
 
     def evolve(self, elements: ElementsType, t: float, dt: float):
@@ -109,6 +110,7 @@ class NumbaFunctionActor(ActorBase):
 
     def copy(self) -> NumbaFunctionActor:
         """Returns a copy the actor."""
+        assert isinstance(self.num_elements, int)
         return self.__class__(self.num_elements, self.func)
 
     def make_evolver_numba(self, elements: ElementsType) -> EvolverType:

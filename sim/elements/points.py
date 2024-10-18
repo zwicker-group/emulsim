@@ -33,7 +33,7 @@ class PointsElement(ArrayElementBase):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         self._logger = logging.getLogger(self.__class__.__name__)
         # data = np.asanyarray(data)
@@ -147,7 +147,7 @@ class ArrowsElement(PointsElement):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         super()._init_state(attributes, data)
         dir_shape = self.data.dtype["direction"].shape

@@ -513,7 +513,7 @@ class ScalarFieldElement(FieldElementBase):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         super()._init_state(attributes)
 
@@ -697,7 +697,7 @@ class FieldCollectionElement(ArrayElementBase):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         super()._init_state(attributes)
 
@@ -961,7 +961,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         super()._init_state(attributes, data)
 

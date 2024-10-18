@@ -134,7 +134,9 @@ class Simulation:
                 raise ValueError(f'No element "{element_name}" in state')
 
         # check whether the number of elements agrees with what the actor expects
-        if actor.num_elements > 0 and len(elements) != actor.num_elements:
+        if actor.num_elements is Ellipsis or (
+            actor.num_elements > 0 and len(elements) != actor.num_elements
+        ):
             raise ValueError(
                 f"Actor {actor.__class__.__name__} expects {actor.num_elements} "
                 f"elements, but {len(elements)} were given."

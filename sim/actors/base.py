@@ -57,10 +57,13 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         return objects_equal(self.info, other.info)
 
     @property
-    def num_elements(self) -> int:
+    def num_elements(self) -> int | EllipsisType:
         """int: the number of elements this actor affects. This value is
         determined from the `element_classes` attribute"""
-        return len(self.element_classes)
+        if self.element_classes is Ellipsis:
+            return Ellipsis
+        else:
+            return len(self.element_classes)
 
     @classmethod
     def supports_elements(
@@ -80,7 +83,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         Returns:
             bool: Whether the current actor supports the elements in the given order
         """
-        if cls.element_classes == Ellipsis:
+        if cls.element_classes is Ellipsis:
             return True  # generic result indicating that all elements are supported
 
         if len(elements) != len(cls.element_classes):
@@ -104,8 +107,8 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
             mismatch_cls = None
             if hasattr(expected, "__iter__"):
                 # actor supports multiple classes for this element
-                if not any(issubclass(given_cls, cls) for cls in expected):
-                    mismatch_cls = ", ".join(cls.__name__ for cls in expected)
+                if not any(issubclass(given_cls, cls) for cls in expected):  # type: ignore
+                    mismatch_cls = ", ".join(cls.__name__ for cls in expected)  # type: ignore
             else:
                 # actor supports a single class for this element
                 if not issubclass(given_cls, expected):

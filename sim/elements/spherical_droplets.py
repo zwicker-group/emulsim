@@ -40,7 +40,7 @@ class SphericalDropletsElement(ArrayElementBase):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
         """
         super()._init_state(attributes, data)
 
@@ -170,7 +170,7 @@ class SphericalDropletsElement(ArrayElementBase):
             maxcount (int):
                 If supplied, sets the maximal number of droplets that can be stored in
                 this element. If `maxcount > len(droplets)`, the additional entries are
-                intialized as zero.
+                initialized as zero.
             parameters (dict):
                 Additional parameters. Call
                 :meth:`~SphericalDropletsElement.show_parameters` for details.
@@ -210,11 +210,11 @@ class SphericalDropletsElement(ArrayElementBase):
                 each individual droplet is chosen.
             remove_overlapping (bool):
                 Flag determining whether overlapping droplets are removed. If enabled,
-                the resulting element might contain less thatn `num` droplets.
+                the resulting element might contain less than `num` droplets.
             maxcount (int):
                 If supplied, sets the maximal number of droplets that can be stored in
                 this element. If `maxcount > num`, the additional entries are
-                intialized as zero.
+                initialized as zero.
             rng (:class:`~numpy.random.Generator`):
                 Random number generator (default: :func:`~numpy.random.default_rng()`)
             parameters (dict):

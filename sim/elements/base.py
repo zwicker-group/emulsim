@@ -140,7 +140,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             attributes (dict):
                 Additional (unserialized) attributes
             data:
-                The data of the degerees of freedom of the physical system
+                The data of the degrees of freedom of the physical system
         """
         # set the parameters
         parameters = attributes.pop("parameters", None)
@@ -215,7 +215,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
 
         Args:
             attributes (dict): Additional (unserialized) attributes
-            data: The data of the degerees of freedom of the physical system
+            data: The data of the degrees of freedom of the physical system
 
         Returns:
             The object containing the given attributes and data
