@@ -40,7 +40,7 @@ def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
 class CoalescenceDropletActor(ActorBase):
     """Actor merging overlapping droplets."""
 
-    element_classes = ([SphericalDropletsElement, MulticomponentDropletsElement],)
+    element_classes = ((SphericalDropletsElement, MulticomponentDropletsElement),)
 
     def make_evolver_numba(
         self, elements: ElementsType

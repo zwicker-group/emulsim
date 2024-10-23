@@ -18,7 +18,7 @@ Contents
     :gallery:examples_gallery/index
     dev_guide/index
     packages/sim
- 
+    classlist 
 
 
 Indices and tables

@@ -30,7 +30,7 @@ class BrownianMotionActor(ActorBase):
         ),
     ]
 
-    element_classes = ([ArrowsElement, PointsElement, SphericalDropletsElement],)
+    element_classes = ((ArrowsElement, PointsElement, SphericalDropletsElement),)
 
     def estimate_dt(self, elements: ElementsType) -> float:
         """Estimate the maximal time step for simulating this actor.

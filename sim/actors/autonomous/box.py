@@ -31,7 +31,7 @@ class BoxActor(ActorBase):
         ),
     ]
 
-    element_classes = ([PointsElement, ArrowsElement, SphericalDropletsElement],)
+    element_classes = ((PointsElement, ArrowsElement, SphericalDropletsElement),)
 
     def __init__(self, parameters: dict[str, Any] | None = None):
         """
