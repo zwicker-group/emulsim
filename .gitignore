@@ -2,6 +2,7 @@
 docs/source/packages
 docs/source/examples
 docs/source/examples_gallery
+docs/source/snippets
 tests/coverage/
 .DS_Store
 .settings
