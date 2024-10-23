@@ -48,11 +48,14 @@ def main():
         for element in sorted(elements, key=lambda e: e.__name__):
             if elements[element]:
                 classname = element.__module__ + "." + element.__name__
+                description = element.__doc__.split("\n", 1)[0][:-1]
                 actors_str = "\n".join(
-                    f"    - :class:`~{actor.__module__ + "." + actor.__name__}`"
+                    f"   - :class:`~{actor.__module__ + "." + actor.__name__}`"
                     for actor in sorted(elements[element], key=lambda a: a.__name__)
                 )
-                fp.write(f"* :class:`~{classname}`:\n{actors_str}\n\n")
+                fp.write(
+                    f"- :class:`~{classname}` ({description}):\n\n{actors_str}\n\n"
+                )
 
     # create the output file for the actors
     with (OUTPUT / "actors.rst").open("w") as fp:
@@ -61,7 +64,8 @@ def main():
             if not connected_elements:
                 continue
             classname = actor.__module__ + "." + actor.__name__
-            fp.write(f"- :class:`~{classname}`:\n\n")
+            description = actor.__doc__.split("\n", 1)[0][:-1]
+            fp.write(f"- :class:`~{classname}` ({description}):\n\n")
             for i, elementlist in enumerate(connected_elements, 1):
                 if elementlist is Ellipsis:
                     fp.write(f"  * Variable number of elements")
@@ -70,7 +74,7 @@ def main():
                         f":class:`~{element.__module__ + "." + element.__name__}`"
                         for element in elementlist
                     )
-                    fp.write(f"  {i}. {el_str}\n")
+                    fp.write(f"   - {el_str}\n")
             fp.write("\n")
 
 
