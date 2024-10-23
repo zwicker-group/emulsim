@@ -715,7 +715,7 @@ class SphericalDropletActor(ActorBase):
         ),
     ]
 
-    element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])  # type: ignore
+    element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
     reaction_rate_tolerance: float = 1e-10
     """float: tolerance determining when a simpler expression for reactions is used"""

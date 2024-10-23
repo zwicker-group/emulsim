@@ -13,17 +13,20 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from types import EllipsisType
 
 from numba import TypingError
 
 from pde.tools.numba import jit
 
 from ..elements.base import _ElementBase
-from .base import ActorBase, ElementsType, EvolverType
+from .base import ActorBase, ElementsSpec, ElementsType, EvolverType
 
 
 class FunctionActor(ActorBase):
     """Actor that uses a python function to evolve elements."""
+
+    element_classes: tuple[ElementsSpec, ...] | EllipsisType = Ellipsis
 
     def __init__(self, num_elements: int, func: Callable):
         """
@@ -79,6 +82,8 @@ class FunctionActor(ActorBase):
 
 class NumbaFunctionActor(ActorBase):
     """Actor that uses a compiled function to evolve the data of elements."""
+
+    element_classes: tuple[ElementsSpec, ...] | EllipsisType = Ellipsis
 
     def __init__(self, num_elements: int, func: Callable):
         """

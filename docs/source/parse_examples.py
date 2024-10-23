@@ -2,11 +2,11 @@
 
 import pathlib
 
-# Root direcotry of the package
+# Root directory of the package
 ROOT = pathlib.Path(__file__).absolute().parents[2]
 # directory where all the examples reside
 INPUT = ROOT / "examples"
-# directory to which the documents are writen
+# directory to which the documents are written
 OUTPUT = ROOT / "docs" / "source" / "examples"
 
 

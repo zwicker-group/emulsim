@@ -5,7 +5,7 @@ The main idea of the :mod:`sim` package is to separate the description of the *s
 of the simulation from the description that govern the dynamics.
 The state gives all the necessary information to represent the system at a particular
 time point.
-Since we restrict ourself to memoryless systems (i.e., Markov chains), the state
+Since we restrict ourself to memory-less systems (i.e., Markov chains), the state
 contains all information to evolve the system forward in time.
 The full dynamics then leads to a sequence of states, collectively called a
 *trajectory*.
@@ -18,7 +18,9 @@ System state (Elements)
 A full physical system consist of *elements* that define *what* is present in the system
 and *actors* that define *how* these elements interact and evolve in time.
 All the elements in a system together described by the system's
-:class:`~sim.state.State`.
+:class:`~sim.state.State`. All elements defined by the package are collected in the
+:ref:`list-of-all-elements`.
+
 
 Each element has internal degrees of freedom, which can change over time and can
 accessed by the :attr:`~sim.elements.base.ElementBase.data` attribute.
@@ -89,6 +91,7 @@ In the :mod:`sim` package, the dynamics are defined by a
 :class:`~sim.simulation.Simulation` object.
 Each simulation contains one or more *actors*, which each affect one or multiple
 elements.
+All actors defined by the package are collected in the :ref:`list-of-all-actors`.
 This approach allows combining multiple actors without redefining their code simply by
 combining them in a :class:`~sim.simulation.Simulation`. 
 Each actor inherits from :class:`~sim.actors.base.ActorBase`, which defines the necessary

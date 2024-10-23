@@ -50,6 +50,10 @@ from parse_examples import main
 
 main()
 
+from parse_classes import main
+
+main()
+
 
 # -- General configuration ---------------------------------------------------
 

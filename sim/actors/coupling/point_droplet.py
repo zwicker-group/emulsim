@@ -89,7 +89,7 @@ class PointDropletActor(ActorBase):
         ),
     ]
 
-    element_classes = (SphericalDropletsElement, [ReservoirElement, FieldElementBase])  # type: ignore
+    element_classes = (SphericalDropletsElement, (ReservoirElement, FieldElementBase))
 
     def _parse_expression(
         self, expr: Callable | str | float, signature: list[list[str]]

@@ -21,7 +21,7 @@ from pde.tools.cache import objects_equal
 from ..elements.base import _ElementBase
 
 ElementsType = tuple[_ElementBase, ...]
-ElementsSpec = type[_ElementBase] | list[type[_ElementBase]]
+ElementsSpec = type[_ElementBase] | tuple[type[_ElementBase], ...]
 EvolverType = Callable[[tuple[np.ndarray, ...], float, float], None]
 
 
