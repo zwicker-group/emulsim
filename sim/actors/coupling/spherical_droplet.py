@@ -302,7 +302,7 @@ class PointsOnSphere:
                 Denotes the symbol used for the atoms
         """
         with Path(path).open("w") as fp:
-            fp.write("%d\n" % len(self.points))
+            fp.write(f"{len(self.points):d}\n")
             fp.write(comment + "\n")
             for point in self.points:
                 point_str = " ".join(f"{v:.12g}" for v in point)
@@ -366,12 +366,12 @@ class ShellSectors:
     @property
     def dim(self) -> int:
         """int: dimension of the space this shell is defined for"""
-        return self.vectors.shape[1]
+        return int(self.vectors.shape[1])
 
     @property
     def sector_count(self) -> int:
         """int: number of sectors"""
-        return self.vectors.shape[0]
+        return int(self.vectors.shape[0])
 
     def get_shell(self, radius: float) -> ShellSectors:
         """Return shell corresponding to droplet of given radius.
