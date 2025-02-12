@@ -1,7 +1,7 @@
-Examples
-^^^^^^^^
+First steps
+^^^^^^^^^^^
 
-We here collect examples for using the package to demonstrate some of its
+We here collect simple examples for using the package to demonstrate some of its
 functionality. 
 
 
