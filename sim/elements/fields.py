@@ -1059,7 +1059,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         if dim != self.dim - 1:
             raise DimensionError(
                 "Element has a different dimension than boundary field "
-                f"({dim} != {self.dim-1})"
+                f"({dim} != {self.dim - 1})"
             )
 
     @cached_property()

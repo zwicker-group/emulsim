@@ -50,7 +50,7 @@ def main():
                 classname = element.__module__ + "." + element.__name__
                 description = element.__doc__.split("\n", 1)[0][:-1]
                 actors_str = "\n".join(
-                    f"   - :class:`~{actor.__module__ + "." + actor.__name__}`"
+                    f"   - :class:`~{actor.__module__ + '.' + actor.__name__}`"
                     for actor in sorted(elements[element], key=lambda a: a.__name__)
                 )
                 fp.write(
@@ -71,7 +71,7 @@ def main():
                     fp.write(f"  * Variable number of elements")
                 else:
                     el_str = ", ".join(
-                        f":class:`~{element.__module__ + "." + element.__name__}`"
+                        f":class:`~{element.__module__ + '.' + element.__name__}`"
                         for element in elementlist
                     )
                     fp.write(f"   - {el_str}\n")
