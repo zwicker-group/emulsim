@@ -37,9 +37,15 @@ from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
 from pde.tools.numba import jit
+from pde.tools.plotting import PlotReference, plot_on_axes
 
 from ... import Parameter
-from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
+from ...elements import (
+    FieldElementBase,
+    ReservoirElement,
+    ScalarFieldElement,
+    SphericalDropletsElement,
+)
 from ..base import ActorBase
 
 π = float(np.pi)
@@ -1235,18 +1241,24 @@ class SphericalDropletActor(ActorBase):
 
         return np.array(result)
 
+    @plot_on_axes()
     def plot_shell_points(
         self,
-        elements: ActorElementType,
+        droplets: SphericalDropletsElement,
+        background: FieldElementBase,
+        ax=None,
         state_style: dict[str, Any] | None = None,
         point_style: dict[str, Any] | None = None,
         shell_style: dict[str, Any] | None = None,
-    ):
+    ) -> PlotReference:
         r"""Plot all shell points around the droplets of a given state.
 
         Args:
-            elements (tuple):
-                The state of all the droplets and of the field
+            {PLOT_ARGS}
+            droplets (:class:`SphericalDropletsElement` or :class:`Emulsion`):
+                Information about all the droplets
+            background (:class:`FieldElementBase` or :class:`ScalarField`):
+                Information about the background field
             state_style (dict, optional):
                 Dictionary with keyword arguments that are used in the
                 :meth:`AgentState.plot` call. This affects the style of
@@ -1263,7 +1275,8 @@ class SphericalDropletActor(ActorBase):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Wedge
 
-        droplets, field = elements
+        # ensure the cached information is correct
+        self._check_cache((droplets, background))
 
         if droplets.dim != 2:
             raise NotImplementedError("Can only plot shell points in 2d")
@@ -1274,26 +1287,31 @@ class SphericalDropletActor(ActorBase):
 
         if point_style is None:
             point_style = {}
+        else:
+            point_style = point_style.copy()
         point_style.setdefault("linestyle", "")
         point_style.setdefault("marker", ".")
         point_style.setdefault("markersize", 4)
         point_style.setdefault("color", "w")
+        point_style.setdefault("zorder", 11)
 
         if shell_style is None:
             shell_style = {}
+        else:
+            shell_style = shell_style.copy()
         shell_style.setdefault("facecolor", "w")
         shell_style.setdefault("edgecolor", "none")
         shell_style.setdefault("alpha", 0.2)
+        shell_style.setdefault("zorder", 10)
 
-        # plot the background and the droplets
-        if isinstance(field, ScalarField):
-            self.plot(phase_field=field, **state_style)
+        # add the background and the droplets to the axes, but don't show them yet
+        if isinstance(background, ScalarFieldElement):
+            ref = droplets.droplets.plot(field=background.field, ax=ax, **state_style)
+        else:
+            ref = droplets.droplets.plot(ax=ax, **state_style)
 
-        # initialize the shell
+        # add all shell points for all droplets to the axes
         thickness = self._cache["shell_thickness"]
-
-        # plot all shell points for all droplets
-        ax = plt.gca()
         for droplet in droplets.droplets:
             shell = self._cache["shells"].get_shell(droplet.radius)
             ring_radius = droplet.radius + thickness
@@ -1304,7 +1322,15 @@ class SphericalDropletActor(ActorBase):
             ax.add_artist(annulus)
             # plot the shell points on top
             points = droplet.position[None, :] + ring_radius * shell.vectors
-            plt.plot(points[:, 0], points[:, 1], **point_style)
+            ax.plot(points[:, 0], points[:, 1], **point_style)
+
+        # show the actual figure
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            plt.show()
+
+        # just return the plot reference of the emulsion plot
+        return ref  # type: ignore
 
     def _make_droplet_evolver_numba(
         self, elements: ActorElementType

@@ -84,8 +84,8 @@ def test_field_boundary_coupling(resolution, rng):
     elif resolution == 4:
         bulk = ScalarFieldElement.from_field(ScalarField(grid, 0.001))
     else:
-        gri_bulk = CartesianGrid(grid.axes_bounds, [resolution, 4], periodic=True)
-        bulk = ScalarFieldElement.from_field(ScalarField(gri_bulk, 0.001))
+        grid_bulk = CartesianGrid(grid.axes_bounds, [resolution, 4], periodic=True)
+        bulk = ScalarFieldElement.from_field(ScalarField(grid_bulk, 0.001))
     data = rng.normal(size=4)
     bndry = ScalarBoundaryFieldElement.from_bulk_grid(
         grid, axis=1, upper=True, data=data

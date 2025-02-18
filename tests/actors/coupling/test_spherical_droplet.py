@@ -126,7 +126,7 @@ def test_spherical_droplets(dim, rng):
 
     # test whether plotting works in principle
     if dim == 2:
-        coupling.plot_shell_points((droplets, field))
+        coupling.plot_shell_points(droplets, field)
 
     # test incompatible dimensions
     droplet_dim = (None, 2, 1, 1)[dim]
@@ -178,7 +178,7 @@ def test_spherical_droplets_const_shell_count(dim, rng):
 
     # test whether plotting works in principle
     if dim == 2:
-        coupling.plot_shell_points((droplets, field))
+        coupling.plot_shell_points(droplets, field)
 
     # test incompatible dimensions
     droplet_dim = (None, 2, 1, 1)[dim]
