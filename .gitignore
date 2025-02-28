@@ -6,6 +6,7 @@ docs/source/snippets
 tests/coverage/
 .DS_Store
 .settings
+debug/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -14,6 +15,16 @@ __pycache__/
 
 # C extensions
 *.so
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.bgl
+*.out
+*.synctex.gz
+*.toc
+*Notes.bib
 
 # Distribution / packaging
 .Python
