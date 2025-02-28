@@ -4,7 +4,7 @@ This module also provides a class for managing a collection of spherical shells 
 different subdivisions into spherical sectors. Each sector is defined by a unit vector
 pointing to its center and an associated weight, which captures is local size compared
 to all other shell sectors. These shell sectors are used to connect the diffusive fluxes
-right outside droplets to the background field; see the pulbication for details:
+right outside droplets to the background field; see the publication for details:
 `A. Kulkarni, E. Vidal-Henriquez, and D. Zwicker, Sci. Rep. 13, 733
 <https://doi.org/10.1038/s41598-023-27630-3>`_.
 
@@ -678,6 +678,15 @@ class SphericalDropletActor(ActorBase):
             "at `droplet_concentration` specified by the droplets.",
         ),
         Parameter(
+            "background_correction",
+            False,
+            bool,
+            "Flag determining whether the reaction flux in the droplet is corrected to "
+            "ensure material conservation in the case where the reaction dynamics are "
+            "first-order rate laws. Since we do not fully understand the implications "
+            "of this correction at this point, we disabled it by default.",
+        ),
+        Parameter(
             "drift_enabled", True, bool, "Flag determining whether droplets can move"
         ),
         Parameter(
@@ -1023,12 +1032,20 @@ class SphericalDropletActor(ActorBase):
         else:
             raise NotImplementedError(f"Unsupported dimension: {self._cache['dim']}")
 
-    def _make_flux_outside(self) -> Callable[[float, float, float, int], float]:
+    def _make_flux_outside(
+        self, *, calc_sOut: Callable[[float, int], float] | None = None
+    ) -> Callable[[float, float, float, int], float]:
         """Create a function that calculates the integrated outwards flux at the droplet
         surface given some imposed concentration value at the outer shell. The fluxes
-        are calcuated by solving the ReactionDiffusion or the Diffusion equation inside
+        are calculated by solving the ReactionDiffusion or the Diffusion equation inside
         each shell sector. Detailed documentation for calculating the material fluxes
         (both inside and outside the droplets) is located at /py-sim/docs/methods.
+
+        Args:
+            calc_sOut (callable):
+                Compiled function to calculate the reaction flux in the shell sector.
+                This function only needs to be supplied when it was used earlier to
+                avoid a second compilation.
 
         Returns:
             callable: the function with the signature
@@ -1039,7 +1056,8 @@ class SphericalDropletActor(ActorBase):
         D = float(self.parameters["diffusivity"])
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
-        calc_sOut: Callable[[float, int], float] = sOut.get_compiled()
+        if calc_sOut is None:
+            calc_sOut = sOut.get_compiled()
 
         try:
             no_reaction = sOut.constant and sOut.value == 0
@@ -1351,6 +1369,7 @@ class SphericalDropletActor(ActorBase):
         droplets, field = elements
         shell_thickness = self._cache["shell_thickness"]
         drift_enabled = bool(self.parameters["drift_enabled"])
+        background_correction = bool(self.parameters["background_correction"])
 
         cEqOut = self._cache["cEqOut"]
         if hasattr(cEqOut, "get_compiled"):
@@ -1367,6 +1386,9 @@ class SphericalDropletActor(ActorBase):
             # try compiling in case sBaseIn is a function
             calc_sBaseIn = jit(sBaseInFunc)
 
+        sOut = self._cache["sOut"]
+        calc_sOut: Callable[[float, int], float] = sOut.get_compiled()
+
         dim = self._cache["dim"]
         radius = spherical.make_radius_from_volume_compiled(dim)
         surface = spherical.make_surface_from_radius_compiled(dim)
@@ -1376,7 +1398,7 @@ class SphericalDropletActor(ActorBase):
         get_concentration = field.make_get_concentration_compiled()
         add_amount = field.make_add_amount_compiled()
 
-        calc_flux = jit(self._make_flux_outside())
+        calc_flux = jit(self._make_flux_outside(calc_sOut=calc_sOut))
         get_shell_data = self._cache["shells"].make_shell_data_getter()
 
         @jit(nogil=True)
@@ -1395,7 +1417,7 @@ class SphericalDropletActor(ActorBase):
 
             # obtain the material flux across the droplet surface
             cEqIn = cBaseIn
-            cEqOut = calc_cEqOut(droplet_data.position, droplet_data.radius, droplet_id)
+            cEqOut = calc_cEqOut(droplet_data.position, R, droplet_id)
 
             # get concentration distribution outside the droplet
             ring_radius = R + shell_thickness
@@ -1410,11 +1432,22 @@ class SphericalDropletActor(ActorBase):
 
             # amount taken up from the outside per sector
             amount_per_shell_out = -dt * flux_out * shell_weights
+            # if background_correction:
+            #     # Correct this flux for the concentration that is produced in the
+            #     # background region inside the droplet. The sign convention here is such
+            #     # that positive `amounts` correspond to produced droplet material, which
+            #     # should then not be added to the droplet volume and will rather be
+            #     # removed from the background field
+            #     amount_back = calc_sOut(0, droplet_id) * V
+            #     amount_per_shell_out += dt * amount_back * shell_weights
             amount_total_out = amount_per_shell_out.sum()
+
             # amount produced in the inside
-            sBaseIn = calc_sBaseIn(
-                droplet_data.position, droplet_data.radius, droplet_id
-            )
+            sBaseIn = calc_sBaseIn(droplet_data.position, R, droplet_id)
+            if background_correction:
+                # Correct the production flux to ensure conservation of material in case
+                # of linear reactions.
+                sBaseIn -= calc_sOut(0, droplet_id)
             amount_total_in = dt * sBaseIn * V
 
             # update the droplet volume
@@ -1580,6 +1613,8 @@ class SphericalDropletActor(ActorBase):
         self._check_cache(elements)
         shells = self._cache["shells"]
         calc_sBaseIn = self._cache["sBaseIn"]
+        calc_sOut = self._cache["sOut"]
+        background_correction = self.parameters["background_correction"]
 
         droplets, field = elements
 
@@ -1608,17 +1643,22 @@ class SphericalDropletActor(ActorBase):
                     droplet.radius, cShell, cEqOut, droplet_id
                 )
 
-            # amount taken up from the outside per shell
+            # amount taken up from the outside for each shell
             amount_per_shell_out = -dt * flux_out * shell.weights
             amount_total_out = amount_per_shell_out.sum()
+
             # amount produced inside the droplet
             sBaseIn = calc_sBaseIn(droplet.position, droplet.radius, droplet_id)
+            if background_correction:
+                # Correct the production flux to ensure conservation of material in case
+                # of linear reactions.
+                sBaseIn -= calc_sOut(0, droplet_id)
             amount_total_in = dt * sBaseIn * droplet.volume
 
             # update the droplet volume
             dV = (amount_total_in + amount_total_out) / cEqIn
             if droplet.volume + dV < 0:
-                # make sure
+                # make sure that droplet volume does not become negative
                 amount_remain = droplet.volume * cEqIn - amount_total_in
                 amount_per_shell_out *= -amount_remain / amount_total_out
                 droplet.volume = 0  # remove all droplet material

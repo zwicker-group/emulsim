@@ -275,6 +275,59 @@ def test_material_conservation(backend):
 
 
 @pytest.mark.skipif(
+    not module_available("phasesep"), reason="requires `py-phasesep` module"
+)
+@pytest.mark.parametrize("backend", ["numpy", "numba"])
+def test_linear_reactions(backend):
+    """Test whether the simulation with linear droplets conserves material."""
+    cIn = 3
+    cOut = "0.05 + 0.01/R"
+    diff = 3
+    k = 0.01
+    c0 = 0.25
+    reaction_flux = f"-{k} * (c - {c0})"
+
+    # initialize some droplets
+    droplets = SphericalDropletsElement.from_droplets(
+        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": cIn}
+    )
+
+    # initialize the background field
+    grid = UnitGrid([4] * 3, periodic=True)
+    field_data = ScalarField(grid, c0 - droplets.total_amount / grid.volume)
+    field = ScalarFieldElement.from_field(field_data)
+
+    # get the total amount
+    state = State({"droplets": droplets, "background": field})
+    total_amount = state.get_total_quantity("total_amount")
+    assert total_amount == pytest.approx(c0 * grid.volume)
+
+    simulation = Simulation(state)
+    coupling = spherical_droplet.SphericalDropletActor(
+        {
+            "equilibrium_concentration": cOut,
+            "diffusivity": diff,
+            "reaction_outside": reaction_flux,
+            "background_correction": True,
+        }
+    )
+    simulation.add_actor(("droplets", "background"), coupling)
+
+    simulation.add_actor(
+        "background",
+        ReactionDiffusionActor({"diffusivity": diff, "reaction_flux": reaction_flux}),
+    )
+
+    res = simulation.run(t_range=10, backend=backend)
+
+    # check whether the reaction inside was determined correctly
+    sIn = float(coupling.parameters["mean_reaction_inside"])
+    assert sIn == pytest.approx(-k * (cIn - c0))
+    total_amount = res.get_total_quantity("total_amount")
+    assert total_amount == pytest.approx(total_amount, rel=1e-6)
+
+
+@pytest.mark.skipif(
     not module_available("phasesep"), reason="requires `phasesep` module"
 )
 @pytest.mark.parametrize("dim", [1, 2, 3])
