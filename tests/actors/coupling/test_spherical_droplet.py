@@ -280,8 +280,8 @@ def test_material_conservation(backend):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_linear_reactions(backend):
     """Test whether the simulation with linear droplets conserves material."""
-    cIn = 1
-    cOut = "0.01/R"
+    cIn = 3
+    cOut = "0.05 + 0.01/R"
     diff = 3
     k = 0.01
     c0 = 0.25
@@ -289,7 +289,7 @@ def test_linear_reactions(backend):
 
     # initialize some droplets
     droplets = SphericalDropletsElement.from_droplets(
-        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": 1}
+        [SphericalDroplet([2] * 3, 0.5)], parameters={"droplet_concentration": cIn}
     )
 
     # initialize the background field
