@@ -33,7 +33,7 @@ def init_random_number_generators():
     The function returns an instance of :func:`~numpy.random.default_rng()` and
     initializes the default generators of both :mod:`numpy` and :mod:`numba`.
     """
-    random_seed()
+    random_seed(0)
     return np.random.default_rng(0)
 
 

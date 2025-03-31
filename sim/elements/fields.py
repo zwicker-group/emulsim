@@ -246,6 +246,7 @@ class MeanfieldElement(FieldElementBase):
         Parameter(
             "bounds",
             None,
+            required=True,
             description="Sets the size of the Cartesian space covered by this element. "
             "This should be a list of tuples, where each element denotes the lower and "
             "upper bounds of an axis. The number of elements then determines the "
@@ -317,8 +318,7 @@ class MeanfieldElement(FieldElementBase):
             parameters = {}
         parameters["bounds"] = field.grid.axes_bounds
 
-        data = float(field.average)  # type: ignore
-        return cls(data, parameters)
+        return cls(field.average, parameters)  # type: ignore
 
     @cached_property()
     def grid(self) -> CartesianGrid:
@@ -429,7 +429,7 @@ class MeanfieldElement(FieldElementBase):
             # many points
             return np.full(len(points), self.concentration)
         else:
-            raise ValueError("Expected single point of list of points")
+            raise ValueError("Expected single point or list of points")
 
     def add_amount(self, point: np.ndarray, amount: float):
         """Add the given amount to the field.
@@ -568,7 +568,7 @@ class ScalarFieldElement(FieldElementBase):
 
         return cls(field.data, parameters)
 
-    def copy(self, method: Literal["clean", "shallow", "data"], data=None):
+    def copy(self, method: Literal["clean", "shallow", "data"] = "data", data=None):
         """Create a copy of the state.
 
         Args:
@@ -584,7 +584,7 @@ class ScalarFieldElement(FieldElementBase):
         """
         if method == "data":
             # copy the data by creating a shallow copy and copy the field data
-            # explicitely. This is important to keep the connection between the `_field`
+            # explicitly. This is important to keep the connection between the `_field`
             # data attribute and the `data` itself
             obj = super().copy("shallow")
             obj._field = self._field.copy()
