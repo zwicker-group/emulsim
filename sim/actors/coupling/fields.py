@@ -554,5 +554,5 @@ class FieldBoundaryExchangeActor(ActorBase):
         boundary.data[...] += exchange_amount / self._cache["boundary_cell_volume"]
 
 
-class DomainStitchingActor(ActorBase):
-    """Actor that couples two domains at a common boundary."""
+# class DomainStitchingActor(ActorBase):
+#     """Actor that couples two domains at a common boundary."""

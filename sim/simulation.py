@@ -721,7 +721,7 @@ class SimulationSolver(AdaptiveSolverBase):
         def fixed_stepper(state: State, t_start: float, t_end: float) -> float:
             """Advance `state` from `t_start` to `t_end` using fixed steps."""
             # calculate number of steps (which is at least 1)
-            steps = max(1, int(np.ceil((t_end - t_start) / dt)))
+            steps = max(1, int(round((t_end - t_start) / dt)))
 
             for i in range(steps):
                 t = t_start + i * dt
