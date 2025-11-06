@@ -158,7 +158,7 @@ class MulticomponentDroplet(SphericalDroplet):
             phase fields at support points of the `grid`.
         """
         phase_field = super()._get_phase_field(grid, dtype=float)
-        return np.outer(self.phis, phase_field).astype(dtype)
+        return np.outer(self.phis, phase_field).astype(dtype)  # type: ignore
 
     def _get_mpl_patch(self, dim=None, *, brightness=0.5, **kwargs):
         """Return the patch representing the droplet for plotting.

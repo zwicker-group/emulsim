@@ -10,7 +10,7 @@ PACKAGE = "sim"  # name of the package that needs to be tested
 PACKAGE_PATH = Path(__file__).resolve().parents[1]  # base path of the package
 
 
-def test_codestyle(*, verbose: bool = True):
+def run_test_codestyle(*, verbose: bool = True):
     """Run the codestyle tests.
 
     Args:
@@ -25,7 +25,7 @@ def test_codestyle(*, verbose: bool = True):
         sp.check_call(["ruff", "check", path])
 
 
-def test_types(*, report: bool = False, verbose: bool = True):
+def run_test_types(*, report: bool = False, verbose: bool = True):
     """Run mypy to check the types of the python code.
 
     Args:
@@ -207,9 +207,9 @@ def main():
 
     # run the requested tests
     if run_all or args.style:
-        test_codestyle(verbose=not args.quite)
+        run_test_codestyle(verbose=not args.quite)
     if run_all or args.types:
-        test_types(report=args.report, verbose=not args.quite)
+        run_test_types(report=args.report, verbose=not args.quite)
     if run_all or args.unit:
         run_unit_tests(
             runslow=args.runslow,

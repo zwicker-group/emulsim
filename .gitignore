@@ -151,3 +151,4 @@ dmypy.json
 /.pydevproject
 .vscode/settings.json
 docs/source/sg_execution_times.rst
+docs/methods/effective_droplet_model
