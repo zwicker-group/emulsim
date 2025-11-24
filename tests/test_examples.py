@@ -35,6 +35,8 @@ CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}
 def test_example(path):
     """Runs an example script given by path."""
     # check whether the example should actually by ran
+    if ".ipynb_checkpoints" in str(path):
+        pytest.skip("Python file in private directory")
     if path.name.startswith("_"):
         pytest.skip("skip examples starting with an underscore")
     if any(name in str(path) for name in SKIP_EXAMPLES):
