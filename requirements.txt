@@ -7,4 +7,4 @@ py-modelrunner>=0.18
 py-pde>=0.38
 scipy>=1.4
 sympy>=1.5
-zarr>=2.16
+zarr>=2.16,<3

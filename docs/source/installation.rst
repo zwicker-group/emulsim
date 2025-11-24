@@ -58,6 +58,7 @@ Package      Usage
 ===========  =========
 h5py         Storing data in the hierarchical file format
 networkx     Representing simulation as a graph
+numba-scipy  Accelerated scientific functions
 pydot        Nicer plot of the graph representation
 pytest       Running tests
 sphinx       Building the documentation

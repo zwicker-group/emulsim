@@ -552,7 +552,3 @@ class FieldBoundaryExchangeActor(ActorBase):
             for index, amount in np.ndenumerate(exchange_amount):
                 bulk.add_amount(bulk_coordinates[index], -amount)  # type: ignore
         boundary.data[...] += exchange_amount / self._cache["boundary_cell_volume"]
-
-
-# class DomainStitchingActor(ActorBase):
-#     """Actor that couples two domains at a common boundary."""

@@ -276,7 +276,11 @@ intersphinx_mapping = {
 
 def setup(app):
     """Entry point for this extension."""
-    from pde.tools.parameters import sphinx_display_parameters
+    try:
+        from modelrunner.model.parameters import sphinx_display_parameters
+    except ImportError:
+        # legacy import of function from py-pde package
+        from pde.tools.parameters import sphinx_display_parameters
 
     app.connect("autodoc-process-docstring", sphinx_display_parameters)
 
