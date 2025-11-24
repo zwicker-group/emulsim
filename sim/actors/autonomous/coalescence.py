@@ -24,7 +24,7 @@ def fill_with_zeros(recarr: np.recarray) -> None:
 @overload(fill_with_zeros)
 def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
     """Create numba implementation to fill a record array with zeros."""
-    keys = tuple(recarr.dtype.fields.keys())
+    keys = tuple(recarr.dtype.fields.keys())  # type: ignore
 
     def fill_with_zeros_impl(recarr: np.recarray) -> None:
         """Numba implementation to fill a record array with zeros."""

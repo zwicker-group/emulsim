@@ -6,4 +6,5 @@ pytest-cov>=2.8
 pytest-xdist>=1.30
 mypy>=0.770
 networkx>=2
+numba-scipy>=0.4
 ruff>=0.6

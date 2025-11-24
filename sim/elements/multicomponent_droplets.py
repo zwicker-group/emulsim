@@ -96,7 +96,7 @@ class MulticomponentDroplet(SphericalDroplet):
     @property
     def num_comps(self) -> int:
         """int: number of components inside the droplet"""
-        shape = self.data.dtype.fields["amounts"][0].shape
+        shape = self.data.dtype.fields["amounts"][0].shape  # type: ignore
         return int(shape[0]) if shape else 1
 
     @property
@@ -158,7 +158,7 @@ class MulticomponentDroplet(SphericalDroplet):
             phase fields at support points of the `grid`.
         """
         phase_field = super()._get_phase_field(grid, dtype=float)
-        return np.outer(self.phis, phase_field).astype(dtype)  # type: ignore
+        return np.outer(self.phis, phase_field).astype(dtype)
 
     def _get_mpl_patch(self, dim=None, *, brightness=0.5, **kwargs):
         """Return the patch representing the droplet for plotting.
@@ -199,7 +199,7 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
     @property
     def num_comps(self) -> int:
         """int: the number of components inside each droplet"""
-        shape = self.data.dtype.fields["amounts"][0].shape
+        shape = self.data.dtype.fields["amounts"][0].shape  # type: ignore
         return int(shape[0]) if shape else 1
 
     @property
