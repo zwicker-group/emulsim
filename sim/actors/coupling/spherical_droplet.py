@@ -632,6 +632,51 @@ class ShellCollection:
 ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 
 
+def _make_normalize_point_compiled(
+    grid: GridBase, reflect: bool = True
+) -> Callable[[FloatingArray], None]:
+    """Return a compiled function that normalizes a point.
+
+    Here, the point is assumed to be specified by the physical values along
+    the non-symmetric axes of the grid. Normalizing points is useful to make sure
+    they lie within the domain of the  grid. This function respects periodic
+    boundary conditions and can also reflect points off the boundary.
+
+    Args:
+        grid (:class:`~pde.grids.base.GridBase`):
+            The grid for which we calculate the point normalization
+        reflect (bool):
+            Flag determining whether coordinates along non-periodic axes are
+            reflected to lie in the valid range. If `False`, such coordinates are
+            left unchanged and only periodic boundary conditions are enforced.
+
+    Returns:
+        callable: A function that takes a :class:`~numpy.ndarray` as an argument,
+        which describes the coordinates of the points. This array is modified
+        in-place!
+    """
+    num_axes = grid.num_axes
+    periodic = np.array(grid.periodic)  # using a tuple instead led to a numba error
+    bounds = np.array(grid.axes_bounds)
+    xmin = bounds[:, 0]
+    xmax = bounds[:, 1]
+    size = bounds[:, 1] - bounds[:, 0]
+
+    @jit
+    def normalize_point(point: FloatingArray) -> None:
+        """Helper function normalizing a single point."""
+        assert point.ndim == 1  # only support single points
+        for i in range(num_axes):
+            if periodic[i]:
+                point[i] = (point[i] - xmin[i]) % size[i] + xmin[i]
+            elif reflect:
+                arg = (point[i] - xmax[i]) % (2 * size[i]) - size[i]
+                point[i] = xmin[i] + abs(arg)
+            # else: do nothing
+
+    return normalize_point  # type: ignore
+
+
 class SphericalDropletActor(ActorBase):
     """Actor coupling spherical droplets to a field."""
 
@@ -1394,7 +1439,7 @@ class SphericalDropletActor(ActorBase):
         surface = spherical.make_surface_from_radius_compiled(dim)
         volume = spherical.make_volume_from_radius_compiled(dim)
 
-        normalize_point = field.grid.make_normalize_point_compiled()
+        normalize_point = _make_normalize_point_compiled(field.grid)
         get_concentration = field.make_get_concentration_compiled()
         add_amount = field.make_add_amount_compiled()
 
