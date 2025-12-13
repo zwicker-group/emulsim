@@ -9,7 +9,7 @@ from collections.abc import Callable
 import numba as nb
 import numpy as np
 
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from ... import Parameter
 from ...elements import ArrowsElement

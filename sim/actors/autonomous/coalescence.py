@@ -10,7 +10,7 @@ import numpy as np
 from numba import literal_unroll
 from numba.extending import overload
 
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from ...elements import MulticomponentDropletsElement, SphericalDropletsElement
 from ..base import ActorBase, ElementsType

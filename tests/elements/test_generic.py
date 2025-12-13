@@ -10,7 +10,7 @@ import pytest
 
 from droplets import SphericalDroplet
 from pde import FieldCollection, ScalarField, UnitGrid
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from sim.elements import (
     ArrowsElement,

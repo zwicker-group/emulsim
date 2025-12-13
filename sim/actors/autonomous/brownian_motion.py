@@ -8,8 +8,8 @@ from collections.abc import Callable
 
 import numpy as np
 
+from pde.backends.numba.utils import jit
 from pde.tools.expressions import ScalarExpression
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement
@@ -79,7 +79,7 @@ class BrownianMotionActor(ActorBase):
                 evolving `state_data`
         """
         self._check_cache(elements)
-        diffusivity = self._cache["diffusivity"].get_compiled()
+        diffusivity = self._cache["diffusivity"].get_function(backend="numba")
         dim = int(elements[0].dim)  # type: ignore
 
         if self._cache["has_radius"]:

@@ -22,12 +22,12 @@ from typing import Any, Literal
 import numpy as np
 from numba.extending import register_jitable
 
+from pde.backends.numba.utils import jit
 from pde.fields import FieldCollection, ScalarField
 from pde.grids.base import DimensionError
 from pde.grids.cartesian import CartesianGrid, GridBase
 from pde.tools.cache import cached_property
 from pde.tools.cuboid import Cuboid
-from pde.tools.numba import jit
 from pde.tools.plotting import plot_on_axes
 from pde.tools.typing import NumberOrArray
 
@@ -670,7 +670,9 @@ class ScalarFieldElement(FieldElementBase):
             point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
-        return self._field.grid.make_inserter_compiled()
+        from pde.backends.numba import numba_backend
+
+        return numba_backend.make_inserter(self._field.grid)
 
 
 class FieldCollectionElement(ArrayElementBase):
@@ -879,9 +881,11 @@ class FieldCollectionElement(ArrayElementBase):
             point: :class:`~numpy.ndarray`, amounts: :class:`~numpy.ndarray`), which
             adds `amounts` to the field state given by `data` at point `point`.
         """
+        from pde.backends.numba import numba_backend
+
         # we just need one inserter for all fields since they are assumed to be
         # equivalent, e.g., lie on the same grid (and have the same rank)
-        inserter_single = self.field[0].grid.make_inserter_compiled()
+        inserter_single = numba_backend.make_inserter(self.field[0].grid)
         num_fields = self.num_fields
 
         @register_jitable
@@ -1146,7 +1150,9 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
             point: :class:`~numpy.ndarray`, amount: float), which adds `amount`
             to the field state given by `data` at point `point`.
         """
-        inserter = self._field.grid.make_inserter_compiled()
+        from pde.backends.numba import numba_backend
+
+        inserter = numba_backend.make_inserter(self._field.grid)
         thickness = self.parameters["thickness"]
 
         @jit

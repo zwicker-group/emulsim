@@ -11,8 +11,8 @@ from collections.abc import Callable
 import numpy as np
 
 from droplets.tools import spherical
+from pde.backends.numba.utils import jit
 from pde.tools.expressions import ScalarExpression
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import FieldElementBase, ReservoirElement, SphericalDropletsElement
@@ -44,7 +44,7 @@ class PointDropletActor(ActorBase):
             "index in the list of droplets), respectively. If the value is a function "
             "it should have the signature (position, radius, i) and return the "
             "equilibrium concentration. it can also be an instance defining a __call__ "
-            "method that returns the equilibrium concentration and a `get_compiled` "
+            "method that returns the equilibrium concentration and a `get_function` "
             "method that returns a numba compiled function for calculating it."
             "(position, radius, i).",
         ),
@@ -239,8 +239,8 @@ class PointDropletActor(ActorBase):
 
         elif self.parameters["flux_model"] in {"linear", "expression"}:
             exchange_rate = self._cache["exchange_rate"]
-            if hasattr(exchange_rate, "get_compiled"):
-                calc_exchange_rate = exchange_rate.get_compiled()
+            if hasattr(exchange_rate, "get_function"):
+                calc_exchange_rate = exchange_rate.get_function(backend="numba")
             else:
                 # try compiling in case exchange_rate is a function
                 calc_exchange_rate = jit(exchange_rate)
@@ -307,15 +307,15 @@ class PointDropletActor(ActorBase):
         droplets, field = elements
 
         cEqOut = self._cache["cEqOut"]
-        if hasattr(cEqOut, "get_compiled"):
-            calc_cEqOut = cEqOut.get_compiled()
+        if hasattr(cEqOut, "get_function"):
+            calc_cEqOut = cEqOut.get_function(backend="numba")
         else:
             # try compiling in case cEqOut is a function
             calc_cEqOut = jit(cEqOut)
         cBaseIn = droplets.parameters["droplet_concentration"]
         sBaseInFunc = self._cache["sBaseIn"]
-        if hasattr(sBaseInFunc, "get_compiled"):
-            calc_sBaseIn = sBaseInFunc.get_compiled()
+        if hasattr(sBaseInFunc, "get_function"):
+            calc_sBaseIn = sBaseInFunc.get_function(backend="numba")
         else:
             # try compiling in case sBaseIn is a function
             calc_sBaseIn = jit(sBaseInFunc)

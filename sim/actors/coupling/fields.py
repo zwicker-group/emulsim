@@ -11,10 +11,10 @@ from typing import Any
 
 import numpy as np
 
+from pde.backends.numba.utils import jit
 from pde.grids import CartesianGrid
 from pde.grids.base import DimensionError
 from pde.tools.expressions import ScalarExpression
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import FieldElementBase, MeanfieldElement, ScalarBoundaryFieldElement
@@ -102,7 +102,7 @@ class FieldCouplingActor(ActorBase):
         for field_id, rhs in self._cache["rhs_expressions"].items():
             expression_data = {
                 "field_id": field_id,
-                "rhs": rhs.get_compiled(single_arg=False),
+                "rhs": rhs.get_function(backend="numba", single_arg=False),
             }
             expressions.append(expression_data)
 
@@ -238,12 +238,15 @@ class FieldExchangeActor(ActorBase):
                 (droplets_data: :class:`~numpy.ndarray`, field_data, t: float,
                 dt: float), evolving `droplets_data` and `field_data`
         """
+        from pde.backends.numba import numba_backend
+
         self._check_cache(fields)
 
         field1_mean, field2_mean = self._cache["mean_field"]
-        rhs = self._cache["rhs_expression"].get_compiled(single_arg=False)
-        if self._cache["grid"]:
-            integrate = self._cache["grid"].make_integrator()
+        rhs = self._cache["rhs_expression"].get_function(
+            backend="numba", single_arg=False
+        )
+        integrate = numba_backend.make_integrator(self._cache["grid"])
         if field1_mean:
             add_amount1 = fields[0].make_add_amount_compiled()
         if field2_mean:
@@ -443,7 +446,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         self._check_cache(fields)
 
         bulk, boundary = fields
-        exchange_flux = self._cache["exchange_flux"].get_compiled()
+        exchange_flux = self._cache["exchange_flux"].get_function(backend="numba")
         bulk_cell_volume = self._cache["bulk_cell_volume"]
         boundary_cell_area = self._cache["boundary_cell_area"]
         boundary_cell_volume = self._cache["boundary_cell_volume"]
