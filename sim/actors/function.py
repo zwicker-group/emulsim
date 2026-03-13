@@ -17,7 +17,7 @@ from types import EllipsisType
 
 from numba import TypingError
 
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from ..elements.base import _ElementBase
 from .base import ActorBase, ElementsSpec, ElementsType, EvolverType

@@ -18,8 +18,8 @@ from typing import Any, Literal
 import numpy as np
 
 from modelrunner import Parameter, Parameterized
+from pde.backends.numba.utils import jit
 from pde.grids.base import DimensionError, GridBase
-from pde.tools.numba import jit
 from pde.tools.plotting import napari_add_layers, plot_on_axes
 
 from .elements.base import DictElementBase, NoData, _ElementBase

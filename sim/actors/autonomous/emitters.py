@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 
 from modelrunner import Parameter
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from ...elements.fields import FieldElementBase
 from ..base import ActorBase, ElementsType

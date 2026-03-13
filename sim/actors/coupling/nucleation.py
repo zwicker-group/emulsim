@@ -11,8 +11,8 @@ import numpy as np
 
 from droplets.tools import spherical
 from pde import CartesianGrid, ScalarField
+from pde.backends.numba.utils import jit
 from pde.grids.base import DimensionError
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import FieldElementBase, SphericalDropletsElement

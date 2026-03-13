@@ -7,8 +7,8 @@ import pytest
 from numpy.lib.recfunctions import structured_to_unstructured as s2u
 
 import pde
+from pde.backends.numba.utils import jit
 from pde.tools.misc import module_available
-from pde.tools.numba import jit
 
 from sim import Simulation, State
 from sim.actors.coupling import MulticomponentDropletActor

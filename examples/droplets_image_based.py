@@ -11,6 +11,7 @@ from numba import jit
 
 from droplets import SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
+from pde.backends import backends
 
 import sim
 
@@ -33,14 +34,14 @@ class cEqOutField:
         """Return equilibrium concentration for a position."""
         return 1e-2 * self.image.interpolate(position)
 
-    def get_compiled(self):
+    def get_function(self, backend):
         """Return compiled function for calculating c_eq for a position."""
-        interpolate = self.image.grid._make_interpolator_compiled()
+        interpolate = backends["numba"].make_interpolator(self.image)
         image_data = self.image.data
 
         @jit
         def c_eq(position, radius, droplet_id):
-            return 1e-2 * interpolate(image_data, position)
+            return 1e-2 * interpolate(position, image_data)
 
         return c_eq
 

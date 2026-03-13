@@ -7,6 +7,7 @@ import pytest
 
 from droplets import SphericalDroplet
 from pde import CartesianGrid, DiffusionPDE, ScalarField, UnitGrid
+from pde.backends.numba.utils import JIT_COUNT
 from pde.tools.misc import module_available
 
 import sim
@@ -49,15 +50,20 @@ def test_simulation(rng):
         simulation.plot_interacting_elements()
 
     # run simulation
+    jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend="numpy", tracker=None)
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 5
+    assert int(JIT_COUNT) - jit_count < 5
+
+    jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend="numba", tracker=None)
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < 40
+    assert int(JIT_COUNT) - jit_count < 40
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_adaptive_simulation_simple(backend, rng):
     """Test some adaptive simulations."""
+    jit_count = int(JIT_COUNT)
+
     # set up state
     field = ScalarField.random_uniform(UnitGrid([8, 8], periodic=True), rng=rng)
     element = sim.ScalarFieldElement.from_field(field)
@@ -75,7 +81,7 @@ def test_adaptive_simulation_simple(backend, rng):
     simulation2.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation2.state["field"].data)
     thresh = {"numpy": 5, "numba": 30}[backend]
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
+    assert int(JIT_COUNT) - jit_count < 40
 
 
 @pytest.mark.skipif(
@@ -110,20 +116,22 @@ def test_adaptive_simulation_complex(backend, rng):
     state = sim.State({"field": element})
 
     # run simulation using fixed time steps
+    jit_count = int(JIT_COUNT)
     simulation = sim.Simulation(state.copy(method="data"))
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, tracker=None)
     result = simulation.state["field"].data
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
+    assert int(JIT_COUNT) - jit_count < thresh
 
     # run simulation using adaptive time steps
+    jit_count = int(JIT_COUNT)
     simulation = sim.Simulation(state.copy(method="data"))
     eq = DiffusionPDE(diffusivity=0.1)
     simulation.add_actor("field", sim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation.state["field"].data)
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) < thresh
+    assert int(JIT_COUNT) - jit_count < thresh
 
 
 def test_simulation_timing(rng):
@@ -172,14 +180,16 @@ def test_simulation_cache(backend, use_cache, rng):
 
     # run simulation
     jit_max = {"numba": 40, "numpy": 5}[backend]
+    jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend=backend, tracker=None, use_cache=True)
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) <= jit_max
+    assert int(JIT_COUNT) - jit_count <= jit_max
 
     simulation.state = state2
+    jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend=backend, tracker=None, use_cache=use_cache)
     if use_cache and backend == "numba":
         jit_max = 0
-    assert sum(simulation.diagnostics["controller"]["jit_count"].values()) <= jit_max
+    assert int(JIT_COUNT) - jit_count <= jit_max
 
     assert_recarrays_allclose(state["droplets"].data, state2["droplets"].data)
     np.testing.assert_allclose(state["background"].data, state2["background"].data)

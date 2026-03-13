@@ -32,12 +32,14 @@ import scipy.special as sc
 
 from droplets.tools import spherical
 from pde import ScalarField
+from pde.backends.numba.utils import jit
+from pde.grids import GridBase
 from pde.grids.coordinates import SphericalCoordinates
 from pde.tools import expressions
 from pde.tools.cache import cached_method
 from pde.tools.misc import module_available
-from pde.tools.numba import jit
 from pde.tools.plotting import PlotReference, plot_on_axes
+from pde.tools.typing import FloatingArray
 
 from ... import Parameter
 from ...elements import (
@@ -82,7 +84,7 @@ def haversine_distance(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
     # spherical coordinates - φ differs by π/4
     factor = (1 - np.cos(λ2 - λ1)) / 2
     arg = (1 - np.cos(φ2 - φ1)) / 2 + np.sin(φ1) * np.sin(φ2) * factor
-    return 2 * r1 * np.arcsin(np.sqrt(arg))  # type: ignore
+    return 2 * r1 * np.arcsin(np.sqrt(arg))
 
 
 def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float:
@@ -690,7 +692,7 @@ class SphericalDropletActor(ActorBase):
             "its position vector, and its identity (the index in the list of droplets)"
             ", respectively. Alternatively, the value can also be an instance defining "
             "a __call__ method that returns the equilibrium concentration and a "
-            "`get_compiled` method that returns a numba compiled function for "
+            "`get_function` method that returns a numba compiled function for "
             "calculating it. These functions must have the signature "
             "(position, radius, i).",
         ),
@@ -1102,7 +1104,7 @@ class SphericalDropletActor(ActorBase):
         L = float(self._cache["shell_thickness"])
         sOut = self._cache["sOut"]
         if calc_sOut is None:
-            calc_sOut = sOut.get_compiled()
+            calc_sOut = sOut.get_function(backend="numba")
 
         try:
             no_reaction = sOut.constant and sOut.value == 0
@@ -1417,22 +1419,22 @@ class SphericalDropletActor(ActorBase):
         background_correction = bool(self.parameters["background_correction"])
 
         cEqOut = self._cache["cEqOut"]
-        if hasattr(cEqOut, "get_compiled"):
-            calc_cEqOut = cEqOut.get_compiled()
+        if hasattr(cEqOut, "get_function"):
+            calc_cEqOut = cEqOut.get_function(backend="numba")
         else:
             # try compiling in case cEqOut is a function
             calc_cEqOut = jit(cEqOut)
         cBaseIn = droplets.parameters["droplet_concentration"]
 
         sBaseInFunc = self._cache["sBaseIn"]
-        if hasattr(sBaseInFunc, "get_compiled"):
-            calc_sBaseIn = sBaseInFunc.get_compiled()
+        if hasattr(sBaseInFunc, "get_function"):
+            calc_sBaseIn = sBaseInFunc.get_function(backend="numba")
         else:
             # try compiling in case sBaseIn is a function
             calc_sBaseIn = jit(sBaseInFunc)
 
         sOut = self._cache["sOut"]
-        calc_sOut: Callable[[float, int], float] = sOut.get_compiled()
+        calc_sOut: Callable[[float, int], float] = sOut.get_function(backend="numba")
 
         dim = self._cache["dim"]
         radius = spherical.make_radius_from_volume_compiled(dim)

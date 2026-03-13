@@ -7,7 +7,7 @@ import pytest
 from elements.test_generic import generate_elements
 
 import pde
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from sim.elements import ScalarFieldElement
 from sim.state import State

@@ -47,8 +47,7 @@ class SphericalDropletsElement(ArrayElementBase):
         if data is not NoData:
             # extract the droplets from data if given
             drop_list: list[SphericalDroplet] = [
-                self.droplet_class.from_data(data_row)  # type: ignore
-                for data_row in self.data
+                self.droplet_class.from_data(data_row) for data_row in self.data
             ]
             droplets = Emulsion(
                 drop_list, copy=False, dtype=self.data.dtype, force_consistency=True
@@ -85,7 +84,7 @@ class SphericalDropletsElement(ArrayElementBase):
                 np.zeros(1, dtype=droplets.dtype)[0]
             )
             for _ in range(maxcount - len(droplets)):
-                droplets.append(empty_droplet, copy=True)  # type: ignore
+                droplets.append(empty_droplet, copy=True)
             assert len(droplets) == maxcount
 
         self.droplets = droplets  # set the given droplets as an attribute

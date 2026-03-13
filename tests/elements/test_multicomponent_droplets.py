@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from droplets import Emulsion
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 from sim.elements import MulticomponentDroplet, MulticomponentDropletsElement
 

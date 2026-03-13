@@ -41,7 +41,7 @@ from modelrunner.storage import (
     open_storage,
 )
 from modelrunner.storage.utils import decode_class, storage_actions
-from pde.tools.numba import jit
+from pde.backends.numba.utils import jit
 
 SerializedAttributesType = dict[str, str]
 SerializedDataType = np.ndarray | dict[str, np.ndarray]

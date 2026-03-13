@@ -22,10 +22,10 @@ from typing import Any
 import numpy as np
 
 from pde import ScalarField
+from pde.backends.numba.utils import jit
 from pde.pdes.base import PDEBase
 from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import ScalarExpression
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import FieldCollectionElement, FieldElementBase, ScalarFieldElement
@@ -96,7 +96,7 @@ class LocalReactionsActor(ActorBase):
             callable: A function with signature (field_data, t: float,
                 dt: float), which evolves the field_data.
         """
-        reation_flux = self._reaction.get_compiled()
+        reation_flux = self._reaction.get_function(backend="numba")
 
         @jit
         def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
@@ -183,7 +183,7 @@ class ScalarPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde._make_pde_rhs_numba(element._field)
+        pde_rhs = self.pde.make_pde_rhs_numba(element._field)
 
         @jit
         def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
@@ -422,7 +422,7 @@ class CollectionPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde._make_pde_rhs_numba(element.field)
+        pde_rhs = self.pde.make_pde_rhs_numba(element.field)
 
         @jit
         def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:

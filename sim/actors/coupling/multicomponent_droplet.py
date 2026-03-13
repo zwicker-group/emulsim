@@ -13,11 +13,11 @@ import numpy as np
 
 from droplets.tools import spherical
 from pde import ScalarField
+from pde.backends.numba.utils import jit
 from pde.fields.base import FieldBase
 from pde.grids.base import DimensionError
 from pde.tools.docstrings import get_text_block
 from pde.tools.expressions import TensorExpression
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import FieldCollectionElement, MulticomponentDropletsElement
@@ -731,7 +731,7 @@ class MulticomponentDropletActor(ActorBase):
                 raise NotImplementedError("Only implemented for dim ∈ [1, 3]")
             # droplet volume increases as response to pressure difference
             ΔV = vol_step * (p_in - p_out - p_laplace)
-            # amount transfered from outside to inside (= -J)
+            # amount transferred from outside to inside (= -J)
             Δamount = diff_step * (mu_out - mu_in)
 
             # check whether the updated droplet vanishes

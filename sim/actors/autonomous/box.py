@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
+from pde.backends.numba.utils import jit
 from pde.grids.cartesian import CartesianGrid
-from pde.tools.numba import jit
 
 from ... import Parameter
 from ...elements import ArrowsElement, PointsElement, SphericalDropletsElement

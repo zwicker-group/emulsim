@@ -21,10 +21,10 @@ from typing import Any, Literal
 import numba as nb
 import numpy as np
 
-from pde.solvers.base import AdaptiveSolverBase
+from pde.backends.numba.utils import jit, make_array_constructor
+from pde.solvers.base import AdaptiveSolverBase, _make_dt_adjuster
 from pde.solvers.controller import Controller, TrackerCollectionDataType, TRangeType
 from pde.tools.math import OnlineStatistics
-from pde.tools.numba import jit, make_array_constructor
 
 from .actors.base import ActorBase, EvolverType
 from .state import State
@@ -753,7 +753,7 @@ class SimulationSolver(AdaptiveSolverBase):
 
         # obtain auxiliary functions
         single_step = self._make_single_step(state)
-        adjust_dt = self._make_dt_adjuster()
+        adjust_dt = _make_dt_adjuster(self.dt_min, self.dt_max)
         if self.backend == "numba":
             error_estimator = state._make_error_estimator(backend="numba")
         else:  # also support backend == "auto"
