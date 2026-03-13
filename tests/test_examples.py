@@ -19,6 +19,7 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 SKIP_EXAMPLES: set[str] = set()
 if not module_available("phasesep"):
     SKIP_EXAMPLES.add("droplets_active.py")
+    SKIP_EXAMPLES.add("droplets_trackers.py")
 if not module_available("napari"):
     SKIP_EXAMPLES.add("droplets_interactive.py")
 if not module_available("numba_scipy"):
@@ -45,6 +46,7 @@ def test_example(path):
     # run the example script
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PACKAGEPATH) + ":" + env.get("PYTHONPATH", "")
+    env["MPLBACKEND"] = "Agg"  # set matplotlib backend
     proc = sp.Popen([sys.executable, path], env=env, stdout=sp.PIPE, stderr=sp.PIPE)
     try:
         outs, errs = proc.communicate(timeout=30)

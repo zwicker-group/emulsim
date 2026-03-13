@@ -15,7 +15,6 @@ def _setup_and_teardown():
     """Helper function preparing and cleaning tests."""
     # initialize random number generators to have predicable tests
     random_seed(0)
-
     # raise all underflow errors
     np.seterr(all="raise", under="ignore")
 

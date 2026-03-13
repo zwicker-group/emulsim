@@ -731,7 +731,7 @@ class MulticomponentDropletActor(ActorBase):
                 raise NotImplementedError("Only implemented for dim ∈ [1, 3]")
             # droplet volume increases as response to pressure difference
             ΔV = vol_step * (p_in - p_out - p_laplace)
-            # amount transfered from outside to inside (= -J)
+            # amount transferred from outside to inside (= -J)
             Δamount = diff_step * (mu_out - mu_in)
 
             # check whether the updated droplet vanishes
