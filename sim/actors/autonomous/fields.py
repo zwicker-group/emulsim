@@ -183,7 +183,7 @@ class ScalarPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde.make_pde_rhs_numba(element._field)
+        pde_rhs = self.pde.make_pde_rhs(element._field, backend="numba")
 
         @jit
         def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
@@ -422,7 +422,7 @@ class CollectionPDEActor(ActorBase):
                 dt: float), which evolves the field_data.
         """
         (element,) = elements  # extract single element
-        pde_rhs = self.pde.make_pde_rhs_numba(element.field)
+        pde_rhs = self.pde.make_pde_rhs(element.field, backend="numba")
 
         @jit
         def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
