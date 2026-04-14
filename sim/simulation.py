@@ -670,34 +670,47 @@ class SimulationSolver(AdaptiveSolverBase):
 
         Returns: Function that advances the State by one time step
         """
-        backend = self.backend
-        if backend == "numba" or backend == "auto":
-            # try defining step using the numba backend
+        if self.backend_name == "auto":
+            try:
+                from pde import get_backend
+            except ImportError:
+                # use older style of selecting backends
+                from pde import backends
+
+                def get_backend(name):
+                    return backends[name]
+
+            # do automatic backend selection by trying numba and fall-back to numpy
             try:
                 simulation_evolver = self.simulation.make_evolver_numba(state)
             except NotImplementedError:
                 self._logger.warning("Numba backend not implemented for all actors")
-                if backend == "auto":
-                    backend = "numpy"  # fall back onto the numpy backend
+                self._backend = get_backend("numpy")  # fall back onto the numpy backend
             else:
                 # creating a step using the numba backend was successful
-                self.info["backend"] = "numba"
+                self._backend = get_backend("numba")  # fall back onto the numpy backend
 
-                def single_step(state: State, t: float, dt: float) -> None:
-                    """Function that advances the state from t_start to t_end."""
-                    simulation_evolver(state._data_numba, t, dt)
-
-        if backend == "numpy":
+        if self.backend.implementation == "numpy":
             # define the step using the numpy backend
-            self.info["backend"] = "numpy"
 
             def single_step(state: State, t: float, dt: float) -> None:
                 """Function that advances the state from t_start to t_end."""
                 self.simulation.evolve(state, t, dt)
 
-        elif "single_step" not in locals():
+        elif self.backend.implementation == "numba":
+            # try defining step using the numba backend
+            if "simulation_evolver" not in locals():
+                simulation_evolver = self.simulation.make_evolver_numba(state)
+
+            def single_step(state: State, t: float, dt: float) -> None:
+                """Function that advances the state from t_start to t_end."""
+                simulation_evolver(state._data_numba, t, dt)
+
+        else:
             # emit exception if no backend provided the function
-            raise ValueError(f"Unknown backend `{backend}`")
+            raise ValueError(f"Unsupported backend `{self.backend}`")
+
+        self.info["backend"] = self.backend.name
         return single_step
 
     def _make_fixed_stepper(  # type: ignore
@@ -754,7 +767,7 @@ class SimulationSolver(AdaptiveSolverBase):
         # obtain auxiliary functions
         single_step = self._make_single_step(state)
         adjust_dt = _make_dt_adjuster(self.dt_min, self.dt_max)
-        if self.backend == "numba":
+        if self.backend.implementation == "numba":
             error_estimator = state._make_error_estimator(backend="numba")
         else:  # also support backend == "auto"
             error_estimator = state._make_error_estimator(backend="numpy")
@@ -853,7 +866,7 @@ class SimulationSolver(AdaptiveSolverBase):
         self.info["steps"] = 0
 
         # check whether the stepper can be loaded from the cache
-        cache_key = f"{self.backend}_{self.adaptive}"
+        cache_key = f"{self.backend_name}_{self.adaptive}"
         if self.use_cache and cache_key in self._cache_stepper:
             self._logger.info("Use cached `%s` stepper", cache_key)
             return self._cache_stepper[cache_key]
