@@ -9,6 +9,9 @@ import pytest
 
 from pde.backends.numba.utils import random_seed
 
+# ensure we use the Agg backend, so figures are not displayed
+plt.switch_backend("agg")
+
 
 @pytest.fixture(autouse=True)
 def _setup_and_teardown():

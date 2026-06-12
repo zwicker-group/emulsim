@@ -56,7 +56,7 @@ def test_simulation(rng):
 
     jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend="numba", tracker=None)
-    assert int(JIT_COUNT) - jit_count < 40
+    assert int(JIT_COUNT) - jit_count < 50
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])

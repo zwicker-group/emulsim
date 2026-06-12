@@ -123,7 +123,7 @@ def test_state_io(dim, tmp_path):
     """Test some IO of the State class."""
     s1 = State({str(i): el for i, el in enumerate(generate_elements(dim))})
 
-    path = tmp_path / "state.zarr"
+    path = tmp_path / "state.hdf"
     s1.to_file(path)
     s2 = State.from_file(path)
     assert s1 is not s2
