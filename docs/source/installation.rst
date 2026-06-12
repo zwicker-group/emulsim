@@ -28,19 +28,19 @@ The code builds on other python packages, which need to be installed for
 this package to function properly.
 The required packages are listed in the table below:
 
-==============  ========= =========
-Package         Version   Usage 
-==============  ========= =========
-matplotlib      >=3.1     Visualizing results
-numpy           >=1.22    Array library used for storing data
-numba           >=0.49    Just-in-time compilation to accelerate numerics
-scipy           >=1.4     Miscellaneous scientific functions
-sympy           >=1.5     Dealing with user-defined mathematical expressions
-py-droplets     >=0.23    Represent droplets
-py-modelrunner  >=0.19    Solving partial differential equations
-py-pde          >=0.38    Solving partial differential equations
-zarr            >=2.16    Storage of numerical data
-==============  ========= =========
+==============  =============== =========
+Package         Version         Usage 
+==============  =============== =========
+matplotlib      >=3.1           Visualizing results
+numpy           >=1.22          Array library used for storing data
+numba           >=0.49          Just-in-time compilation to accelerate numerics
+scipy           >=1.4           Miscellaneous scientific functions
+sympy           >=1.5           Dealing with user-defined mathematical expressions
+py-droplets     >=0.23          Represent droplets
+py-modelrunner  >=0.19,<0.20    Solving partial differential equations
+py-pde          >=0.38          Solving partial differential equations
+zarr            >=2.16          Storage of numerical data
+==============  =============== =========
 
 
 These package can be installed via your operating system's package manager, e.g.
