@@ -9,8 +9,8 @@ popd > /dev/null
 echo "Formating import statements..."
 ruff check --fix --config=../pyproject.toml ..
 
-echo "Formating docstrings..."
-docformatter --in-place --black --recursive ..
+# echo "Formating docstrings..."
+# docformatter --in-place --black --recursive ..
 
 echo "Formating source code..."
 ruff format --config=../pyproject.toml ..

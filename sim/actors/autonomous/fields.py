@@ -311,7 +311,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
                 Parameters affecting the actor. Call
                 :meth:`~ReactionDiffusionActor.show_parameters` for details
         """
-        from phasesep.pdes import ReactionDiffusionPDE
+        from phasesep.pdes import ReactionDiffusionPDE  # type: ignore
 
         # parse parameters
         parameters = self._parse_parameters(parameters, include_deprecated=True)
