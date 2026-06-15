@@ -35,7 +35,7 @@ We have developed a general method in [@Kulkarni2023], but the code is not easil
 
 # Methods
 
-The `emulsim` packages builds on a quite general simulation framework, where the state of the system is described by various *elements*.
+The `emulsim` package provides a general simulation framework, where the state of the system is described by various *elements*.
 This state then evolves in times using various *actors*, which affect one or many elements.
 Building on this general principle, the package particularly provides elements that are useful to described emulsions and their surroundings.
 For instance, we provide the basic class `SphericalDropletsElement`, which describes a collection of droplets by their positions and sizes in one to three dimensions.
@@ -86,8 +86,6 @@ result.plot()
 
 <!-- ![Phase diagram of binary mixture. The lines show the coexisting composition $\phi$ at a given interaction strength $\chi$, together known as a the binodal line.](pd.jpg "Phase diagram of binary mixture") -->
 
-Moreover, one can vary the type of interaction by initializing a different class or by modifying the existing one, and one could similarly change the entropy, ensemble, and constraints.
-Customized specialization of all four aspects can be easily implemented by deriving from the provided base classes [@2025Flory]. 
 
 # Acknowledgements
 

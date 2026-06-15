@@ -14,9 +14,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-         submodules: 'true'
-    - uses: ammaraskar/sphinx-action@master
-      with:
-        docs-folder: "docs/"
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+      - uses: ammaraskar/sphinx-action@master
+        with:
+          docs-folder: "docs/"
