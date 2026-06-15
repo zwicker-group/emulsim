@@ -275,8 +275,8 @@ class SphericalDropletsElement(ArrayElementBase):
         plot_args = self.parameters["plot_args"].copy()
         plot_args.update(kwargs)
         # set the default such that the emulsion uses autoscale for determining the
-        # plot bounds
-        plot_args.setdefault("set_bounds", False)
+        # plot bounds if the grid argument is given
+        plot_args.setdefault("set_bounds", "grid" in kwargs)
 
         emulsion = self.droplets
         if "grid" in kwargs:

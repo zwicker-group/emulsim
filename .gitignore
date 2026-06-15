@@ -152,5 +152,3 @@ dmypy.json
 .vscode/settings.json
 docs/source/sg_execution_times.rst
 docs/methods/effective_droplet_model
-docs/paper/paper.crossref
-docs/paper/paper.pdf
