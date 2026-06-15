@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # add the likely paths of custom packages, relative to current base path
-export PYTHONPATH=submodules/py-pde:submodules/py-droplets:submodules/py-phasesep:submodules/py-modelrunner:$PYTHONPATH
+export PYTHONPATH=submodules/py-pde:submodules/py-droplets:submodules/py-modelrunner:$PYTHONPATH
 
 if [ ! -z $1 ] 
 then 

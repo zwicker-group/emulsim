@@ -22,7 +22,6 @@ sys.path.insert(
     0,
     os.path.abspath("../../submodules/py-pde/docs/sphinx_ext"),  # noqa: PTH100
 )
-sys.path.insert(0, os.path.abspath("../../submodules/py-phasesep"))  # noqa: PTH100
 sys.path.insert(0, os.path.abspath("../../submodules/py-modelrunner"))  # noqa: PTH100
 sys.path.insert(0, ".")
 

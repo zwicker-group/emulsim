@@ -14,7 +14,6 @@ from sim.elements import PointsElement, SphericalDropletsElement
 
 def test_brownian_motion_points(rng):
     """Simple test of Brownian motion of points."""
-
     element = PointsElement(rng.normal(size=(10, 2)))
     actor = BrownianMotionActor()
 
@@ -34,7 +33,6 @@ def test_brownian_motion_points(rng):
 )
 def test_brownian_motion_droplets(rng):
     """Simple test of Brownian motion of droplets."""
-
     droplets = [SphericalDroplet(rng.normal(size=(2,)), 1) for _ in range(10)]
     element = SphericalDropletsElement.from_droplets(droplets)
     actor = BrownianMotionActor()

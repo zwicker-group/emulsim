@@ -10,8 +10,7 @@ read from an image.
 from numba import jit
 
 from droplets import SphericalDroplet
-from pde import CartesianGrid, ScalarField, UnitGrid
-from pde.backends import backends
+from pde import CartesianGrid, ScalarField, UnitGrid, get_backend
 
 import sim
 
@@ -36,7 +35,7 @@ class cEqOutField:
 
     def get_function(self, backend):
         """Return compiled function for calculating c_eq for a position."""
-        interpolate = backends["numba"].make_interpolator(self.image)
+        interpolate = get_backend("numba").make_interpolator(self.image)
         image_data = self.image.data
 
         @jit
