@@ -24,7 +24,7 @@ multiple elements, introducing couplings.
 `emulsim` is available on `emulsim`, so you should be able to install it through `pip`:
 
 ```bash
-pip install 
+pip install emulsim
 ```
 
 
