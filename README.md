@@ -26,19 +26,7 @@ pip install -r emulsim/requirements.txt
 
 ## Documentation
 
-The documentation for this package is not publicly available, but it can be generated
-from the source code. To do this, additional requirements have to be installed and the
-build script has to be called from the `docs` directory. The following commands, run
-from the root directory of the repository, achieve this:
-
-```bash
-pip install -r docs/requirements.txt
-cd docs
-make html
-```
-
-The main entry point to the documentation is then the web page
-`docs/build/html/index.html`.
+The [documentation for this package is available online](https://emulsim.readthedocs.io/)
 
 
 ## Running tests
