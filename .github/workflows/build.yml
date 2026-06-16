@@ -30,6 +30,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      with:
+        resolution-strategy: ${{ matrix.uv-resolution }}
+
     - name: Install dependencies
       # install all requirements. Note that the full requirements are installed separately
       # so the job does not fail if one of the packages cannot be installed. This allows
@@ -37,16 +42,16 @@ jobs:
       # packages are not yet available.
       run: |
         python -m pip install --upgrade pip
-        uv pip install -r requirements.txt --resolution ${{ matrix.uv-resolution }}
-        cat tests/requirements_full.txt | sed -e '/^\s*#.*$/d' -e '/^\s*$/d' | xargs -I % sh -c "uv pip install % --resolution ${{ matrix.uv-resolution }} || true"
-        uv pip install -r tests/requirements.txt --resolution ${{ matrix.uv-resolution }}
+        uv pip install -r requirements.txt
+        cat tests/requirements_full.txt | sed -e '/^\s*#.*$/d' -e '/^\s*$/d' | xargs -I % sh -c "uv pip install % || true"
+        uv pip install -r tests/requirements.txt
 
     - name: Test with pytest
       env:
         NUMBA_WARNINGS: 1
         MPLBACKEND: agg
       run: |
-        uv pip install pytest --resolution ${{ matrix.uv-resolution }}
+        uv pip install pytest
         cd scripts
         python run_tests.py --unit --parallel
 
