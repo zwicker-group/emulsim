@@ -39,10 +39,6 @@ jobs:
         cat tests/requirements_full.txt | sed -e '/^\s*#.*$/d' -e '/^\s*$/d' | xargs -I % sh -c "pip install % || true"
         pip install -r tests/requirements.txt
 
-    - name: Include submodules in python path
-      run: |
-        echo "PYTHONPATH=$PWD/submodules/py-droplets:$PWD/submodules/py-modelrunner:$PWD/submodules/py-pde:$PYTHONPATH" >> $GITHUB_ENV
-
     - name: Test with pytest
       env:
         NUMBA_WARNINGS: 1
