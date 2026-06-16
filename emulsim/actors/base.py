@@ -174,7 +174,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -195,11 +195,6 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
                 The current time point
             dt (float):
                 The time step
-
-        Returns:
-            callable: A function with signature
-                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
-                which evolves the state
         """
 
 

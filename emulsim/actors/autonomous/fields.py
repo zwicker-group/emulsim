@@ -122,6 +122,8 @@ class LocalReactionsActor(ActorBase):
 
 
 class MeanfieldActor(LocalReactionsActor):
+    """Deprecated alias for :class:`LocalReactionsActor`."""
+
     def __init__(self, parameters: dict[str, Any] | None = None):
         """
         Args:
