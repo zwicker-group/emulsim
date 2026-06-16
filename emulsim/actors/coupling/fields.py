@@ -1,5 +1,12 @@
 """Provides an actor coupling two or more fields.
 
+.. autosummary::
+   :nosignatures:
+
+   ~FieldCouplingActor
+   ~FieldExchangeActor
+   ~FieldBoundaryExchangeActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

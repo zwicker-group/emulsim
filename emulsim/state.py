@@ -1,5 +1,10 @@
 """Provides a class representing the full system state of multiple elements.
 
+.. autosummary::
+   :nosignatures:
+
+   ~State
+
 .. inheritance-diagram:: State
    :parts: 1
 

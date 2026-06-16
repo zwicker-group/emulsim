@@ -1,4 +1,10 @@
-"""
+"""Provides an actor for simulating droplet coalescence.
+
+.. autosummary::
+   :nosignatures:
+
+   ~CoalescenceDropletActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

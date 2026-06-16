@@ -1,4 +1,10 @@
-"""
+"""Provides an actor that confines particles inside a box.
+
+.. autosummary::
+   :nosignatures:
+
+   ~BoxActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
