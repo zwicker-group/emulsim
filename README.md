@@ -5,11 +5,9 @@
 [![Build Status](https://github.com/zwicker-group/emulsim/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/zwicker-group/emulsim/actions/workflows/continous_integration.yml)
 [![Documentation Status](https://readthedocs.org/projects/emulsim/badge/?version=latest)](https://emulsim.readthedocs.io/en/latest/?badge=latest)
 
-
 `emulsim` is a framework for simulating physical systems consisting of multiple,
 interacting droplets. The current focus of the package lies on simulating interacting
 droplets in a common environment, but the framework is extensible and flexible.
-
 
 ## Main idea
 
@@ -17,7 +15,6 @@ The main idea is that the physical system consists of multiple `elements`, which
 together describe the state of the system. The dynamical rules are encoded in `actors`,
 which either act on individual elements, encoding their autonomous dynamics, or on
 multiple elements, introducing couplings.
-
 
 ## Installation
 
@@ -27,11 +24,9 @@ multiple elements, introducing couplings.
 pip install emulsim
 ```
 
-
 ## Documentation
 
 The [documentation for this package is available online](https://emulsim.readthedocs.io/)
-
 
 ## Running tests
 
