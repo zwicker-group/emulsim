@@ -18,7 +18,7 @@ multiple elements, introducing couplings.
 
 ## Installation
 
-`emulsim` is available on `emulsim`, so you should be able to install it through `pip`:
+`emulsim` is available on `pip`, so you should be able to install it through `pip`:
 
 ```bash
 pip install emulsim
