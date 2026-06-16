@@ -262,7 +262,7 @@ class PointDropletActor(ActorBase):
         """Returns the equilibrium concentration outside each droplet.
 
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+            droplets (:class:`~emulsim.elements.spherical_droplets.SphericalDropletsElement`):
                 The state of all the droplets
 
         Returns:

@@ -9,8 +9,8 @@ from elements.test_generic import generate_elements
 import pde
 from pde.backends.numba.utils import jit
 
-from sim.elements import ScalarFieldElement
-from sim.state import State
+from emulsim.elements import ScalarFieldElement
+from emulsim.state import State
 
 
 @pytest.mark.parametrize("dim", [1, 2])

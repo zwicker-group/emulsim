@@ -48,7 +48,7 @@ class CoalescenceDropletActor(ActorBase):
         """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
+            elements (tuple of :class:`~emulsim.elements.droplets.SphericalDropletsElement`):
                 The field element that contains the droplet information
 
         Returns:
@@ -88,7 +88,7 @@ class CoalescenceDropletActor(ActorBase):
         """Evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
+            elements (tuple of :class:`~emulsim.elements.droplets.SphericalDropletsElement`):
                 The field element that contains the droplet information
             t (float):
                 The current time point

@@ -10,10 +10,10 @@ import pde
 from pde.backends.numba.utils import jit
 from pde.tools.misc import module_available
 
-from sim import Simulation, State
-from sim.actors.coupling import MulticomponentDropletActor
-from sim.actors.coupling.multicomponent_droplet import _make_regularizer
-from sim.elements import (
+from emulsim import Simulation, State
+from emulsim.actors.coupling import MulticomponentDropletActor
+from emulsim.actors.coupling.multicomponent_droplet import _make_regularizer
+from emulsim.elements import (
     FieldCollectionElement,
     MulticomponentDroplet,
     MulticomponentDropletsElement,
@@ -269,7 +269,7 @@ def test_multicomponent_active_droplet(backend):
 
     chi, mobility, kf, kb, t_range = 3.0, 1, 0.002, 0.01, 1000
 
-    # run py-sim simulation
+    # run emulsim simulation
     grid = pde.CartesianGrid([[-64, 64]] * 3, 1, periodic=True)
     fc = pde.FieldCollection.from_scalar_expressions(grid, [0.1])
 

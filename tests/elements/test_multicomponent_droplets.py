@@ -8,7 +8,7 @@ import pytest
 from droplets import Emulsion
 from pde.backends.numba.utils import jit
 
-from sim.elements import MulticomponentDroplet, MulticomponentDropletsElement
+from emulsim.elements import MulticomponentDroplet, MulticomponentDropletsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])

@@ -5,8 +5,8 @@
 import numpy as np
 import pytest
 
-from sim.actors.autonomous import ActiveParticleActor
-from sim.elements import ArrowsElement
+from emulsim.actors.autonomous import ActiveParticleActor
+from emulsim.elements import ArrowsElement
 
 
 def test_active_particles(rng):

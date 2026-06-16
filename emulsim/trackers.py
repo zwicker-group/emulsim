@@ -69,7 +69,7 @@ class TrajectoryTracker(TrackerBase):
     ) -> float:
         """
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The initial state of the simulation
             info (dict):
                 Extra information for the simulation
@@ -91,7 +91,7 @@ class TrajectoryTracker(TrackerBase):
         """Handle data supplied to this tracker.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The current state of the simulation
             t (float):
                 The associated time
@@ -184,7 +184,7 @@ class DropletElementTracker(TrackerBase):
     ) -> float:
         """
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The initial state of the simulation
             info (dict):
                 Extra information for the simulation
@@ -213,7 +213,7 @@ class DropletElementTracker(TrackerBase):
         """Handle data supplied to this tracker.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The current state of the simulation
             t (float):
                 The associated time
@@ -298,7 +298,7 @@ class FieldTracker(TrackerBase):
         """Initialize the tracker with information about the simulation.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 An example of the data that will be analyzed by the tracker
             info (dict):
                 Extra information from the simulation
@@ -322,7 +322,7 @@ class FieldTracker(TrackerBase):
         """Handle data supplied to this tracker.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The current state of the simulation
             t (float):
                 The associated time

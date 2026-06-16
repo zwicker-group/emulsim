@@ -8,9 +8,9 @@ import pytest
 from droplets import SphericalDroplet
 from pde.tools.misc import module_available
 
-from sim import Simulation, State
-from sim.actors.autonomous import CoalescenceDropletActor
-from sim.elements import SphericalDropletsElement
+from emulsim import Simulation, State
+from emulsim.actors.autonomous import CoalescenceDropletActor
+from emulsim.elements import SphericalDropletsElement
 
 
 @pytest.mark.skipif(

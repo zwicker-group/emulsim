@@ -37,7 +37,7 @@ def replace_in_file(infile: Path, replacements, outfile=None):
         fp.write(content)
 
 
-def main(package="sim"):
+def main(package="emulsim"):
     logger = logging.getLogger("autodoc")
 
     # remove old files
@@ -65,7 +65,7 @@ def main(package="sim"):
     REPLACEMENTS = {
         "Submodules\n----------\n\n": "",
         "Subpackages\n-----------": "**Subpackages:**",
-        "sim package\n===========": "Reference manual\n================",
+        "emulsim package\n===========": "Reference manual\n================",
     }
 
     # replace unwanted information

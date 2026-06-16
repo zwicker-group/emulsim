@@ -11,10 +11,10 @@ import numpy as np
 
 from pde import UnitGrid
 
-import sim
+import emulsim
 
 
-class RandomFieldActor(sim.ActorBase):
+class RandomFieldActor(emulsim.ActorBase):
     """Actor that sets a new random field each time step."""
 
     def evolve(self, elements, t, dt):
@@ -37,11 +37,11 @@ class RandomFieldActor(sim.ActorBase):
 
 
 # set up state
-element = sim.ScalarFieldElement(parameters={"grid": UnitGrid([32, 32])})
-state = sim.State({"field": element})
+element = emulsim.ScalarFieldElement(parameters={"grid": UnitGrid([32, 32])})
+state = emulsim.State({"field": element})
 
 # set up simulation
-simulation = sim.Simulation(state)
+simulation = emulsim.Simulation(state)
 simulation.add_actor("field", RandomFieldActor())
 
 # run simulation

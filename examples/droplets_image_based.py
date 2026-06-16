@@ -12,14 +12,14 @@ from numba import jit
 from droplets import SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid, get_backend
 
-import sim
+import emulsim
 
 # set up state
 grid = UnitGrid([32, 32], periodic=True)
-background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
+background = emulsim.ScalarFieldElement.from_field(ScalarField(grid, 0.1))
 droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
-droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
-state = sim.State({"background": background, "droplets": droplets})
+droplets = emulsim.SphericalDropletsElement.from_droplets(droplet_data)
+state = emulsim.State({"background": background, "droplets": droplets})
 
 
 # define how the equilibrium concentration is calculated
@@ -50,10 +50,12 @@ image_grid = CartesianGrid(grid.axes_bounds, 16, periodic=grid.periodic)
 image = ScalarField.random_uniform(image_grid)
 
 # set up simulation
-simulation = sim.Simulation(state)
-simulation.add_actor("background", sim.DiffusionActor())
+simulation = emulsim.Simulation(state)
+simulation.add_actor("background", emulsim.DiffusionActor())
 parameters = {"equilibrium_concentration": cEqOutField(image)}
-simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor(parameters))
+simulation.add_actor(
+    ("droplets", "background"), emulsim.SphericalDropletActor(parameters)
+)
 
 # run simulation
 result = simulation.run(t_range=10)

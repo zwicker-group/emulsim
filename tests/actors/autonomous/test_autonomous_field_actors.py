@@ -8,14 +8,18 @@ import pytest
 from pde import PDE, CartesianGrid, DiffusionPDE, FieldCollection, ScalarField, UnitGrid
 from pde.tools.misc import module_available
 
-from sim.actors.autonomous.fields import (
+from emulsim.actors.autonomous.fields import (
     CollectionPDEActor,
     DiffusionActor,
     LocalReactionsActor,
     ReactionDiffusionActor,
     ScalarPDEActor,
 )
-from sim.elements import FieldCollectionElement, MeanfieldElement, ScalarFieldElement
+from emulsim.elements import (
+    FieldCollectionElement,
+    MeanfieldElement,
+    ScalarFieldElement,
+)
 
 
 def test_diffusion_actor():

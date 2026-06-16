@@ -1,7 +1,7 @@
 Data model
 ^^^^^^^^^^
 
-The main idea of the :mod:`sim` package is to separate the description of the *state*
+The main idea of the :mod:`emulsim` package is to separate the description of the *state*
 of the simulation from the description that govern the dynamics.
 The state gives all the necessary information to represent the system at a particular
 time point.
@@ -18,48 +18,48 @@ System state (Elements)
 A full physical system consist of *elements* that define *what* is present in the system
 and *actors* that define *how* these elements interact and evolve in time.
 All the elements in a system together described by the system's
-:class:`~sim.state.State`. All elements defined by the package are collected in the
+:class:`~emulsim.state.State`. All elements defined by the package are collected in the
 :ref:`list-of-all-elements`.
 
 
 Each element has internal degrees of freedom, which can change over time and can
-accessed by the :attr:`~sim.elements.base.ElementBase.data` attribute.
-Elements might also have :attr:`~sim.elements.base.ElementBase.attributes` that do not
+accessed by the :attr:`~emulsim.elements.base.ElementBase.data` attribute.
+Elements might also have :attr:`~emulsim.elements.base.ElementBase.attributes` that do not
 change over time. 
 Attributes are typically given when initializing an element.
 For instance, most elements accept an attribute `parameters`, which defines the physical
 parameters like the mass of an object.
-Together, :attr:`~sim.elements.base.ElementBase.data` and
-:attr:`~sim.elements.base.ElementBase.attributes` fully describe an element.
+Together, :attr:`~emulsim.elements.base.ElementBase.data` and
+:attr:`~emulsim.elements.base.ElementBase.attributes` fully describe an element.
 In particular, those two elements should contain all information to re-create the
 element, e.g., from a file.
-To summarize, the key assumption of :mod:`sim` is that elements have fixed properties,
+To summarize, the key assumption of :mod:`emulsim` is that elements have fixed properties,
 described by attributes, and dynamical degrees of freedom, described by data.
 
 Some elements represent collections of identical items, e.g., the
-:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`. In this case, the
+:class:`~emulsim.elements.spherical_droplets.SphericalDropletsElement`. In this case, the
 :attr:`data` attribute is an array specifying the degree of freedoms for each item.
 Since each individual item could have multiple degrees of freedom (e.g., position and
 radius for the a droplet), we use structured datatypes of numpy, which can be created
 with the :class:`numpy.dtype` class. 
 
 To define a custom element, you need to define a class that inherits from
-:class:`~sim.elements.base.ArrayElementBase`,
-:class:`~sim.elements.base.ArrayCollectionElementBase`, or
-:class:`~sim.elements.base.ObjectElementBase` depending on what data is best describing
+:class:`~emulsim.elements.base.ArrayElementBase`,
+:class:`~emulsim.elements.base.ArrayCollectionElementBase`, or
+:class:`~emulsim.elements.base.ObjectElementBase` depending on what data is best describing
 the degrees of freedom of your element.
 These base elements can already support the data attribute and are fully functional.
 To customize the element, you can add model parameters to it by defining the class
 attribute `parameters_default`.
 If you want to add attributes other than parameters, you need to overwrite the
-:attr:`~sim.elements.base._ElementBase.attributes` property and the class method
-:meth:`~sim.elements.base._ElementBase._init_state`, which initializes objects from a 
+:attr:`~emulsim.elements.base._ElementBase.attributes` property and the class method
+:meth:`~emulsim.elements.base._ElementBase._init_state`, which initializes objects from a 
 supplied state.
 These aspects are explained in the code example below:
 
 .. code-block:: python
 
-    from sim.elements.base import ElementBase
+    from emulsim.elements.base import ElementBase
 
     class CustomElement(ElementBase):
 
@@ -87,22 +87,22 @@ Since the state is encoded in *elements*, the physics must change the dynamical 
 of freedom of the elements, i.e., their :attr:`data` attributes.
 
 
-In the :mod:`sim` package, the dynamics are defined by a 
-:class:`~sim.simulation.Simulation` object.
+In the :mod:`emulsim` package, the dynamics are defined by a 
+:class:`~emulsim.simulation.Simulation` object.
 Each simulation contains one or more *actors*, which each affect one or multiple
 elements.
 All actors defined by the package are collected in the :ref:`list-of-all-actors`.
 This approach allows combining multiple actors without redefining their code simply by
-combining them in a :class:`~sim.simulation.Simulation`. 
-Each actor inherits from :class:`~sim.actors.base.ActorBase`, which defines the necessary
+combining them in a :class:`~emulsim.simulation.Simulation`. 
+Each actor inherits from :class:`~emulsim.actors.base.ActorBase`, which defines the necessary
 behavior.
 In the simplest case, a custom actor only needs to overwrite the
-:meth:`~sim.actors.base.ActorBase.evolve` method, which evolves its elements from time
+:meth:`~emulsim.actors.base.ActorBase.evolve` method, which evolves its elements from time
 :code:`t` to :code:`t + dt`, changing the respective :attr:`data` attributes in place:
 
 .. code-block:: python
 
-    class BrownianParticlesActor(sim.ActorBase):
+    class BrownianParticlesActor(emulsim.ActorBase):
 
         diffusivity = 1
 

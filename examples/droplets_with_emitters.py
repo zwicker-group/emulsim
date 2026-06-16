@@ -10,23 +10,25 @@ in the background fluid that emit extra material.
 from droplets import SphericalDroplet
 from pde import UnitGrid
 
-import sim
+import emulsim
 
 # set up state
 grid = UnitGrid([32, 32], periodic=True)
-background = sim.ScalarFieldElement(parameters={"grid": grid})
+background = emulsim.ScalarFieldElement(parameters={"grid": grid})
 droplet_data = [SphericalDroplet(grid.get_random_point(), 1) for _ in range(3)]
-droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
-state = sim.State({"background": background, "droplets": droplets})
+droplets = emulsim.SphericalDropletsElement.from_droplets(droplet_data)
+state = emulsim.State({"background": background, "droplets": droplets})
 
 # set up simulation
-simulation = sim.Simulation(state)
-simulation.add_actor("background", sim.DiffusionActor(parameters={"diffusivity": 0.1}))
+simulation = emulsim.Simulation(state)
+simulation.add_actor(
+    "background", emulsim.DiffusionActor(parameters={"diffusivity": 0.1})
+)
 positions = [grid.get_random_point() for _ in range(5)]
 simulation.add_actor(
-    "background", sim.EmittersActor({"positions": positions, "strengths": 10})
+    "background", emulsim.EmittersActor({"positions": positions, "strengths": 10})
 )
-simulation.add_actor(("droplets", "background"), sim.SphericalDropletActor())
+simulation.add_actor(("droplets", "background"), emulsim.SphericalDropletActor())
 
 # run simulation
 result = simulation.run(t_range=10)

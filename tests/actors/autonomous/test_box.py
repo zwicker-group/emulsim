@@ -7,8 +7,8 @@ import pytest
 
 from pde.grids import CartesianGrid
 
-from sim.actors.autonomous import BoxActor
-from sim.elements import ArrowsElement, PointsElement
+from emulsim.actors.autonomous import BoxActor
+from emulsim.elements import ArrowsElement, PointsElement
 
 
 @pytest.mark.parametrize("periodic", [True, False])

@@ -10,26 +10,26 @@ import numpy as np
 
 from pde import CartesianGrid, FieldCollection
 
-import sim
+import emulsim
 
 # set up state
 grid = CartesianGrid([[0, 128]] * 3, 1)
 fc = FieldCollection.scalar_random_uniform(2, grid, 0.01, 0.05)
-background_el = sim.FieldCollectionElement.from_fields(fc)
+background_el = emulsim.FieldCollectionElement.from_fields(fc)
 droplet_data = [
-    sim.MulticomponentDroplet.from_composition(
+    emulsim.MulticomponentDroplet.from_composition(
         position=grid.get_random_point(),
         radius=np.random.uniform(1, 5),
         phis=[0.4, 0.4],
     )
     for _ in range(50)
 ]
-droplets_el = sim.MulticomponentDropletsElement.from_droplets(droplet_data)
-state = sim.State({"background": background_el, "droplets": droplets_el})
+droplets_el = emulsim.MulticomponentDropletsElement.from_droplets(droplet_data)
+state = emulsim.State({"background": background_el, "droplets": droplets_el})
 
 # set up simulation
-simulation = sim.Simulation(state)
-droplets_actor = sim.MulticomponentDropletActor(
+simulation = emulsim.Simulation(state)
+droplets_actor = emulsim.MulticomponentDropletActor(
     {
         "chis": [[-1, 0], [0, -1]],  # interactions between internal components
         "chis_solvent": [2.5, 2.5],  # interactions of components with solvent

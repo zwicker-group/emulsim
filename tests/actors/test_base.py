@@ -4,8 +4,8 @@
 
 import pytest
 
-from sim.actors.base import ActorBase, find_actors
-from sim.elements import MeanfieldElement, ReservoirElement
+from emulsim.actors.base import ActorBase, find_actors
+from emulsim.elements import MeanfieldElement, ReservoirElement
 
 
 def test_actor_base():

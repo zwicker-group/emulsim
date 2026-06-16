@@ -6,8 +6,8 @@ import pytest
 
 from pde.grids import UnitGrid
 
-from sim.actors.autonomous import EmittersActor
-from sim.elements import MeanfieldElement
+from emulsim.actors.autonomous import EmittersActor
+from emulsim.elements import MeanfieldElement
 
 
 def test_emitters(rng):

@@ -1,4 +1,4 @@
-# py-sim
+# emulsim
 
 Framework for simulating physical systems consisting of multiple, interacting entities.
 The current focus of the package lies on simulating interacting droplets in a common
@@ -20,8 +20,8 @@ necessary python packages can be installed using `pip`. To install the package t
 with the requirements, the following commands can be used:
 
 ```bash
-git clone https://github.com/david-zwicker/py-sim.git
-pip install -r sim/requirements.txt
+git clone https://github.com/david-zwicker/emulsim.git
+pip install -r emulsim/requirements.txt
 ```
 
 ## Documentation

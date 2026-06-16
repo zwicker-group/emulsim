@@ -7,14 +7,14 @@ import pytest
 
 from pde import CartesianGrid, ScalarField, UnitGrid
 
-from sim import Simulation, State
-from sim.actors.autonomous import DiffusionActor
-from sim.actors.coupling.fields import (
+from emulsim import Simulation, State
+from emulsim.actors.autonomous import DiffusionActor
+from emulsim.actors.coupling.fields import (
     FieldBoundaryExchangeActor,
     FieldCouplingActor,
     FieldExchangeActor,
 )
-from sim.elements import (
+from emulsim.elements import (
     MeanfieldElement,
     ScalarBoundaryFieldElement,
     ScalarFieldElement,

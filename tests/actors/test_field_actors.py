@@ -5,8 +5,8 @@
 import numpy as np
 import pytest
 
-from sim.actors.function import FunctionActor, NumbaFunctionActor
-from sim.elements import MeanfieldElement
+from emulsim.actors.function import FunctionActor, NumbaFunctionActor
+from emulsim.elements import MeanfieldElement
 
 
 def test_function_actor_1el():

@@ -8,10 +8,10 @@ Demonstrates the custom implementation of Brownian motion.
 
 import numpy as np
 
-import sim
+import emulsim
 
 
-class BrownianParticlesActor(sim.ActorBase):
+class BrownianParticlesActor(emulsim.ActorBase):
     diffusivity = 1
 
     def evolve(self, elements, t, dt):
@@ -24,11 +24,11 @@ class BrownianParticlesActor(sim.ActorBase):
 
 # set up state
 particle_data = np.random.uniform(0, 100, size=(10, 2))
-particles = sim.PointsElement(particle_data)
-state = sim.State({"particles": particles})
+particles = emulsim.PointsElement(particle_data)
+state = emulsim.State({"particles": particles})
 
 # set up simulation
-simulation = sim.Simulation(state)
+simulation = emulsim.Simulation(state)
 simulation.add_actor("particles", BrownianParticlesActor())
 
 # run simulation

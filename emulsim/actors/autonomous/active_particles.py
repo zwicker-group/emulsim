@@ -31,7 +31,7 @@ class ActiveParticleActor(ActorBase):
         """Estimate the maximal time step for simulating this actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.points.ArrowsElement`):
+            elements (tuple of :class:`~emulsim.elements.points.ArrowsElement`):
                 The element that is affected by the directed motion
 
         Returns:
@@ -45,7 +45,7 @@ class ActiveParticleActor(ActorBase):
         """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.points.ArrowsElement`):
+            elements (tuple of :class:`~emulsim.elements.points.ArrowsElement`):
                 The element that is affected by the directed motion
 
         Returns:
@@ -94,7 +94,7 @@ class ActiveParticleActor(ActorBase):
         """Evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.points.ArrowsElement`):
+            elements (tuple of :class:`~emulsim.elements.points.ArrowsElement`):
                 The element that is affected by the directed motion
             t (float):
                 The current time point
