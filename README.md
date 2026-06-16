@@ -1,8 +1,14 @@
 # emulsim
 
-Framework for simulating physical systems consisting of multiple, interacting entities.
-The current focus of the package lies on simulating interacting droplets in a common
-environment, but the framework is extensible and flexible.
+[![PyPI version](https://badge.fury.io/py/emulsim.svg)](https://badge.fury.io/py/emulsim)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/zwicker-group/emulsim/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/zwicker-group/emulsim/actions/workflows/continous_integration.yml)
+[![Documentation Status](https://readthedocs.org/projects/emulsim/badge/?version=latest)](https://emulsim.readthedocs.io/en/latest/?badge=latest)
+
+
+`emulsim` is a framework for simulating physical systems consisting of multiple,
+interacting droplets. The current focus of the package lies on simulating interacting
+droplets in a common environment, but the framework is extensible and flexible.
 
 
 ## Main idea

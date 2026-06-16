@@ -2,6 +2,7 @@
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
+import numba as nb
 import numpy as np
 import pytest
 
@@ -54,11 +55,13 @@ def test_simulation(rng):
     # run simulation
     jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend="numpy", tracker=None)
-    assert int(JIT_COUNT) - jit_count < 5
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count < 5
 
     jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend="numba", tracker=None)
-    assert int(JIT_COUNT) - jit_count < 50
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count < 50
 
 
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
@@ -83,7 +86,8 @@ def test_adaptive_simulation_simple(backend, rng):
     simulation2.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation2.state["field"].data)
     thresh = {"numpy": 5, "numba": 30}[backend]
-    assert int(JIT_COUNT) - jit_count < 40
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count < 40
 
 
 @pytest.mark.skipif(
@@ -124,7 +128,8 @@ def test_adaptive_simulation_complex(backend, rng):
     simulation.add_actor("field", emulsim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, tracker=None)
     result = simulation.state["field"].data
-    assert int(JIT_COUNT) - jit_count < thresh
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count < thresh
 
     # run simulation using adaptive time steps
     jit_count = int(JIT_COUNT)
@@ -133,7 +138,8 @@ def test_adaptive_simulation_complex(backend, rng):
     simulation.add_actor("field", emulsim.ScalarPDEActor(eq))
     simulation.run(t_range=1, backend=backend, adaptive=True, tracker=None)
     np.testing.assert_allclose(result, simulation.state["field"].data)
-    assert int(JIT_COUNT) - jit_count < thresh
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count < thresh
 
 
 def test_simulation_timing(rng):
@@ -184,14 +190,16 @@ def test_simulation_cache(backend, use_cache, rng):
     jit_max = {"numba": 40, "numpy": 5}[backend]
     jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend=backend, tracker=None, use_cache=True)
-    assert int(JIT_COUNT) - jit_count <= jit_max
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count <= jit_max
 
     simulation.state = state2
     jit_count = int(JIT_COUNT)
     simulation.run(t_range=10, backend=backend, tracker=None, use_cache=use_cache)
     if use_cache and backend == "numba":
         jit_max = 0
-    assert int(JIT_COUNT) - jit_count <= jit_max
+    if not nb.config.DISABLE_JIT:
+        assert int(JIT_COUNT) - jit_count <= jit_max
 
     assert_recarrays_allclose(state["droplets"].data, state2["droplets"].data)
     np.testing.assert_allclose(state["background"].data, state2["background"].data)
