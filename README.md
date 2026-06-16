@@ -21,14 +21,12 @@ multiple elements, introducing couplings.
 
 ## Installation
 
-The package is not yet available on `pip` and must thus be cloned from Github. The
-necessary python packages can be installed using `pip`. To install the package together
-with the requirements, the following commands can be used:
+`emulsim` is available on `emulsim`, so you should be able to install it through `pip`:
 
 ```bash
-git clone https://github.com/david-zwicker/emulsim.git
-pip install -r emulsim/requirements.txt
+pip install 
 ```
+
 
 ## Documentation
 
