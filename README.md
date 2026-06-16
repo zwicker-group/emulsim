@@ -16,29 +16,13 @@ multiple elements, introducing couplings.
 Installation
 ------------
 
-Since this package is not public, it cannot be installed using `pip`. Instead
-the repository needs to be cloned from github. The necessary python packages
-can be installed using `pip`. To install the package together with the
-requirements, the following commands can be used:
+The package is not yet available on `pip` and must thus be cloned from Github. The
+necessary python packages can be installed using `pip`. To install the package together
+with the requirements, the following commands can be used:
 
 ```bash
 git clone https://github.com/david-zwicker/py-sim.git
 pip install -r sim/requirements.txt
-```
-
-Note that the public packages `py-pde`, `py-droplets`, and `py-modelrunner` are included
-as submodules in the `submodules` folder. To update these, please run
-
-```bash
-git submodule update --init --recursive
-git pull --recurse-submodules
-```
-
-after cloning the `py-sim`. To update submodules automatically every time, the following
-git option is useful:
-
-```bash
-git config --global submodule.recurse true
 ```
 
 
