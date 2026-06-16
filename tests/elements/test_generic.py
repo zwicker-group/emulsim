@@ -12,7 +12,7 @@ from droplets import SphericalDroplet
 from pde import FieldCollection, ScalarField, UnitGrid
 from pde.backends.numba.utils import jit
 
-from sim.elements import (
+from emulsim.elements import (
     ArrowsElement,
     FieldCollectionElement,
     MeanfieldElement,
@@ -24,7 +24,7 @@ from sim.elements import (
     ScalarFieldElement,
     SphericalDropletsElement,
 )
-from sim.elements.base import _ElementBase
+from emulsim.elements.base import _ElementBase
 
 
 class EmptyElement(ObjectElementBase):

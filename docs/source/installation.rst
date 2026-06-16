@@ -1,7 +1,7 @@
 Installation
 ############
 
-This `py-sim` package is developed for python 3.10+ and should run on all
+This `emulsim` package is developed for python 3.10+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
 Since the code is not yet published on `pip`, it needs to be installed from
@@ -74,7 +74,7 @@ Downloading the package
 -----------------------
 
 The package can be simply checked out from
-`github.com/zwicker-group/py-sim <https://github.com/zwicker-group/py-sim>`_.
+`github.com/zwicker-group/emulsim <https://github.com/zwicker-group/emulsim>`_.
 To import the package from any python session, it might be convenient to include
 the root folder of the package into the :envvar:`PYTHONPATH` environment variable.
 

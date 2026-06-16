@@ -9,9 +9,9 @@ from numpy.lib.recfunctions import structured_to_unstructured
 from droplets import Emulsion, SphericalDroplet
 from pde.grids import UnitGrid
 
-from sim import Simulation, State
-from sim.actors.coupling.point_droplet import PointDropletActor
-from sim.elements import MeanfieldElement, SphericalDropletsElement
+from emulsim import Simulation, State
+from emulsim.actors.coupling.point_droplet import PointDropletActor
+from emulsim.elements import MeanfieldElement, SphericalDropletsElement
 
 
 @pytest.mark.parametrize("dim", [3])

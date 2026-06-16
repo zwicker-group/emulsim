@@ -59,7 +59,7 @@ class State(DictElementBase):
             elements (dict):
                 Lists the elements in the simulation. The key in this dictionary
                 gives the name of the element, while the associated value should
-                be an instance of :class:`~sim.elements.base._ElementBase`.
+                be an instance of :class:`~emulsim.elements.base._ElementBase`.
             parameters (dict):
                 Parameters that affect the entire state
         """
@@ -161,7 +161,7 @@ class State(DictElementBase):
         Args:
             name (str):
                 The identifier for the element.
-            element (:class:`~sim.elements.base._ElementBase`):
+            element (:class:`~emulsim.elements.base._ElementBase`):
                 The instance defining the element.
         """
         if name in self.elements:

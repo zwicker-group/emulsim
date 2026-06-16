@@ -20,8 +20,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-         submodules: "true"
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -51,4 +49,4 @@ jobs:
     - name: Test types with mypy
       continue-on-error: true
       run: |
-        python -m mypy --config-file pyproject.toml --pretty --package sim
+        python -m mypy --config-file pyproject.toml --pretty --package emulsim

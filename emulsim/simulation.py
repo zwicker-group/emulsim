@@ -45,7 +45,7 @@ class Simulation:
     ):
         """
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The initial simulation state defining the elements in the simulation.
             actors (sequence, optional):
                 The actors in the simulation. This should be an iterable returning an
@@ -117,7 +117,7 @@ class Simulation:
                 The elements this actor acts upon. This needs to have the exact number
                 of elements the actor expects. In the special case of autonomous actors,
                 a single string can be given instead of a tuple with a single entry.
-            actor (:class:`~sim.actors.base.ActorBase`):
+            actor (:class:`~emulsim.actors.base.ActorBase`):
                 The instance describing the actor.
             check (str):
                 A flag determining what to do when the chosen elements are not the ones
@@ -340,7 +340,7 @@ class Simulation:
         """Get the optimal time step for the simulation.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 A state, which may influence the calculation of the time step
 
         Returns:
@@ -369,7 +369,7 @@ class Simulation:
         Args:
             actor_id (int):
                 The id of the actor that needs to be evolved
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 A state defining the degrees of freedom of the simulation.
 
         Returns:
@@ -424,7 +424,7 @@ class Simulation:
         """Return a function evolving the state from time `t` to `t + dt`
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 A state defining the degrees of freedom of the simulation.
 
         Returns:
@@ -501,7 +501,7 @@ class Simulation:
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 The state of the simulation
             t (float):
                 The current time point
@@ -551,7 +551,7 @@ class Simulation:
                 :func:`~pde.trackers.base.get_named_trackers`). Multiple trackers can be
                 specified as a list. The default tracker simply displays a progress bar.
                 More general trackers are defined in :mod:`~pde.trackers` and
-                :mod:`~sim.trackers`, where all options are explained in detail. In
+                :mod:`~emulsim.trackers`, where all options are explained in detail. In
                 particular, the time points where the tracker analyzes data can be
                 chosen when creating a tracker object explicitly.
             backend (str):
@@ -665,7 +665,7 @@ class SimulationSolver(AdaptiveSolverBase):
         """Return function evolving state using adaptive time steps.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 An example for the state from which element definitions are extracted.
 
         Returns: Function that advances the State by one time step
@@ -719,7 +719,7 @@ class SimulationSolver(AdaptiveSolverBase):
         """Return function evolving state using adaptive time steps.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 An example for the state from which element definitions are extracted.
             dt (float):
                 Time step used in the fixed stepping
@@ -751,7 +751,7 @@ class SimulationSolver(AdaptiveSolverBase):
         """Return function evolving state using adaptive time steps.
 
         Args:
-            state (:class:`~sim.state.State`):
+            state (:class:`~emulsim.state.State`):
                 An example for the state from which element definitions are extracted.
             dt (float):
                 Initial time step

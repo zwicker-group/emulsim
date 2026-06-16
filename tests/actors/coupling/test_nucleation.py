@@ -8,9 +8,13 @@ import pytest
 from droplets import Emulsion, SphericalDroplet
 from pde import ScalarField, UnitGrid
 
-from sim import DropletElementTracker, Simulation, State
-from sim.actors import DiffusionActor, DropletNucleationActor
-from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
+from emulsim import DropletElementTracker, Simulation, State
+from emulsim.actors import DiffusionActor, DropletNucleationActor
+from emulsim.elements import (
+    MeanfieldElement,
+    ScalarFieldElement,
+    SphericalDropletsElement,
+)
 
 
 @pytest.mark.parametrize("dim", [1, 2])

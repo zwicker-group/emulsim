@@ -1,5 +1,5 @@
 [project]
-name = "py-sim"
+name = "emulsim"
 description = "Python framework for simulating physical systems consisting of multiple, interacting entities."
 authors = [
     {name = "David Zwicker", email="david.zwicker@ds.mpg.de"}
@@ -37,8 +37,8 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/zwicker-group/py-sim"
-repository = "https://github.com/zwicker-group/py-sim"
+homepage = "https://github.com/zwicker-group/emulsim"
+repository = "https://github.com/zwicker-group/emulsim"
 
 [build-system]
 requires = [
@@ -52,11 +52,11 @@ include-package-data = true
 zip-safe = false  # required for mypy to find the py.typed file
 
 [tool.setuptools.packages.find]
-include = ["sim*"]
+include = ["emulsim*"]
 namespaces = false
 
 [tool.setuptools_scm]
-write_to = "sim/_version.py"
+write_to = "emulsim/_version.py"
 
 [tool.ruff]
 target-version = "py310"
@@ -92,7 +92,7 @@ section-order = ["future", "standard-library", "third-party", "own-modules", "fi
 
 [tool.ruff.lint.isort.sections]
 own-modules = ["droplets", "modelrunner", "pde", "phasesep"]
-self = ["sim", "helpers"]
+self = ["emulsim", "helpers"]
 
 [tool.black]
 target_version = ["py310"]
@@ -100,10 +100,10 @@ extend-exclude = "submodules"
 
 [tool.isort]
 profile = "black"
-src_paths = ["sim", "examples", "tests"]
+src_paths = ["emulsim", "examples", "tests"]
 extend_skip_glob = ["submodules/*"]
 known_first_party = ["droplets", "modelrunner", "pde", "phasesep"]
-known_self = ["sim", "helpers"]
+known_self = ["emulsim", "helpers"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "SELF", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]

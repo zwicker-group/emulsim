@@ -925,7 +925,7 @@ class SphericalDropletActor(ActorBase):
             the ReactionDiffusion or the Diffusion equation inside each shell sector.
             Detailed documentation for calculating the material fluxes
             (both inside and outside the droplets) is located at
-            /py-sim/docs/methods.
+            /emulsim/docs/methods.
 
         Args:
             radius (float):
@@ -1086,7 +1086,7 @@ class SphericalDropletActor(ActorBase):
         surface given some imposed concentration value at the outer shell. The fluxes
         are calculated by solving the ReactionDiffusion or the Diffusion equation inside
         each shell sector. Detailed documentation for calculating the material fluxes
-        (both inside and outside the droplets) is located at /py-sim/docs/methods.
+        (both inside and outside the droplets) is located at /emulsim/docs/methods.
 
         Args:
             calc_sOut (callable):
@@ -1284,7 +1284,7 @@ class SphericalDropletActor(ActorBase):
         """Returns the equilibrium concentration outside each droplet.
 
         Args:
-            droplets (:class:`~sim.elements.spherical_droplets.SphericalDropletsElement`):
+            droplets (:class:`~emulsim.elements.spherical_droplets.SphericalDropletsElement`):
                 The state of all the droplets
 
         Returns:

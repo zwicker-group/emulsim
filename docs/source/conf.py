@@ -17,10 +17,7 @@ import sys
 
 sys.path.insert(0, ".")
 sys.path.insert(0, os.path.abspath("../.."))  # noqa: PTH100
-sys.path.insert(
-    0,
-    os.path.abspath("../../submodules/py-pde/docs/sphinx_ext"),  # noqa: PTH100
-)
+sys.path.insert(0, os.path.abspath("../sphinx_ext/"))  # noqa: PTH100
 
 from datetime import date
 
@@ -28,17 +25,17 @@ import sphinx_simplify_typehints
 
 # -- Project information -----------------------------------------------------
 
-project = "py-sim"
-module_name = "sim"
+project = "emulsim"
+module_name = "emulsim"
 author = "David Zwicker"
 copyright = f"{date.today().year}, {author}"  # noqa: A001
 
 # The short X.Y version
-import sim
+import emulsim
 
-version = sim.__version__.split("-")[0]
+version = emulsim.__version__.split("-")[0]
 # The full version, including alpha/beta/rc tags
-release = sim.__version__
+release = emulsim.__version__
 
 
 # -- Pre-processing ---------------------------------------------------

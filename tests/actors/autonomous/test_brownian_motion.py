@@ -8,8 +8,8 @@ import pytest
 from droplets import SphericalDroplet
 from pde.tools.misc import module_available
 
-from sim.actors.autonomous import BrownianMotionActor
-from sim.elements import PointsElement, SphericalDropletsElement
+from emulsim.actors.autonomous import BrownianMotionActor
+from emulsim.elements import PointsElement, SphericalDropletsElement
 
 
 def test_brownian_motion_points(rng):

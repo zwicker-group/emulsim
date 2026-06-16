@@ -63,7 +63,7 @@ class FieldCouplingActor(ActorBase):
         """Prepare the simulation doing pre-calculations.
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
         """
         # ensure that all grids are compatible
@@ -88,7 +88,7 @@ class FieldCouplingActor(ActorBase):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
 
         Returns:
@@ -139,7 +139,7 @@ class FieldCouplingActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
             t (float):
                 The current time point
@@ -195,7 +195,7 @@ class FieldExchangeActor(ActorBase):
         """Prepare the simulation doing pre-calculations.
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
         """
         # ensure that all grids are compatible
@@ -230,7 +230,7 @@ class FieldExchangeActor(ActorBase):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
 
         Returns:
@@ -283,7 +283,7 @@ class FieldExchangeActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
             t (float):
                 The current time point
@@ -354,7 +354,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         """Prepare the simulation doing pre-calculations.
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
         """
         bulk, boundary = fields
@@ -435,7 +435,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
 
         Returns:
@@ -519,7 +519,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            fields (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            fields (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The state of the individual fields
             t (float):
                 The current time point

@@ -65,7 +65,7 @@ class FunctionActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point
@@ -122,7 +122,7 @@ class NumbaFunctionActor(ActorBase):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            *elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -145,7 +145,7 @@ class NumbaFunctionActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point

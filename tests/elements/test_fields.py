@@ -9,7 +9,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection, ScalarField, UnitGrid
 from pde.grids.base import DimensionError
 
-from sim.elements import (
+from emulsim.elements import (
     FieldCollectionElement,
     MeanfieldElement,
     ReservoirElement,

@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 
-from sim.elements import ArrowsElement
+from emulsim.elements import ArrowsElement
 
 
 @pytest.mark.parametrize("dim", [1, 2])

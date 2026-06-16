@@ -11,10 +11,14 @@ from droplets import Emulsion, SphericalDroplet
 from pde import CartesianGrid, ScalarField, UnitGrid
 from pde.tools.misc import module_available
 
+from emulsim import ReactionDiffusionActor, Simulation, State
+from emulsim.actors.coupling import spherical_droplet
+from emulsim.elements import (
+    MeanfieldElement,
+    ScalarFieldElement,
+    SphericalDropletsElement,
+)
 from helpers import assert_recarrays_allclose
-from sim import ReactionDiffusionActor, Simulation, State
-from sim.actors.coupling import spherical_droplet
-from sim.elements import MeanfieldElement, ScalarFieldElement, SphericalDropletsElement
 
 
 def test_spherical_polygon_area():

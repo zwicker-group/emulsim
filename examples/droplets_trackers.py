@@ -13,31 +13,31 @@ import numpy as np
 from droplets import SphericalDroplet
 from pde import ScalarField, UnitGrid
 
-import sim
+import emulsim
 
 # set up state
 grid = UnitGrid([32, 32], periodic=True)
-background = sim.ScalarFieldElement.from_field(ScalarField(grid, 0.005))
+background = emulsim.ScalarFieldElement.from_field(ScalarField(grid, 0.005))
 droplet_data = [
     SphericalDroplet(position=grid.get_random_point(), radius=np.random.uniform(0.1, 4))
     for _ in range(10)
 ]
-droplets = sim.SphericalDropletsElement.from_droplets(droplet_data)
-state = sim.State({"background": background, "droplets": droplets})
+droplets = emulsim.SphericalDropletsElement.from_droplets(droplet_data)
+state = emulsim.State({"background": background, "droplets": droplets})
 
 # set up simulation
 reaction_flux = "0.001 - 0.01 * c"
-simulation = sim.Simulation(state)
+simulation = emulsim.Simulation(state)
 simulation.add_actor(
-    "background", sim.ReactionDiffusionActor({"reaction_flux": reaction_flux})
+    "background", emulsim.ReactionDiffusionActor({"reaction_flux": reaction_flux})
 )
-droplet_actor = sim.SphericalDropletActor(
+droplet_actor = emulsim.SphericalDropletActor(
     {"mean_reaction_inside": -0.01, "reaction_outside": reaction_flux}
 )
 simulation.add_actor(("droplets", "background"), droplet_actor)
 
 # run simulation
-tracker = sim.DropletElementTracker("droplets", interrupts=10)
+tracker = emulsim.DropletElementTracker("droplets", interrupts=10)
 simulation.run(t_range=1e3, tracker=tracker)
 
 # show droplet tracks

@@ -64,7 +64,7 @@ class LocalReactionsActor(ActorBase):
         """Get the optimal time step for the simulation of the actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
         """
         s_max = np.abs(self._reaction(np.linspace(0, 1, 32), t=0)).max()
@@ -89,7 +89,7 @@ class LocalReactionsActor(ActorBase):
         """Return a function evolve the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -110,7 +110,7 @@ class LocalReactionsActor(ActorBase):
         """Evolve the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.MeanfieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.MeanfieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point
@@ -175,7 +175,7 @@ class ScalarPDEActor(ActorBase):
         """Return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -197,7 +197,7 @@ class ScalarPDEActor(ActorBase):
         """Evolve the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point
@@ -253,7 +253,7 @@ class DiffusionActor(ScalarPDEActor):
         """Get the optimal time step for the simulation of the actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -329,7 +329,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
         """Get the optimal time step for the simulation of the actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -414,7 +414,7 @@ class CollectionPDEActor(ActorBase):
         """Return a function evolving the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
 
         Returns:
@@ -436,7 +436,7 @@ class CollectionPDEActor(ActorBase):
         """Evolve the field from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.ScalarFieldElement`):
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
                 The element affected by the actor
             t (float):
                 The current time point

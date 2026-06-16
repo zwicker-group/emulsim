@@ -36,7 +36,7 @@ class BrownianMotionActor(ActorBase):
         """Estimate the maximal time step for simulating this actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
+            elements (tuple of :class:`~emulsim.elements.droplets.SphericalDropletsElement`):
                 The element that is affected by the Brownian motion
 
         Returns:
@@ -70,7 +70,7 @@ class BrownianMotionActor(ActorBase):
         """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
+            elements (tuple of :class:`~emulsim.elements.droplets.SphericalDropletsElement`):
                 The field element that is affected by the Brownian motion
 
         Returns:
@@ -111,7 +111,7 @@ class BrownianMotionActor(ActorBase):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.droplets.SphericalDropletsElement`):
+            elements (tuple of :class:`~emulsim.elements.droplets.SphericalDropletsElement`):
                 The element that is affected by the Brownian motion
             t (float):
                 The current time point

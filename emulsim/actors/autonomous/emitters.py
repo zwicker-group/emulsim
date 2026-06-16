@@ -49,7 +49,7 @@ class EmittersActor(ActorBase):
         """Estimate the maximal time step for simulating this actor.
 
         Args:
-            element (:class:`~sim.elements.fields.FieldElementBase`):
+            element (:class:`~emulsim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters
 
         Returns:
@@ -63,7 +63,7 @@ class EmittersActor(ActorBase):
         """Return a function evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            elements (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters
 
         Returns:
@@ -90,7 +90,7 @@ class EmittersActor(ActorBase):
         """Evolve the field state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.fields.FieldElementBase`):
+            elements (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
                 The field element that is effected by the emitters
             t (float):
                 The current time point

@@ -74,7 +74,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """Determines whether this actor supports the given elements.
 
         Args:
-            elements (:class:`~sim.elements.base._ElementBase`):
+            elements (:class:`~emulsim.elements.base._ElementBase`):
                 Various elements or element classes.
             silent (bool):
                 Determines whether the function returns silently or whether an exception
@@ -141,7 +141,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """Estimate the maximal time step for simulating this actor.
 
         Args:
-            elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -156,7 +156,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         pre-computed data, which is then available in later.
 
         Args:
-            elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
             \**kwargs:
                 Additional arguments will be forwarded to the update cache function
@@ -174,7 +174,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            *elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -189,7 +189,7 @@ class ActorBase(Parameterized, metaclass=ABCMeta):
         """Evolve the state from time `t` to `t + dt`
 
         Args:
-            elements (tuple of :class:`~sim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
             t (float):
                 The current time point
@@ -209,7 +209,7 @@ def find_actors(
     """Finds actors compatible with the given elements.
 
     Args:
-        elements (:class:`~sim.elements.base._ElementBase`):
+        elements (:class:`~emulsim.elements.base._ElementBase`):
             Element classes or instances that shall serve as input for the actors
         unordered (bool):
             Determines whether also actors are returned that only accept a reordered

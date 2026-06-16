@@ -1,4 +1,4 @@
-r"""The `sim` package provides classes for describing physical system that consists of
+r"""The `emulsim` package provides classes for describing physical system that consists of
 multiple `elements`, which together describe the state of the system.
 
 The dynamical
@@ -15,7 +15,7 @@ except ImportError:
     from importlib.metadata import PackageNotFoundError, version
 
     try:
-        __version__ = version("sim")
+        __version__ = version("emulsim")
     except PackageNotFoundError:
         # package is not installed, so we cannot determine any version
         __version__ = "unknown"
@@ -24,7 +24,7 @@ except ImportError:
 # make key classes from modelrunner available
 from modelrunner import Parameter
 
-# import key classes from py-sim package into general namespace
+# import key classes from emulsim package into general namespace
 from .actors import *
 from .elements import *
 from .simulation import Simulation

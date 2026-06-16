@@ -16,7 +16,7 @@ General, each simulation is split in three parts: First, the simulation elements
 are combined to a simulation state. This defines *what* can be evolved in time.
 Second, the actors are added to a simulation. This determines *how* the elements
 change in time. Finally, the simulation is actually run and results are collected. 
-Here, `result` is a :class:`~sim.state.State` class like `state`, but with
+Here, `result` is a :class:`~emulsim.state.State` class like `state`, but with
 updated data.
 
 

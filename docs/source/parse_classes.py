@@ -10,8 +10,8 @@ OUTPUT = ROOT / "docs" / "source" / "snippets"
 
 sys.path.insert(0, str(ROOT))
 
-from sim.actors.base import ActorBase
-from sim.elements.base import _ElementBase
+from emulsim.actors.base import ActorBase
+from emulsim.elements.base import _ElementBase
 
 
 def main():
