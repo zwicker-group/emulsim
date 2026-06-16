@@ -65,6 +65,7 @@ class PointsElement(ArrayElementBase):
 
     @property
     def positions(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: the positions of all points"""
         return self.data["position"]  # type: ignore
 
     @positions.setter
@@ -226,6 +227,7 @@ class ArrowsElement(PointsElement):
 
     @property
     def directions(self) -> np.ndarray:
+        """:class:`~numpy.ndarray`: the directions of all arrows"""
         return self.data["direction"]  # type: ignore
 
     @directions.setter

@@ -50,7 +50,7 @@ class EmittersActor(ActorBase):
 
         Args:
             element (:class:`~emulsim.elements.fields.FieldElementBase`):
-                The field element that is effected by the emitters
+                The field element that is affected by the emitters
 
         Returns:
             float: the maximal time step
@@ -64,7 +64,7 @@ class EmittersActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
-                The field element that is effected by the emitters
+                The field element that is affected by the emitters
 
         Returns:
             callable: A function with signature
@@ -91,7 +91,7 @@ class EmittersActor(ActorBase):
 
         Args:
             elements (tuple of :class:`~emulsim.elements.fields.FieldElementBase`):
-                The field element that is effected by the emitters
+                The field element that is affected by the emitters
             t (float):
                 The current time point
             dt (float):

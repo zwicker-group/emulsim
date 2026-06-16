@@ -121,19 +121,6 @@ class LocalReactionsActor(ActorBase):
         element.data[...] += dt * self._reaction(element.data, t)
 
 
-class MeanfieldActor(LocalReactionsActor):
-    def __init__(self, parameters: dict[str, Any] | None = None):
-        """
-        Args:
-            parameters (dict):
-                Parameters affecting the actor. Call
-                :meth:`~LocalReactionsActor.show_parameters` for details.
-        """
-        # MeanfieldActor was deprecated on 2023-05-23
-        warnings.warn("MeanfieldActor is now LocalReactionsActor", DeprecationWarning)
-        super().__init__(parameters=parameters)
-
-
 class ScalarPDEActor(ActorBase):
     """Actor evolving a field according to a PDE."""
 

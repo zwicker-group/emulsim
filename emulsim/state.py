@@ -153,6 +153,7 @@ class State(DictElementBase):
 
     @property
     def elements(self) -> dict[str, _ElementBase]:
+        """dict: the elements in the simulation, keyed by name"""
         return self.data
 
     def add_element(self, name: str, element: _ElementBase):
@@ -224,12 +225,15 @@ class State(DictElementBase):
         return name in self.elements
 
     def keys(self):
+        """Return the names of all elements."""
         return self.elements.keys()
 
     def values(self):
+        """Return all elements."""
         return self.elements.values()
 
     def items(self):
+        """Return all (name, element) pairs."""
         return self.elements.items()
 
     def __str__(self):
@@ -306,8 +310,7 @@ class State(DictElementBase):
                 The name of the property or attribute that is analyzed
 
         Returns:
-            float or dict: A total value is returned if total is `True`. Otherwise, the
-            value for each element is returned in a dictionary. Note that elements that
+            float: The sum of the quantity over all elements. Note that elements that
             do not define the quantity are not included.
         """
         return sum(self.get_quantities(property_name).values())  # type: ignore
@@ -381,7 +384,7 @@ class State(DictElementBase):
                 def wrap(state1, state2) -> float:
                     # get error from inner functions
                     error = 0 if inner is None else inner(state1, state2)
-                    # add estiamted error of current element
+                    # add estimated error of current element
                     if np.isnan(error):
                         return error
                     else:
@@ -483,7 +486,7 @@ class State(DictElementBase):
         """Create an interactive plot of the field using :mod:`napari`
 
         Args:
-            grid (:~pde.grids.base.GridBase`):
+            grid (:class:`~pde.grids.base.GridBase`):
                 The grid that defines the space in which the simulation takes place. If
                 omitted, we try to determine it automatically from the elements in the
                 state.

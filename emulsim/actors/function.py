@@ -71,11 +71,6 @@ class FunctionActor(ActorBase):
                 The current time point
             dt (float):
                 The time step
-
-        Returns:
-            callable: A function with signature
-                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
-                which evolves the state
         """
         self.func(elements, t, dt)
 
@@ -122,7 +117,7 @@ class NumbaFunctionActor(ActorBase):
         """Return a function evolve the state from time `t` to `t + dt`
 
         Args:
-            *elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
+            elements (tuple of :class:`~emulsim.elements.base._ElementBase`):
                 The elements that this actor affects
 
         Returns:
@@ -151,11 +146,6 @@ class NumbaFunctionActor(ActorBase):
                 The current time point
             dt (float):
                 The time step
-
-        Returns:
-            callable: A function with signature
-                (state_data: :class:`~numpy.ndarray`, t: float, dt: float),
-                which evolves the state
         """
         # extract data of elements to pass it to the user function
         element_data = [el.data for el in elements]

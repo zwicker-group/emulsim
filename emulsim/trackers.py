@@ -112,7 +112,7 @@ class TrajectoryTracker(TrackerBase):
 class Trajectory(_Trajectory):
     """Reads trajectories of states written with :class:`TrajectoryTracker`
 
-    The class permits direct access to indivdual states using the square bracket
+    The class permits direct access to individual states using the square bracket
     notation. It is also possible to directly iterate over all states.
 
     Attributes:
@@ -248,7 +248,7 @@ class DropletElementTracker(TrackerBase):
                             self._active_tracks[i] = len(self.droplet_tracks)
                             self.droplet_tracks.append(DropletTrack([droplet], [t]))
                         else:
-                            # extend exisiting track
+                            # extend existing track
                             self.droplet_tracks[track_id].append(droplet, time=t)
 
                     elif i in self._active_tracks:
