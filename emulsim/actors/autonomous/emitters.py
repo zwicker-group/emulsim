@@ -1,4 +1,9 @@
-"""Provides a simple actor that emit mass into a field a predefined positions.
+"""Provides a simple actor that emits mass into a field at predefined positions.
+
+.. autosummary::
+   :nosignatures:
+
+   ~EmittersActor
 
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """

@@ -11,6 +11,7 @@ right outside droplets to the background field; see the publication for details:
 .. autosummary::
    :nosignatures:
 
+   ~PointsOnSphere
    ~ShellSectors
    ~ShellCollection
    ~SphericalDropletActor

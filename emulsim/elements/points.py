@@ -1,5 +1,11 @@
 """Provides an element that represents a collection of points.
 
+.. autosummary::
+   :nosignatures:
+
+   ~PointsElement
+   ~ArrowsElement
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

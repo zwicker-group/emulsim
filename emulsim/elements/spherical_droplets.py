@@ -1,5 +1,10 @@
 """Provides a simulation element representing spherical droplets.
 
+.. autosummary::
+   :nosignatures:
+
+   ~SphericalDropletsElement
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

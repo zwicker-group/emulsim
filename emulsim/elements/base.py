@@ -6,6 +6,7 @@
    ArrayElementBase
    ArrayCollectionElementBase
    ObjectElementBase
+   DictElementBase
 
 The inheritance diagram reads
 

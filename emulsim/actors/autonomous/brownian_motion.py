@@ -1,4 +1,10 @@
-"""
+"""Provides an actor for simulating Brownian motion.
+
+.. autosummary::
+   :nosignatures:
+
+   ~BrownianMotionActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

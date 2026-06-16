@@ -1,5 +1,11 @@
 """Supplies the base class for actors.
 
+.. autosummary::
+   :nosignatures:
+
+   ~ActorBase
+   ~find_actors
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 

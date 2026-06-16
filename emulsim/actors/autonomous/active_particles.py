@@ -1,4 +1,10 @@
-"""
+"""Provides an actor for simulating active particles moving according to their direction.
+
+.. autosummary::
+   :nosignatures:
+
+   ~ActiveParticleActor
+
 .. codeauthor:: David Zwicker <david.zwicker@ds.mpg.de>
 """
 
