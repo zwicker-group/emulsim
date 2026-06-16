@@ -4,8 +4,8 @@ Framework for simulating physical systems consisting of multiple, interacting en
 The current focus of the package lies on simulating interacting droplets in a common
 environment, but the framework is extensible and flexible.
 
-Main idea
----------
+
+## Main idea
 
 The main idea is that the physical system consists of multiple `elements`, which
 together describe the state of the system. The dynamical rules are encoded in `actors`,
@@ -13,8 +13,7 @@ which either act on individual elements, encoding their autonomous dynamics, or 
 multiple elements, introducing couplings.
 
 
-Installation
-------------
+## Installation
 
 The package is not yet available on `pip` and must thus be cloned from Github. The
 necessary python packages can be installed using `pip`. To install the package together
@@ -25,9 +24,7 @@ git clone https://github.com/david-zwicker/py-sim.git
 pip install -r sim/requirements.txt
 ```
 
-
-Documentation
--------------
+## Documentation
 
 The documentation for this package is not publicly available, but it can be generated
 from the source code. To do this, additional requirements have to be installed and the
@@ -44,8 +41,7 @@ The main entry point to the documentation is then the web page
 `docs/build/html/index.html`.
 
 
-Running tests
--------------
+## Running tests
 
 The package comes with automated tests that reside in `tests` directory. The purpose of
 these tests is to ensure some basic functionality of the package. Consequently, it is
