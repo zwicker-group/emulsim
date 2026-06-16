@@ -1,7 +1,8 @@
 # py-sim
 
-Framework for simulating physical systems consisting of multiple, interacting entities. 
-
+Framework for simulating physical systems consisting of multiple, interacting entities.
+The current focus of the package lies on simulating interacting droplets in a common
+environment, but the framework is extensible and flexible.
 
 Main idea
 ---------

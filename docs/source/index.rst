@@ -5,6 +5,8 @@ The `py-sim` python package provides methods and classes for simulating physical
 systems that consists of multiple `elements`. The dynamical rules are encoded in
 `actors`, which either act on individual elements, encoding their autonomous
 dynamics, or on multiple elements, introducing couplings.
+The current focus of the package lies on simulating interacting droplets in a common
+environment, but the framework is extensible and flexible.
 
 
 Contents
