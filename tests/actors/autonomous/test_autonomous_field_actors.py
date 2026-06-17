@@ -96,9 +96,6 @@ def test_local_reactions(meanfield):
     assert np.allclose(element.data, 11)
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `phasesep` module"
-)
 def test_diffusion_vs_reaction_diffusion(rng):
     """Compare the diffusion background with the RD-background."""
     field = ScalarField.random_uniform(UnitGrid([10]), rng=rng)
@@ -117,9 +114,6 @@ def test_diffusion_vs_reaction_diffusion(rng):
     np.testing.assert_array_equal(e1.data, e2.data)
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `phasesep` module"
-)
 def test_reaction_diffusion_background(rng):
     """Test a diffusion background with a reaction."""
     field = ScalarField.random_uniform(UnitGrid([10]), rng=rng)

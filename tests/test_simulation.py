@@ -90,9 +90,6 @@ def test_adaptive_simulation_simple(backend, rng):
         assert int(JIT_COUNT) - jit_count < 40
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `phasesep` module"
-)
 def test_adaptive_reaction_diffusion(rng):
     """Test adaptive reaction-diffusion simulation."""
     # set up state

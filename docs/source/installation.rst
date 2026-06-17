@@ -38,7 +38,7 @@ scipy           >=1.4           Miscellaneous scientific functions
 sympy           >=1.5           Dealing with user-defined mathematical expressions
 py-droplets     >=0.23          Represent droplets
 py-modelrunner  >=0.19,<0.20    Solving partial differential equations
-py-pde          >=0.38          Solving partial differential equations
+py-pde          >=0.57          Solving partial differential equations
 zarr            >=2.16          Storage of numerical data
 ==============  =============== =========
 

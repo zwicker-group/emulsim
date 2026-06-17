@@ -17,9 +17,6 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 
 # create set of examples that need to be skipped
 SKIP_EXAMPLES: set[str] = set()
-if not module_available("phasesep"):
-    SKIP_EXAMPLES.add("droplets_active.py")
-    SKIP_EXAMPLES.add("droplets_trackers.py")
 if not module_available("napari"):
     SKIP_EXAMPLES.add("droplets_interactive.py")
 if not module_available("numba_scipy"):

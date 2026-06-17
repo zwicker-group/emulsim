@@ -278,9 +278,6 @@ def test_material_conservation(backend):
     assert res.get_total_quantity("total_amount") == pytest.approx(total_amount)
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `py-phasesep` module"
-)
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_linear_reactions(backend):
     """Test whether the simulation with linear droplets conserves material."""
@@ -331,9 +328,6 @@ def test_linear_reactions(backend):
     assert total_amount == pytest.approx(total_amount, rel=1e-6)
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `phasesep` module"
-)
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_linearized_fluxes(dim, rng):
     """A simple test for implementation of linearized fluxes for Active Emulsions under
