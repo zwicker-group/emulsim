@@ -15,13 +15,12 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from collections.abc import Callable
 from typing import Any
 
 import numpy as np
 
-from pde import ScalarField
+from pde import FieldCollection, ReactionDiffusionPDE, ScalarField
 from pde.backends.numba.utils import jit
 from pde.pdes.base import PDEBase
 from pde.tools.docstrings import get_text_block
@@ -252,28 +251,22 @@ class DiffusionActor(ScalarPDEActor):
 
 
 class ReactionDiffusionActor(ScalarPDEActor):
-    """Actor evolving a field according to a reaction-diffusion equation.
-
-    This class relies on the optional `phasesep` package, which needs to be
-    installed separately.
-    """
+    """Actor evolving a field according to a reaction-diffusion equation."""
 
     parameters_default = [
         Parameter(
             "diffusivity",
-            "1",
-            str,
-            "Diffusivity in the field. This can be an expression depending  on the "
-            "local concentration that is parsed by `sympy`. Alternatively, simple "
-            "numbers are also supported.",
+            1,
+            float,
+            "Diffusivity in the field.",
         ),
         Parameter(
             "reaction_flux",
             "0",
             str,
             "An expression for the reaction flux in the field, which can depend on the "
-            "concentration (denoted by `c` or `phi`), spatial coordinates (denoted by "
-            "`x[i]`, where `i` is the dimension), and time `t`.",
+            "concentration (denoted by `c`), spatial coordinates (denoted by `x[i]`, "
+            "where `i` is the dimension), and time `t`.",
         ),
         Parameter(
             "boundary_conditions",
@@ -298,19 +291,18 @@ class ReactionDiffusionActor(ScalarPDEActor):
                 Parameters affecting the actor. Call
                 :meth:`~ReactionDiffusionActor.show_parameters` for details
         """
-        from phasesep.pdes import ReactionDiffusionPDE  # type: ignore
-
         # parse parameters
         parameters = self._parse_parameters(parameters, include_deprecated=True)
 
         # initialize reaction-diffusion equation
-        pde_params = {
-            "diffusivity": parameters["diffusivity"],
-            "reaction_flux": parameters["reaction_flux"],
-            "bc": parameters["boundary_conditions"],
-            "expression_constants": parameters["expression_constants"],
-        }
-        super().__init__(ReactionDiffusionPDE(pde_params), parameters)
+        eq = ReactionDiffusionPDE(
+            variables=["c"],
+            diffusivity=parameters["diffusivity"],
+            sources=[parameters["reaction_flux"]],
+            bc=parameters["boundary_conditions"],
+            consts=parameters["expression_constants"],
+        )
+        super().__init__(eq, parameters)
 
     def estimate_dt(self, elements: tuple[ScalarFieldElement]) -> float:  # type: ignore
         """Get the optimal time step for the simulation of the actor.
@@ -326,19 +318,13 @@ class ReactionDiffusionActor(ScalarPDEActor):
         grid = element.grid
 
         # estimate the time step based on the chemical reaction
-        if hasattr(self.pde, "_reaction"):
-            # PDE seems to be an instance of ReactionDiffusionPDE
-            test_field = ScalarField(grid)
-            s_max = 0
-            for c in np.linspace(0, 1, 32):
-                test_field.data = c
-                rates = self.pde.reaction_rate(test_field)  # type: ignore
-                s_max = max(s_max, np.max(np.abs(rates.data)))
-            diffusivity = self.pde.diffusivity.value  # type: ignore
-        else:
-            # PDE seems to be an instance of DiffusionPDE
-            s_max = 0
-            diffusivity = self.pde.diffusivity  # type: ignore
+        test_field = FieldCollection([ScalarField(grid)])
+        s_max = 0
+        for c in np.linspace(0, 1, 32):
+            test_field.data = c
+            rates = self.pde.evolution_rate(test_field)  # type: ignore
+            s_max = max(s_max, np.max(np.abs(rates.data)))
+        diffusivity = self.parameters["diffusivity"]  # type: ignore
 
         if s_max == 0:
             dt_reaction = float("inf")
@@ -358,6 +344,47 @@ class ReactionDiffusionActor(ScalarPDEActor):
         dt_diffusion = 0.1 * dx**2 / diffusivity
 
         return min(dt_reaction, dt_diffusion)  # type: ignore
+
+    def make_evolver_numba(  # type: ignore
+        self, elements: tuple[ScalarFieldElement]
+    ) -> Callable[[tuple[np.ndarray], float, float], None]:
+        """Return a function evolving the field from time `t` to `t + dt`
+
+        Args:
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
+
+        Returns:
+            callable: A function with signature (field_data, t: float,
+                dt: float), which evolves the field_data.
+        """
+        (element,) = elements  # extract single element
+        pde_rhs = self.pde.make_pde_rhs(
+            FieldCollection([element._field]), backend="numba"
+        )
+
+        @jit
+        def evolver(fields_data: tuple[np.ndarray], t: float, dt: float) -> None:
+            """Evolve the PDE explicitly."""
+            (field_data,) = fields_data
+            field_data += dt * pde_rhs(field_data[np.newaxis, ...], t)[0]
+
+        return evolver  # type: ignore
+
+    def evolve(self, elements: tuple[ScalarFieldElement], t: float, dt: float):  # type: ignore
+        """Evolve the field from time `t` to `t + dt`
+
+        Args:
+            elements (tuple of :class:`~emulsim.elements.fields.ScalarFieldElement`):
+                The element affected by the actor
+            t (float):
+                The current time point
+            dt (float):
+                The time step used to evolve the element
+        """
+        (element,) = elements  # extract single element
+        rate = self.pde.evolution_rate(FieldCollection([element._field]), t)
+        element._field += dt * rate[0]
 
 
 class CollectionPDEActor(ActorBase):

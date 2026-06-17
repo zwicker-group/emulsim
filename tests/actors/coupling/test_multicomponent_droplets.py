@@ -53,16 +53,19 @@ def test_make_regularizer(do_jit):
     np.testing.assert_allclose(phis, np.array([[0.1, 0.1, 0.45], [0.5, 0.8, 0.45]]))
 
 
-@pytest.mark.skipif(
-    not module_available("phasesep"), reason="requires `phasesep` module"
-)
 def test_multicomponent_thermodynamics():
     """Test the implementation of the thermodynamics."""
-    from phasesep import FloryHuggins2Components
-
     chi = 3
     droplet_actor = MulticomponentDropletActor({"chis": [[0]], "chis_solvent": chi})
-    fFH = FloryHuggins2Components(chi=chi)
+
+    def f(phi):
+        return phi * np.log(phi) + (1 - phi) * np.log(1 - phi) + chi * phi * (1 - phi)
+
+    def mu(phi):
+        return np.log(phi) - np.log(1 - phi) + chi * (1 - 2 * phi)
+
+    def P(phi):
+        return phi * mu(phi) - f(phi)
 
     cs = np.linspace(0, 1, 128)[1:-1]
     calc_state = droplet_actor._make_calc_state_vars()
@@ -70,9 +73,9 @@ def test_multicomponent_thermodynamics():
     mus = np.ravel([calc_state(c)[1] for c in cs.reshape(-1, 1)])
     ps = np.ravel([calc_state(c)[2] for c in cs.reshape(-1, 1)])
 
-    np.testing.assert_allclose(fs, fFH(cs))
-    np.testing.assert_allclose(mus, fFH.chemical_potential(cs))
-    np.testing.assert_allclose(ps, fFH.pressure(cs))
+    np.testing.assert_allclose(fs, f(cs))
+    np.testing.assert_allclose(mus, mu(cs))
+    np.testing.assert_allclose(ps, P(cs))
 
 
 @pytest.mark.parametrize("dim", [1, 3])
@@ -264,8 +267,9 @@ def test_multicomponent_coarsening(backend, rng):
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_multicomponent_active_droplet(backend):
     """Test active droplet simulation."""
-    import droplets
     import phasesep
+
+    import droplets
 
     chi, mobility, kf, kb, t_range = 3.0, 1, 0.002, 0.01, 1000
 
