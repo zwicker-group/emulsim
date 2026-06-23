@@ -4,8 +4,11 @@ Installation
 This `emulsim` package is developed for python 3.10+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
-Since the code is not yet published on `pip`, it needs to be installed from
-source as described below.
+The code is available on `pip`, so one could simply install it using 
+
+.. code-block:: bash
+
+    pip install emulsim
 
 
 In order to have all features of the package available, you might also want to
@@ -13,7 +16,7 @@ install the following optional packages:
 
 .. code-block:: bash
 
-    pip install h5py pandas pyfftw tqdm
+    pip install networkx numba-scipy
 
 Moreover, :command:`ffmpeg` needs to be installed and for creating movies.
 
@@ -32,13 +35,13 @@ The required packages are listed in the table below:
 Package         Version         Usage 
 ==============  =============== =========
 matplotlib      >=3.1           Visualizing results
-numpy           >=1.22          Array library used for storing data
 numba           >=0.49          Just-in-time compilation to accelerate numerics
+numpy           >=1.22          Array library used for storing data
+py-droplets     >=0.23          Represent droplets
+py-modelrunner  >=0.19,<0.20    Storage of numerical data
+py-pde          >=0.57          Solving partial differential equations
 scipy           >=1.4           Miscellaneous scientific functions
 sympy           >=1.5           Dealing with user-defined mathematical expressions
-py-droplets     >=0.23          Represent droplets
-py-modelrunner  >=0.19,<0.20    Solving partial differential equations
-py-pde          >=0.57          Solving partial differential equations
 zarr            >=2.16          Storage of numerical data
 ==============  =============== =========
 
@@ -56,13 +59,11 @@ features:
 ===========  =========
 Package      Usage
 ===========  =========
-h5py         Storing data in the hierarchical file format
 networkx     Representing simulation as a graph
 numba-scipy  Accelerated scientific functions
 pydot        Nicer plot of the graph representation
 pytest       Running tests
 sphinx       Building the documentation
-tqdm         Display progress bars during calculations
 ===========  =========
 
 Additionally, :command:`ffmpeg` should be installed for making movies and the
