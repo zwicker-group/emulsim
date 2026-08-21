@@ -24,26 +24,35 @@ ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
 class DropletNucleationActor(ActorBase):
     r"""Actor nucleating droplets from a field.
 
-    The nucleation is based on simple nucleation theory, assuming a nucleation barrier
-    that grows linearly with super-saturation :math:`\Delta c`. The nucleation rate
-    :math:`k`, defined per unit volume, is assumed to scale exponentially with the
-    nucleation barrier,
+    This actor assumes a nucleation rate that is only a function of the background
+    concentration, which is given by the second element. Essentially, we assume
+    classical nucleation theory with a fixed kinetic pre-factor together with a simple
+    theory for the nucleation barrier, which scales as :math:`F \sim (\Delta f)^{-2}`,
+    where :math:`\Delta f` is the free energy per unit volume, which is gained when
+    material is moved from the dilute background to a droplet. In the simplest case, we
+    have :math:`\Delta f \sim \ln(c_\infty/c_\mathrm{out})`, where :math:`c_\infty` is
+    the concentration in the background, whereas :math:`c_\mathrm{out}` denotes the
+    concentration right outside the droplet, so that the ratio denotes the
+    supersaturation. Taken together, the nucleation rate :math:`k`, defined per unit
+    volume, reads
 
     .. math::
-        k = k_0 \exp(\alpha \Delta c)
+        k = k_0 \exp\left(\frac{-\alpha}{[\ln(c_\infty/c_\mathrm{out})]^2}\right) \;,
 
-    Here, :math:`k_0` is constant pre-factor (determining the nucleation rate at
-    vanishing supersaturation) and :math:`\alpha` controls the strength of the influence
-    of the supersaturation.
+    where :math:`k_0` (``prefactor``) is the constant governing the time scale,
+    :math:`\alpha` (``scale``) controls the strength of the influence of the
+    supersaturation, which depends on :math:`c_\mathrm{out}`
+    (``saturation_concentration``).
     """
 
     parameters_default = [
         Parameter(
             "saturation_concentration",
-            0,
+            1e-2,
             float,
-            "Saturation concentration above which nucleation can take place. The super-"
-            "saturation is defined as the concentration of the field minus this value.",
+            r"Saturation concentration :math:`c_\mathrm{out}` above which nucleation "
+            "can take place. The super-saturation is defined as the ratio of the field "
+            "and this value.",
         ),
         Parameter(
             "initial_radius",
@@ -56,8 +65,7 @@ class DropletNucleationActor(ActorBase):
             "prefactor",
             1.0,
             float,
-            "Pre-factor :math:`k_0` setting the nucleation rate at vanishing super-"
-            "saturation.",
+            "Pre-factor :math:`k_0` setting the time scale of the nucleation rate.",
         ),
         Parameter(
             "scale",
@@ -109,24 +117,6 @@ class DropletNucleationActor(ActorBase):
         else:
             self._cache["cell_bounds"] = None
 
-    def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
-        """Estimate the maximal time step for simulating this actor.
-
-        Args:
-            elements (tuple):
-                The state of all the droplets and of the field
-
-        Returns:
-            float: the maximal time step
-        """
-        self._check_cache(elements)
-        _, field = elements
-
-        Δc = max(np.max(field.data) - self.parameters["saturation_concentration"], 0)
-        cell_vol = field.grid.cell_volumes.max()
-        k = self.parameters["prefactor"] * np.exp(self.parameters["scale"] * Δc)
-        return 1.0 / (k * cell_vol)  # type: ignore
-
     def nucleation_rate(self, field: FieldElementBase | ScalarField) -> ScalarField:
         """Return nucleation rate :math:`k` for a given field.
 
@@ -142,9 +132,29 @@ class DropletNucleationActor(ActorBase):
             float: Estimated number of droplets that are nucleated
         """
         # calculate nucleation rates for each cell in the field grid
-        Δc = field.data - self.parameters["saturation_concentration"]
-        k = self.parameters["prefactor"] * np.exp(self.parameters["scale"] * Δc)
-        return ScalarField(field.grid, k, label="Nucleation rate")
+        supsat = field.data / self.parameters["saturation_concentration"]
+        nucl_rate = ScalarField(field.grid, 0, label="Nucleation rate")
+        idx = supsat > 1  # select super-saturated regions
+        nucl_rate.data[idx] = self.parameters["prefactor"] * np.exp(
+            -self.parameters["scale"] * np.log(supsat[idx]) ** -2
+        )
+        return nucl_rate
+
+    def estimate_dt(self, elements: ActorElementType) -> float:  # type: ignore
+        """Estimate the maximal time step for simulating this actor.
+
+        Args:
+            elements (tuple):
+                The state of all the droplets and of the field
+
+        Returns:
+            float: the maximal time step
+        """
+        self._check_cache(elements)
+        _, field = elements
+        nucl_rate_cell = field.grid.cell_volumes * self.nucleation_rate(field).data
+        bare_rate = self.parameters["prefactor"]
+        return 1 / max(bare_rate, nucl_rate_cell.max())
 
     def estimate_nucleation_count(
         self, field: FieldElementBase, t_range: float
@@ -211,10 +221,12 @@ class DropletNucleationActor(ActorBase):
             # check nucleation for each cell in the field grid
             drop_id = 0
             for idx in range(size):
+                # get local super-saturation
+                supsat = field_data.flat[idx] / saturation_concentration
+                if supsat <= 1:
+                    continue  # location is under-saturated
                 # get local nucleation rate
-                Δc = field_data.flat[idx] - saturation_concentration
-                k = prefactor * ΔV[idx] * np.exp(scale * Δc)
-
+                k = prefactor * ΔV[idx] * np.exp(-scale * np.log(supsat) ** -2)
                 if np.random.random() < k * dt:
                     # nucleate a new droplet => find empty slot in droplets
                     while True:
