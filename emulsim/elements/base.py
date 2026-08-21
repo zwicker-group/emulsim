@@ -632,7 +632,7 @@ class ArrayElementBase(_ElementBase):
                 field_names = tuple(arr.dtype.fields.keys())
 
                 @jit
-                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:  # type: ignore
                     error = 0
                     for field in literal_unroll(field_names):
                         error = max(np.abs(data1[field] - data2[field]).max(), error)
@@ -641,7 +641,7 @@ class ArrayElementBase(_ElementBase):
             else:
 
                 @jit
-                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:
+                def error_estimator(data1: np.ndarray, data2: np.ndarray) -> float:  # type: ignore
                     return np.abs(data1 - data2).max()  # type: ignore
 
         else:
@@ -729,7 +729,7 @@ class ArrayCollectionElementBase(_ElementBase):
             return error
 
         if backend == "numba":
-            return jit(error_estimator)  # type: ignore
+            return jit(error_estimator)
         else:
             return error_estimator
 

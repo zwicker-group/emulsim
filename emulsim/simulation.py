@@ -467,7 +467,7 @@ class Simulation:
                 return chain(actor_id + 1, inner=wrap)
             else:
                 # this is the outermost function
-                return wrap  # type: ignore
+                return wrap
 
         if self.profile:
             # add code recording the profiling timings
@@ -484,7 +484,7 @@ class Simulation:
                 evolver_chain(state_data, t, dt, timings)
 
             # prevent garbage collection of array
-            evolver._timings = self.timings
+            evolver._timings = self.timings  # type: ignore
 
         else:
             # construct the normal evolver using recursion
@@ -495,7 +495,7 @@ class Simulation:
         sig = (nb.typeof(state._data_numba), nb.double, nb.double)
         evolver = jit(sig)(evolver)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, state: State, t: float, dt: float) -> None:
         """Evolve the state from time `t` to `t + dt`
@@ -677,8 +677,8 @@ class SimulationSolver(AdaptiveSolverBase):
                 # use older style of selecting backends
                 from pde import backends
 
-                def get_backend(name):
-                    return backends[name]
+                def get_backend(name: str) -> backends.BackendBase:  # type: ignore
+                    return backends[name]  # type: ignore
 
             # do automatic backend selection by trying numba and fall-back to numpy
             try:
@@ -713,7 +713,7 @@ class SimulationSolver(AdaptiveSolverBase):
         self.info["backend"] = self.backend.name
         return single_step
 
-    def _make_fixed_stepper(  # type: ignore
+    def _make_fixed_stepper(
         self, state: State, dt: float
     ) -> Callable[[State, float, float], float]:
         """Return function evolving state using adaptive time steps.
@@ -745,7 +745,7 @@ class SimulationSolver(AdaptiveSolverBase):
 
         return fixed_stepper
 
-    def _make_adaptive_stepper(  # type: ignore
+    def _make_adaptive_stepper(
         self, state: State, dt: float
     ) -> Callable[[State, float, float], float]:
         """Return function evolving state using adaptive time steps.
@@ -934,7 +934,7 @@ def _make_get_element_states(
     else:
         raise NotImplementedError(f"{num_elements} elements in actor")
 
-    return get_element_states  # type: ignore
+    return get_element_states
 
 
 __all__ = ["Simulation", "SimulationSolver"]

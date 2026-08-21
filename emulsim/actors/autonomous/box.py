@@ -142,7 +142,7 @@ class BoxActor(ActorBase):
                         arg = (dist_left) % (2 * size_red) - size_red
                         pos[ax] = xmin[ax] + radius + abs(arg)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
         """Evolve the field state from time `t` to `t + dt`

@@ -404,7 +404,7 @@ class PointDropletActor(ActorBase):
                 if droplet_data.radius > 0:
                     droplet_update(droplet_data, droplet_id, field_data, t, dt)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
         """Evolve the state from time `t` to `t + dt`

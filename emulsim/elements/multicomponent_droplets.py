@@ -102,7 +102,7 @@ class MulticomponentDroplet(SphericalDroplet):
     @property
     def num_comps(self) -> int:
         """int: number of components inside the droplet"""
-        shape = self.data.dtype.fields["amounts"][0].shape  # type: ignore
+        shape = self.data.dtype.fields["amounts"][0].shape
         return int(shape[0]) if shape else 1
 
     @property
@@ -205,7 +205,7 @@ class MulticomponentDropletsElement(SphericalDropletsElement):
     @property
     def num_comps(self) -> int:
         """int: the number of components inside each droplet"""
-        shape = self.data.dtype.fields["amounts"][0].shape  # type: ignore
+        shape = self.data.dtype.fields["amounts"][0].shape
         return int(shape[0]) if shape else 1
 
     @property

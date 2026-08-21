@@ -401,9 +401,9 @@ class State(DictElementBase):
                     return chain(element_id + 1, inner=wrap)
                 else:
                     # this is the outermost function
-                    return wrap  # type: ignore
+                    return wrap
 
-            return jit(chain(0))  # type: ignore
+            return jit(chain(0))
 
         else:
             raise NotImplementedError(f"Unknown backend `{backend}`")

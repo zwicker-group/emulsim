@@ -94,7 +94,7 @@ class ActiveParticleActor(ActorBase):
                         # higher dimensions are not currently supported
                         raise NotImplementedError
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
         """Evolve the field state from time `t` to `t + dt`
