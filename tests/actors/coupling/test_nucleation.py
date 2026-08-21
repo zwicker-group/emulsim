@@ -27,10 +27,11 @@ def test_nucleation(dim, field_cls, backend, rng):
         grid = UnitGrid([100])
     elif dim == 2:
         grid = UnitGrid([10, 10])
-    background_el = field_cls.from_field(ScalarField(grid))
+    background_el = field_cls.from_field(ScalarField(grid, 0.1))
+    background_total_init = background_el.total_amount
     drop = SphericalDroplet(grid.get_random_point(rng=rng), radius=0.1)
     drops = Emulsion([], dtype=drop.data.dtype)
-    droplets_el = SphericalDropletsElement.from_droplets(drops, maxcount=100)
+    droplets_el = SphericalDropletsElement.from_droplets(drops, maxcount=1000)
     state = State({"background": background_el, "droplets": droplets_el})
 
     # setup simulation
@@ -39,8 +40,9 @@ def test_nucleation(dim, field_cls, backend, rng):
         simulation.add_actor("background", DiffusionActor())
     nucleation_actor = DropletNucleationActor(
         {
-            "prefactor": 1e-3,
-            "scale": 1e3,
+            "prefactor": 0.01,
+            "scale": 10,
+            "saturation_concentration": 1e-2,
             "initial_radius": 0.1,
             "randomize_position": dim == 1,
         }
@@ -54,13 +56,14 @@ def test_nucleation(dim, field_cls, backend, rng):
     drop_count = [len(e) for e in drop_tracker.emulsions]
     assert np.all(grid.contains_point(drop_tracker.emulsions[-1].data["position"]))
     assert drop_count[0] == 0
-    assert result["background"].total_amount < 0
+    assert result["background"].total_amount < background_total_init
     assert np.all(np.diff(drop_count) >= 0)
     if dim == 1:
-        assert 2 < drop_count[-1] < 7
+        assert 2 < drop_count[-1] < 100
     elif dim == 2:
-        assert 7 < drop_count[-1] < 18
+        assert 50 < drop_count[-1] < 500
 
     amount_start = state.get_total_quantity("total_amount")
     amount_end = result.get_total_quantity("total_amount")
-    assert amount_start == pytest.approx(amount_end)
+    assert amount_start == pytest.approx(background_total_init)
+    assert amount_end == pytest.approx(background_total_init)
