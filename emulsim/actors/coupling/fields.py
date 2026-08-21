@@ -137,7 +137,7 @@ class FieldCouplingActor(ActorBase):
                 return chain(expression_id + 1, inner=wrap)
             else:
                 # this is the outermost function
-                return wrap  # type: ignore
+                return wrap
 
         # compile the recursive chain
         return chain(0, innermost)
@@ -279,7 +279,7 @@ class FieldExchangeActor(ActorBase):
                 field1 -= dt * flux
                 field2 += dt * flux
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(
         self,
@@ -520,7 +520,7 @@ class FieldBoundaryExchangeActor(ActorBase):
         else:
             raise NotImplementedError
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, fields: ElementsType, t: float, dt: float) -> None:
         """Evolve the state from time `t` to `t + dt`

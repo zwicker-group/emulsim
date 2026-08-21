@@ -116,7 +116,7 @@ class ReservoirElement(ArrayElementBase):
         def get_concentration(data: np.ndarray, point: np.ndarray):
             return data[0]
 
-        return get_concentration  # type: ignore
+        return get_concentration
 
     def make_add_amount_compiled(self) -> Callable:
         """Get a compiled function for adding amount to the field.
@@ -130,7 +130,7 @@ class ReservoirElement(ArrayElementBase):
         @jit
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float): ...
 
-        return add_amount  # type: ignore
+        return add_amount
 
 
 class FieldElementBase(ArrayElementBase, metaclass=ABCMeta):
@@ -455,7 +455,7 @@ class MeanfieldElement(FieldElementBase):
         def get_concentration(data: np.ndarray, point: np.ndarray):
             return data[0]
 
-        return get_concentration  # type: ignore
+        return get_concentration
 
     def make_add_amount_compiled(self) -> Callable:
         """Get a compiled function for adding amount to the field.
@@ -471,7 +471,7 @@ class MeanfieldElement(FieldElementBase):
         def add_amount(data: np.ndarray, point: np.ndarray, amount: float):
             data += amount / volume
 
-        return add_amount  # type: ignore
+        return add_amount
 
 
 class ScalarFieldElement(FieldElementBase):
@@ -1159,7 +1159,7 @@ class ScalarBoundaryFieldElement(ScalarFieldElement):
         def insert(data: np.ndarray, point: np.ndarray, amount: NumberOrArray) -> None:
             inserter(data, point, amount / thickness)
 
-        return insert  # type: ignore
+        return insert
 
     def _get_napari_layer_data(self, **kwargs) -> dict[str, Any]:
         raise NotImplementedError

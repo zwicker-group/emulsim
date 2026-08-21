@@ -85,7 +85,7 @@ def haversine_distance(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
     # spherical coordinates - φ differs by π/4
     factor = (1 - np.cos(λ2 - λ1)) / 2
     arg = (1 - np.cos(φ2 - φ1)) / 2 + np.sin(φ1) * np.sin(φ2) * factor
-    return 2 * r1 * np.arcsin(np.sqrt(arg))
+    return 2 * r1 * np.arcsin(np.sqrt(arg))  # type: ignore
 
 
 def get_spherical_polygon_area(vertices: np.ndarray, radius: float = 1) -> float:
@@ -415,7 +415,7 @@ class ShellSectors:
             """Compiled helper function that extracts shell parameters."""
             return vectors, weights
 
-        return get_shell  # type: ignore
+        return get_shell
 
 
 class ShellCollection:
@@ -629,7 +629,7 @@ class ShellCollection:
             i = int(min(np.searchsorted(max_radii, radius), num - 1))  # type: ignore
             return vectors[i], weights[i]
 
-        return get_shell  # type: ignore
+        return get_shell
 
 
 ActorElementType = tuple[SphericalDropletsElement, FieldElementBase]
@@ -677,7 +677,7 @@ def _make_normalize_point_compiled(
                 point[i] = xmin[i] + abs(arg)
             # else: do nothing
 
-    return normalize_point  # type: ignore
+    return normalize_point
 
 
 class SphericalDropletActor(ActorBase):

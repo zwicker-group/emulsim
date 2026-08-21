@@ -108,7 +108,7 @@ def _make_regularizer(
 
         return correction
 
-    return regularize  # type: ignore
+    return regularize
 
 
 class MulticomponentDropletActor(ActorBase):
@@ -339,7 +339,7 @@ class MulticomponentDropletActor(ActorBase):
 
             return f, mu, p
 
-        return calc_state_vars  # type: ignore
+        return calc_state_vars
 
     def _update_cache(self, elements: ActorElementType) -> None:
         """Prepare the simulation doing pre-calculations.
@@ -639,7 +639,7 @@ class MulticomponentDropletActor(ActorBase):
             with nb.objmode:
                 self.diagnostics["amount_corrections"] += amount_corrections
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
         """Evolve the state from time `t` to `t + dt`

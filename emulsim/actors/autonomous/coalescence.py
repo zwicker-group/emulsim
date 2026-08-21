@@ -30,7 +30,7 @@ def fill_with_zeros(recarr: np.recarray) -> None:
 @overload(fill_with_zeros)
 def ol_fill_with_zeros(recarr: np.recarray) -> Callable[[np.recarray], None]:
     """Create numba implementation to fill a record array with zeros."""
-    keys = tuple(recarr.dtype.fields.keys())  # type: ignore
+    keys = tuple(recarr.dtype.fields.keys())
 
     def fill_with_zeros_impl(recarr: np.recarray) -> None:
         """Numba implementation to fill a record array with zeros."""
@@ -88,7 +88,7 @@ class CoalescenceDropletActor(ActorBase):
                         fill_with_zeros(data[i1])
                         break  # droplet with index i1 has been removed -> continue
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
         """Evolve the field state from time `t` to `t + dt`

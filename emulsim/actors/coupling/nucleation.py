@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -165,7 +166,7 @@ class DropletNucleationActor(ActorBase):
         _, field = elements
         nucl_rate_cell = field.grid.cell_volumes * self.nucleation_rate(field).data
         bare_rate = self.parameters["prefactor"]
-        return 1 / max(bare_rate, nucl_rate_cell.max())
+        return 1 / max(bare_rate, nucl_rate_cell.max())  # type: ignore
 
     def estimate_nucleation_count(
         self, field: FieldElementBase, t_range: float
@@ -261,7 +262,7 @@ class DropletNucleationActor(ActorBase):
                     amount_out = cEqIn * volume(droplet_data.radius)
                     add_amount(field_data, droplet_data.position, -amount_out)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ActorElementType, t: float, dt: float) -> None:  # type: ignore
         """Evolve the state from time `t` to `t + dt`

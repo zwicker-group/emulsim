@@ -111,7 +111,7 @@ class BrownianMotionActor(ActorBase):
                     for i in range(dim):
                         droplet_data.position[i] += scale * np.random.randn()
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
         """Evolve the state from time `t` to `t + dt`

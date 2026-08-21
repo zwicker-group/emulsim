@@ -89,7 +89,7 @@ class EmittersActor(ActorBase):
             for i in range(num_emitters):
                 add_amount(state_data[0], positions[i], dt * strengths[i])
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: ElementsType, t: float, dt: float) -> None:
         """Evolve the field state from time `t` to `t + dt`

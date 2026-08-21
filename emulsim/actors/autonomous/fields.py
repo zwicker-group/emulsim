@@ -103,7 +103,7 @@ class LocalReactionsActor(ActorBase):
             (field_data,) = fields_data
             field_data += dt * reation_flux(field_data, t)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: tuple[FieldElementBase], t: float, dt: float):  # type: ignore
         """Evolve the field from time `t` to `t + dt`
@@ -177,7 +177,7 @@ class ScalarPDEActor(ActorBase):
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: tuple[ScalarFieldElement], t: float, dt: float):  # type: ignore
         """Evolve the field from time `t` to `t + dt`
@@ -322,9 +322,9 @@ class ReactionDiffusionActor(ScalarPDEActor):
         s_max = 0
         for c in np.linspace(0, 1, 32):
             test_field.data = c
-            rates = self.pde.evolution_rate(test_field)  # type: ignore
+            rates = self.pde.evolution_rate(test_field)
             s_max = max(s_max, np.max(np.abs(rates.data)))
-        diffusivity = self.parameters["diffusivity"]  # type: ignore
+        diffusivity = self.parameters["diffusivity"]
 
         if s_max == 0:
             dt_reaction = float("inf")
@@ -369,7 +369,7 @@ class ReactionDiffusionActor(ScalarPDEActor):
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data[np.newaxis, ...], t)[0]
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: tuple[ScalarFieldElement], t: float, dt: float):  # type: ignore
         """Evolve the field from time `t` to `t + dt`
@@ -444,7 +444,7 @@ class CollectionPDEActor(ActorBase):
             (field_data,) = fields_data
             field_data += dt * pde_rhs(field_data, t)
 
-        return evolver  # type: ignore
+        return evolver
 
     def evolve(self, elements: tuple[FieldCollectionElement], t: float, dt: float):  # type: ignore
         """Evolve the field from time `t` to `t + dt`

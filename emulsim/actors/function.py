@@ -131,7 +131,7 @@ class NumbaFunctionActor(ActorBase):
 
         # actually compile the function since it seemed to have passed the test
         try:
-            return jit(self.func)  # type: ignore
+            return jit(self.func)
         except (RuntimeError, TypingError) as err:
             self._logger.warning("Could not compile user-supplied function")
             raise NotImplementedError from err
