@@ -86,6 +86,17 @@ class DropletNucleationActor(ActorBase):
 
     element_classes = (SphericalDropletsElement, FieldElementBase)
 
+    def __init__(self, parameters: dict[str, Any] | None = None):
+        """
+        Args:
+            parameters (dict):
+                Parameters defining the behavior of the actor. Call
+                :meth:`~ActorBase.show_parameters` for details.
+        """
+        super().__init__(parameters)
+        if self.parameters["saturation_concentration"] <= 0:
+            self._logger.warning("Saturation concentration must be positive")
+
     def _update_cache(self, elements: ActorElementType) -> None:
         """Prepare the simulation doing pre-calculations.
 
