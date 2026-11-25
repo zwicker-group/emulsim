@@ -29,7 +29,6 @@ from typing import Any
 
 import numba as nb
 import numpy as np
-import scipy.special as sc
 
 from droplets.tools import spherical
 from pde import ScalarField
@@ -49,6 +48,7 @@ from ...elements import (
     ScalarFieldElement,
     SphericalDropletsElement,
 )
+from ...utils.bessel import i0, i1, k0, k1
 from ..base import ActorBase
 
 π = float(np.pi)
@@ -1018,9 +1018,9 @@ class SphericalDropletActor(ActorBase):
                         ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                         r1, r2 = radius / ξ, (L + radius) / ξ
                         term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * radius * (
-                            sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
+                            i1(r1) * k0(r2) + i0(r2) * k1(r1)
                         )
-                        term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                        term2 = i0(r2) * k0(r1) - i0(r1) * k0(r2)
                         final_expression = (2 * D * π * term1) / (k * ξ * term2)
                     else:
                         raise NotImplementedError(
@@ -1169,11 +1169,6 @@ class SphericalDropletActor(ActorBase):
                     return 2 * π * D * (cEqOut - c_far) / float(np.log1p(L / R))
 
             else:
-                if not module_available("numba_scipy"):
-                    self._logger.error(
-                        "Python package `numba_scipy` is not installed. This package "
-                        "is required to compile the Bessel function appearing in 2D."
-                    )
 
                 def flux_outside(
                     R: float, c_far: float, cEqOut: float, droplet_id: int
@@ -1209,9 +1204,9 @@ class SphericalDropletActor(ActorBase):
                             ξ = np.sqrt(D / k)  # Reaction-Diffusion length-scale
                             r1, r2 = R / ξ, (L + R) / ξ
                             term1 = (A - k * c_far) * ξ - (A - k * cEqOut) * R * (
-                                sc.i1(r1) * sc.k0(r2) + sc.i0(r2) * sc.k1(r1)
+                                i1(r1) * k0(r2) + i0(r2) * k1(r1)
                             )
-                            term2 = sc.i0(r2) * sc.k0(r1) - sc.i0(r1) * sc.k0(r2)
+                            term2 = i0(r2) * k0(r1) - i0(r1) * k0(r2)
                             final_expression = (2 * D * π * term1) / (k * ξ * term2)
                         else:
                             raise NotImplementedError(

@@ -80,7 +80,7 @@ def test_state_errors():
         State({str(i): el for i, el in enumerate(generate_elements())})
 
 
-@pytest.mark.parametrize("element", generate_elements())
+@pytest.mark.parametrize("element", list(generate_elements()))
 def test_state_copy(element):
     """Test copying different states."""
     s = State({"el": element})

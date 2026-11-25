@@ -227,9 +227,6 @@ def test_spherical_droplets_reactions_inside(dim, compiled):
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_spherical_droplets_reactions_outside(dim, compiled):
     """Simple test of SphericalDropletAgents with reactions."""
-    if compiled and dim == 2 and not module_available("numba_scipy"):
-        pytest.skip("Python module `numba_scipy` not installed")
-
     grid = UnitGrid([3] * dim)
     field = MeanfieldElement(0, {"bounds": grid.axes_bounds})
 
@@ -332,9 +329,6 @@ def test_linear_reactions(backend):
 def test_linearized_fluxes(dim, rng):
     """A simple test for implementation of linearized fluxes for Active Emulsions under
     mean-field conditions."""
-    if dim == 2 and not module_available("numba_scipy"):
-        pytest.skip("Module `numba_scipy` not available")
-
     # make meanfield grid
     grid = CartesianGrid([(0, 1000)] * dim, 1, periodic=True)
     background = ScalarFieldElement.from_field(ScalarField(grid, 0.005))

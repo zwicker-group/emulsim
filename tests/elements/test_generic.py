@@ -96,7 +96,7 @@ def generate_elements(dim=None, incl_obj=True):
         )
 
 
-@pytest.mark.parametrize("element", generate_elements())
+@pytest.mark.parametrize("element", list(generate_elements()))
 def test_basic(element):
     """Test basic functions of elements."""
     assert isinstance(str(element), str)
@@ -116,7 +116,7 @@ def test_basic(element):
         element.plot(action="close")
 
 
-@pytest.mark.parametrize("element", generate_elements())
+@pytest.mark.parametrize("element", list(generate_elements()))
 def test_numba_data_access(element, capsys):
     """Test whether the element data can be used in numba."""
 
@@ -129,7 +129,7 @@ def test_numba_data_access(element, capsys):
     assert captured.out != ""
 
 
-@pytest.mark.parametrize("element", generate_elements())
+@pytest.mark.parametrize("element", list(generate_elements()))
 @pytest.mark.parametrize("ext", ["zarr", "json"])
 def test_element_io(element, ext, tmp_path):
     """Test writing and reading element states."""

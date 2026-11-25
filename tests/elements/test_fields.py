@@ -18,18 +18,17 @@ from emulsim.elements import (
 )
 
 
-def generate_field_elements():
+def get_field_elements():
     """Helper function generating all tested field elements."""
-    grid = CartesianGrid([[0, 3], [0, 3]], 1)
-    element = MeanfieldElement(parameters={"bounds": grid.axes_bounds})
-    yield element, grid
+    grid1 = CartesianGrid([[0, 3], [0, 3]], 1)
+    element1 = MeanfieldElement(parameters={"bounds": grid1.axes_bounds})
 
-    grid = UnitGrid([3, 3])
-    element = ScalarFieldElement(parameters={"grid": grid})
-    yield element, grid
+    grid2 = UnitGrid([3, 3])
+    element2 = ScalarFieldElement(parameters={"grid": grid2})
+    return [(element1, grid1), (element2, grid2)]
 
 
-@pytest.mark.parametrize("element,grid", generate_field_elements())
+@pytest.mark.parametrize("element,grid", get_field_elements())
 def test_elements_numpy(element, grid, rng):
     """Test functions based on numpy."""
     assert isinstance(element.attributes, dict)
@@ -51,7 +50,7 @@ def test_elements_numpy(element, grid, rng):
     assert np.array_equal(element2.data, element.data)
 
 
-@pytest.mark.parametrize("element,grid", generate_field_elements())
+@pytest.mark.parametrize("element,grid", get_field_elements())
 def test_elements_numba(element, grid, rng):
     """Test functions based on numba."""
     # test adding amounts

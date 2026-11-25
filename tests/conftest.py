@@ -12,6 +12,14 @@ from pde.backends.numba.utils import random_seed
 # ensure we use the Agg backend, so figures are not displayed
 plt.switch_backend("agg")
 
+try:
+    import numcodecs
+except ImportError:
+    ...
+else:
+    # we allow unpickling since we otherwise cannot store arbitrary Python objects
+    numcodecs.pickles.ALLOW_UNSAFE_PICKLE_DECODE = True
+
 
 @pytest.fixture(autouse=True)
 def _setup_and_teardown():
