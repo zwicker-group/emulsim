@@ -21,8 +21,8 @@ jobs:
         uv-resolution: ["highest"]
         include:
           - os: "ubuntu-latest"
-          - python-version: "3.10"
-          - uv-resolution: "lowest"
+            python-version: "3.10"
+            uv-resolution: "lowest"
 
     steps:
       - uses: actions/checkout@v7
