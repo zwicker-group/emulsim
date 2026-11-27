@@ -7,7 +7,7 @@ authors = [
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"
-requires-python = ">=3.10,<3.16"
+requires-python = ">=3.11,<3.16"
 dynamic = ["version"]
 
 classifiers = [
@@ -16,7 +16,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -31,11 +30,11 @@ dependencies = [
     "numba>=0.59",
     "numpy>=1.22",
     "py-droplets>=0.28.1",
-    "py-modelrunner>=0.18,<0.20",
+    "py-modelrunner>=0.21",
     "py-pde>=0.57",
     "scipy>=1.4",
     "sympy>=1.5",
-    "zarr>=2.16,<3",
+    "zarr>=3,<4",
 ]
 
 [project.urls]
@@ -62,7 +61,7 @@ namespaces = false
 write_to = "emulsim/_version.py"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 exclude = ["scripts/templates"]
 
 [tool.ruff.format]
@@ -98,7 +97,7 @@ own-modules = ["droplets", "modelrunner", "pde"]
 self = ["emulsim", "helpers"]
 
 [tool.black]
-target_version = ["py310"]
+target_version = ["py311"]
 
 [tool.isort]
 profile = "black"
@@ -120,7 +119,7 @@ filterwarnings = [
 omit = ['*/test*']
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 warn_unused_ignores = true
