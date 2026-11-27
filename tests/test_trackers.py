@@ -54,7 +54,7 @@ def test_element_trackers(tmp_path, rng):
 
     # run simulation
     drop_t = emulsim.DropletElementTracker("droplets")
-    traj_t = emulsim.TrajectoryTracker(tmp_path / "trajectory")
+    traj_t = emulsim.TrajectoryTracker(tmp_path / "trajectory.hdf")
     simulation.run(t_range=2.5, dt=0.1, backend="numpy", tracker=[drop_t, traj_t])
 
     # test EmulsionTimeCourse
@@ -65,7 +65,7 @@ def test_element_trackers(tmp_path, rng):
     assert len(drop_t.droplet_tracks) == 2
 
     # test Trajectory
-    traj = emulsim.Trajectory(tmp_path / "trajectory")
+    traj = emulsim.Trajectory(tmp_path / "trajectory.hdf")
     np.testing.assert_allclose(traj.times, [0, 1, 2])
     assert traj[0]["droplets"] == droplets
     assert traj[0]["background"] == background

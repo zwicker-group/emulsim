@@ -38,11 +38,11 @@ matplotlib      >=3.1           Visualizing results
 numba           >=0.49          Just-in-time compilation to accelerate numerics
 numpy           >=1.22          Array library used for storing data
 py-droplets     >=0.28.1        Represent droplets
-py-modelrunner  >=0.19,<0.20    Storage of numerical data
+py-modelrunner  >=0.21          Storage of numerical data
 py-pde          >=0.57          Solving partial differential equations
 scipy           >=1.4           Miscellaneous scientific functions
 sympy           >=1.5           Dealing with user-defined mathematical expressions
-zarr            >=2.16          Storage of numerical data
+zarr            >=3             Storage of numerical data
 ==============  =============== =========
 
 

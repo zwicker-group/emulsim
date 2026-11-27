@@ -31,11 +31,11 @@ dependencies = [
     "numba>=0.59",
     "numpy>=1.22",
     "py-droplets>=0.28.1",
-    "py-modelrunner>=0.18,<0.20",
+    "py-modelrunner>=0.21",
     "py-pde>=0.57",
     "scipy>=1.4",
     "sympy>=1.5",
-    "zarr>=2.16,<3",
+    "zarr>=3,<4",
 ]
 
 [project.urls]

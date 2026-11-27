@@ -24,7 +24,7 @@ if not module_available("numba_scipy"):
     SKIP_EXAMPLES.add("droplets_trackers.py")
 
 # get dictionary of files that need to be deleted after the examples ran
-CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.zip"}
+CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.hdf"}
 
 
 @pytest.mark.no_cover
