@@ -25,6 +25,7 @@ from pde.tools.docstrings import fill_in_docstring
 from pde.trackers.base import InfoDict, InterruptData, TrackerBase
 
 from .simulation import State
+from .utils.misc import init_zarr_storage_format
 
 
 class TrajectoryTracker(TrackerBase):
@@ -83,6 +84,7 @@ class TrajectoryTracker(TrackerBase):
             info_write = copy.deepcopy(self.info)
             info_write.update(info)  # type: ignore
 
+        init_zarr_storage_format()
         self._writer = TrajectoryWriter(self.storage, mode=self.mode, attrs=info_write)
 
         return super().initialize(state, info)  # type: ignore

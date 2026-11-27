@@ -44,6 +44,8 @@ from modelrunner.storage import (
 from modelrunner.storage.utils import decode_class, storage_actions
 from pde.backends.numba.utils import jit
 
+from ..utils.misc import init_zarr_storage_format
+
 SerializedAttributesType = dict[str, str]
 SerializedDataType = np.ndarray | dict[str, np.ndarray]
 
@@ -518,6 +520,7 @@ class _ElementBase(Parameterized, metaclass=ABCMeta):
             **kwargs:
                 Arguments passed to :func:`~modelrunner.storage.open_storage`
         """
+        init_zarr_storage_format()
         with open_storage(storage, mode=mode, **kwargs) as opened_storage:
             self._write_to_storage(opened_storage, loc=loc)
 

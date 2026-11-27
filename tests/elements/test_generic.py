@@ -129,8 +129,9 @@ def test_numba_data_access(element, capsys):
     assert captured.out != ""
 
 
+# TODO: support zarr, too
 @pytest.mark.parametrize("element", list(generate_elements()))
-@pytest.mark.parametrize("ext", ["zarr", "json"])
+@pytest.mark.parametrize("ext", ["yaml", "hdf", "json"])
 def test_element_io(element, ext, tmp_path):
     """Test writing and reading element states."""
     path = tmp_path / f"test_io_{element.__class__.__name__}.{ext}"
