@@ -19,9 +19,6 @@ EXAMPLE_PATH = PACKAGEPATH / "examples"
 SKIP_EXAMPLES: set[str] = set()
 if not module_available("napari"):
     SKIP_EXAMPLES.add("droplets_interactive.py")
-if not module_available("numba_scipy"):
-    SKIP_EXAMPLES.add("droplets_active.py")
-    SKIP_EXAMPLES.add("droplets_trackers.py")
 
 # get dictionary of files that need to be deleted after the examples ran
 CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.hdf"}
@@ -29,7 +26,7 @@ CLEANUP: dict[str, Path] = {"storing_data.py": PACKAGEPATH / "trajectory.hdf"}
 
 @pytest.mark.no_cover
 @pytest.mark.skipif(sys.platform == "win32", reason="Assumes unix setup")
-@pytest.mark.parametrize("path", EXAMPLE_PATH.glob("**/*.py"))
+@pytest.mark.parametrize("path", list(EXAMPLE_PATH.glob("**/*.py")))
 def test_example(path):
     """Runs an example script given by path."""
     # check whether the example should actually by ran

@@ -7,7 +7,6 @@ This example shows how to analyze droplet trajectories. Note that the simulation
 requires the optional `numba-scipy` package!
 """
 
-import numba_scipy  # raises an error if the module is not available
 import numpy as np
 
 from droplets import SphericalDroplet
