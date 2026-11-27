@@ -1,7 +1,7 @@
 Installation
 ############
 
-This `emulsim` package is developed for python 3.10+ and should run on all
+This `emulsim` package is developed for python 3.11+ and should run on all
 common platforms.
 The code is tested under Linux, Windows, and macOS.
 The code is available on `pip`, so one could simply install it using 
