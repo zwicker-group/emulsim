@@ -40,6 +40,11 @@ def test_example(path):
     if any(name in str(path) for name in SKIP_EXAMPLES):
         pytest.skip(f"Skip test {path}")
 
+    # clean up potential files from previous runs (before running the test)
+    for script, delete_path in CLEANUP.items():
+        if script in str(path):
+            delete_path.unlink(missing_ok=True)
+
     # run the example script
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PACKAGEPATH) + ":" + env.get("PYTHONPATH", "")
@@ -51,7 +56,7 @@ def test_example(path):
         proc.kill()
         outs, errs = proc.communicate()
 
-    # clean up potential files that were written
+    # clean up potential files that were written (after running the test)
     for script, delete_path in CLEANUP.items():
         if script in str(path):
             delete_path.unlink(missing_ok=True)
@@ -62,4 +67,4 @@ def test_example(path):
         msg = f"{msg}\nSTDOUT:\n{outs}"
     if errs:
         msg = f"{msg}\nSTDERR:\n{errs}"
-    assert proc.returncode <= 0, msg
+    assert proc.returncode == 0, msg
