@@ -11,13 +11,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0 # https://github.com/pypa/setuptools_scm/issues/480
 
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
@@ -32,7 +30,7 @@ jobs:
       - name: Check the package
         run: twine check --strict dist/*
 
-      - name: Build and publish
+      - name: Publish
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}

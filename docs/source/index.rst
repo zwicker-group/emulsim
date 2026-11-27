@@ -1,5 +1,5 @@
 'emulsim' python package
-=======================
+========================
 
 The `emulsim` python package provides methods and classes for simulating physical
 systems that consists of multiple `elements`. The dynamical rules are encoded in
